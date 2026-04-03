@@ -175,7 +175,7 @@ Transfer-Encoding 헤더가 중복으로 들어오는 경우를 처리하지 못
 ### 브랜치 보호
 
 - **main**: GitHub branch protection 설정됨. 직접 push 불가, PR을 통해서만 머지.
-- **dev**: 보호 없음. 기능 브랜치에서 squash merge로 머지.
+- **dev**: GitHub branch protection 설정됨. 직접 push 불가, 기능 브랜치에서 PR squash merge로만 머지.
 
 ### PR 예시
 
