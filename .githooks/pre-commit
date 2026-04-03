@@ -8,4 +8,20 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Frontend lint + format check
+echo "Running frontend lint..."
+cd frontend
+npm run lint 2>/dev/null
+if [ $? -ne 0 ]; then
+  echo "Frontend lint failed. Fix errors before committing."
+  exit 1
+fi
+
+npm run format:check 2>/dev/null
+if [ $? -ne 0 ]; then
+  echo "Frontend format check failed. Run 'npm run format' in frontend/."
+  exit 1
+fi
+cd ..
+
 echo "All checks passed."
