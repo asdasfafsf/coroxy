@@ -491,3 +491,423 @@ internal/
 - `internal/`에 모든 비즈니스 로직을 둔다.
 - `pkg/`는 사용하지 않는다.
 - `utils/`, `helpers/`, `common/` 패키지를 만들지 않는다.
+
+---
+
+## 13. 변수 선언
+
+### var vs :=
+
+- 제로값을 의도할 때: `var`
+- 초기값이 있을 때: `:=`
+
+```go
+// 제로값 의도
+var buf bytes.Buffer
+var mu sync.Mutex
+var sessions []Session
+
+// 초기값 있음
+port := 8080
+name := "proxy"
+config := loadConfig()
+```
+
+### 패키지 레벨 변수
+
+- `var` 블록으로 그룹핑한다.
+- 가변 전역 변수는 사용하지 않는다. 상수와 센티널 에러만 허용.
+
+```go
+var (
+    ErrNotFound   = errors.New("not found")
+    ErrNotRunning = errors.New("not running")
+)
+```
+
+---
+
+## 14. 슬라이스와 맵
+
+### nil 슬라이스 vs 빈 슬라이스
+
+- 선언만 할 때: `var s []T` (nil, JSON `null`)
+- 빈 결과를 명시적으로 반환할 때: `[]T{}` (JSON `[]`)
+- `len(s) == 0`으로 체크한다. `s == nil`로 체크하지 않는다.
+
+```go
+// 좋은 예: 나중에 append할 슬라이스
+var filtered []int
+for _, v := range items {
+    if v > 0 {
+        filtered = append(filtered, v)
+    }
+}
+
+// 나쁜 예
+filtered := []int{}  // 불필요한 할당
+```
+
+### 용량 힌트
+
+- 크기를 알거나 추정할 수 있으면 `make`에 용량을 지정한다.
+
+```go
+results := make([]Result, 0, len(items))
+```
+
+### 맵
+
+- 맵은 반드시 `make`로 초기화한 후 사용한다.
+- 크기를 알면 힌트를 준다.
+
+```go
+m := make(map[string]int, len(keys))
+```
+
+---
+
+## 15. 문자열
+
+- 루프 내 문자열 연결: `strings.Builder`를 사용한다.
+- 포맷팅이 필요할 때: `fmt.Sprintf`
+- 단순 연결 2~3개: `+` 연산자 허용.
+- `[]byte` ↔ `string` 변환은 복사를 발생시킨다. 불필요한 변환을 피한다.
+
+```go
+// 루프 내 연결
+var b strings.Builder
+for _, s := range parts {
+    b.WriteString(s)
+}
+result := b.String()
+
+// 단순 포맷팅
+msg := fmt.Sprintf("listen on %s:%d", host, port)
+
+// 단순 연결
+path := dir + "/" + file
+```
+
+---
+
+## 16. defer
+
+- 리소스 획득 직후에 `defer`를 배치한다.
+- 루프 안에서 `defer`를 사용하지 않는다. 별도 함수로 분리한다.
+- `defer`는 LIFO 순서로 실행된다.
+- `defer` 내에서 에러를 반환해야 할 때만 named return을 사용한다.
+
+```go
+// 좋은 예
+f, err := os.Open(path)
+if err != nil {
+    return err
+}
+defer f.Close()
+
+// 나쁜 예: 루프 안 defer
+for _, path := range paths {
+    f, err := os.Open(path)
+    defer f.Close()  // 루프 끝날 때까지 안 닫힘
+}
+
+// 좋은 예: 루프에서 함수로 분리
+for _, path := range paths {
+    if err := processFile(path); err != nil { ... }
+}
+func processFile(path string) error {
+    f, err := os.Open(path)
+    if err != nil { return err }
+    defer f.Close()
+    // ...
+}
+```
+
+---
+
+## 17. panic과 recover
+
+- `panic`은 프로그램 초기화 실패(필수 의존성 누락)에만 허용한다.
+- 라이브러리 코드에서 `panic`을 사용하지 않는다. 에러를 반환한다.
+- `recover`는 최상위 goroutine 경계(서버의 요청 핸들러 등)에서만 사용한다.
+- `log.Fatal`도 `os.Exit`을 호출하므로 main 또는 init에서만 사용한다.
+
+---
+
+## 18. 타입 단언
+
+- 반드시 comma-ok 패턴을 사용한다. 실패 시 panic을 방지한다.
+
+```go
+// 좋은 예
+v, ok := x.(string)
+if !ok {
+    return fmt.Errorf("expected string, got %T", x)
+}
+
+// 나쁜 예
+v := x.(string)  // 실패 시 panic
+```
+
+- 여러 타입을 검사할 때는 type switch를 사용한다.
+
+```go
+switch v := x.(type) {
+case string:
+    handleString(v)
+case int:
+    handleInt(v)
+default:
+    return fmt.Errorf("unsupported type: %T", x)
+}
+```
+
+---
+
+## 19. 상수와 Enum
+
+### 상수 그룹핑
+
+- 관련 상수끼리 별도 `const` 블록으로 묶는다.
+
+### iota
+
+- enum의 제로값은 Unknown/Invalid로 두어 미초기화를 감지한다.
+- 타입 있는 상수를 사용한다.
+- `String()` 메서드를 반드시 구현한다.
+
+```go
+type Protocol int
+
+const (
+    ProtocolUnknown Protocol = iota
+    ProtocolHTTP
+    ProtocolTLS
+    ProtocolRaw
+)
+
+func (p Protocol) String() string {
+    switch p {
+    case ProtocolHTTP:
+        return "http"
+    case ProtocolTLS:
+        return "tls"
+    case ProtocolRaw:
+        return "raw"
+    default:
+        return "unknown"
+    }
+}
+```
+
+---
+
+## 20. 로깅
+
+### 로거
+
+- 전역 로거를 사용하지 않는다. 구조체 필드로 주입한다.
+- `log/slog`(표준 라이브러리)를 사용한다.
+
+```go
+type Proxy struct {
+    logger *slog.Logger
+}
+
+func NewProxy(logger *slog.Logger) *Proxy {
+    return &Proxy{logger: logger}
+}
+```
+
+### 로그 레벨
+
+| 레벨 | 사용 기준 |
+|------|----------|
+| Error | 운영 개입이 필요한 오류. 요청 처리 실패, 리소스 고갈 |
+| Warn | 주의가 필요하지만 동작은 계속되는 상황 |
+| Info | 주요 상태 변경. 서버 시작/중지, 설정 로드 |
+| Debug | 개발/디버깅용. 요청 상세, 내부 상태 |
+
+### 규칙
+
+- 구조화된 키-값 쌍을 사용한다.
+- 민감 정보(비밀번호, 토큰, 개인정보)를 로깅하지 않는다.
+- 에러 로깅 후 에러를 반환하지 않는다 (둘 중 하나만).
+
+```go
+// 좋은 예
+p.logger.Info("proxy started", "addr", addr, "port", port)
+p.logger.Error("request failed", "err", err, "method", req.Method)
+
+// 나쁜 예
+log.Printf("Proxy started on %s:%d", addr, port)  // 전역 로거
+p.logger.Error("failed", "err", err)
+return err  // 에러 로깅 + 반환 = 중복
+```
+
+---
+
+## 21. JSON 태그
+
+- 필드 태그는 snake_case를 사용한다.
+- 선택 필드는 `omitempty`를 사용한다.
+- 내보내지 않을 필드는 `json:"-"`를 사용한다.
+
+```go
+type Session struct {
+    ID        string    `json:"id"`
+    Protocol  string    `json:"protocol"`
+    CreatedAt time.Time `json:"created_at"`
+    Duration  int       `json:"duration,omitempty"`
+    internal  string    `json:"-"`
+}
+```
+
+---
+
+## 22. 에러 비교
+
+- `==` 대신 `errors.Is`를 사용한다.
+- 타입 단언 대신 `errors.As`를 사용한다.
+
+```go
+// 좋은 예
+if errors.Is(err, ErrNotFound) { ... }
+
+var nfErr *NotFoundError
+if errors.As(err, &nfErr) { ... }
+
+// 나쁜 예
+if err == ErrNotFound { ... }
+if nfErr, ok := err.(*NotFoundError); ok { ... }
+```
+
+---
+
+## 23. 리소스 관리
+
+- `io.Closer`를 구현하는 타입은 `Close()` 에러도 처리한다.
+- HTTP 응답 바디는 반드시 닫는다.
+
+```go
+resp, err := http.Get(url)
+if err != nil {
+    return err
+}
+defer resp.Body.Close()
+```
+
+---
+
+## 24. time 처리
+
+- 테스트 용이성을 위해 `time.Now()` 직접 호출 대신 clock 인터페이스를 주입한다.
+
+```go
+type Clock interface {
+    Now() time.Time
+}
+
+type realClock struct{}
+func (realClock) Now() time.Time { return time.Now() }
+```
+
+- `time.Duration`으로 시간 간격을 표현한다. 초 단위 int를 사용하지 않는다.
+
+---
+
+## 25. Getter/Setter
+
+- Getter: `GetXxx()` 대신 `Xxx()`를 사용한다.
+- Setter: `SetXxx()`를 사용한다.
+
+```go
+// 좋은 예
+func (s *Session) Protocol() string { return s.protocol }
+func (s *Session) SetProtocol(p string) { s.protocol = p }
+
+// 나쁜 예
+func (s *Session) GetProtocol() string { return s.protocol }
+```
+
+---
+
+## 26. else 최소화
+
+- `if-else`에서 else를 줄인다. 에러/예외를 먼저 처리하고 반환한다.
+- `if` 블록이 `return`으로 끝나면 `else`를 쓰지 않는다.
+
+```go
+// 좋은 예
+if err != nil {
+    return err
+}
+// 정상 로직
+
+// 나쁜 예
+if err != nil {
+    return err
+} else {
+    // 정상 로직
+}
+```
+
+---
+
+## 27. 인라인 에러 체크
+
+- 변수가 `if` 블록 안에서만 쓰이면 인라인 선언을 사용한다.
+
+```go
+// 좋은 예
+if err := validate(req); err != nil {
+    return err
+}
+
+// 나쁜 예 (err가 if 밖에서 안 쓰이는 경우)
+err := validate(req)
+if err != nil {
+    return err
+}
+```
+
+---
+
+## 28. HTTP 클라이언트
+
+- `http.DefaultClient`를 사용하지 않는다. 타임아웃을 명시적으로 설정한다.
+
+```go
+client := &http.Client{
+    Timeout: 30 * time.Second,
+}
+```
+
+---
+
+## 29. goroutine 안전성 문서화
+
+- 동시성 안전한 타입은 godoc에 명시한다.
+
+```go
+// Store is safe for concurrent use by multiple goroutines.
+type Store struct { ... }
+```
+
+---
+
+## 30. 벤치마크
+
+- 성능 민감 코드(핫 패스, 프록시 요청 처리 등)에 벤치마크를 작성한다.
+- `b.ReportAllocs()`를 사용하여 할당 수를 추적한다.
+
+```go
+func BenchmarkDetectProtocol(b *testing.B) {
+    data := []byte("GET / HTTP/1.1\r\n")
+    b.ReportAllocs()
+    for i := 0; i < b.N; i++ {
+        DetectProtocol(data)
+    }
+}
+```
