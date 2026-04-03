@@ -201,7 +201,7 @@ func WithLogger(l *slog.Logger) Option { ... }
 
 - 5개 이하로 유지. 많아지면 옵션 구조체를 사용한다.
 - `context.Context`는 항상 첫 번째 매개변수. `ctx`로 이름 짓는다.
-- Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context와 장수명 구조체의 수명 제어용(cancel 전파) context는 허용한다.
+- Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context와 구조체 생성자에서 받은 cancel 전파용 context만 허용한다. 요청별 context는 저장하지 않는다.
 
 ### 반환값 (MUST)
 
@@ -243,15 +243,11 @@ if err := validate(req); err != nil {
 
 한 타입에서 원칙적으로 섞지 않는다 (SHOULD). 단, `String()` 등 상태를 변경하지 않는 메서드를 값 리시버로 두는 것은 허용.
 
-**포인터 리시버:**
-- 메서드가 리시버를 수정할 때
-- `sync.Mutex` 등 복사하면 안 되는 필드가 있을 때
-- 구조체가 클 때 (공개+비공개 필드 합계 5개 이상. 임베딩은 1개 필드로 센다)
-- 판단이 어려울 때
+기본은 포인터 리시버를 사용한다. 값 리시버는 아래 조건을 **모두** 만족할 때만 사용한다:
 
-**값 리시버:**
-- 변경되지 않는 작은 구조체
-- 기본 타입 (int, string 등)
+- 메서드가 리시버를 수정하지 않는다
+- `sync.Mutex` 등 복사 불가 필드가 없다
+- 필드 4개 이하의 작은 구조체이거나 기본 타입(`int`, `string` 등)이다
 
 ### Getter/Setter (MUST)
 
@@ -264,7 +260,7 @@ if err := validate(req); err != nil {
 
 ### 에러는 반드시 처리한다 (MUST)
 
-- `_`로 에러를 무시하지 않는다.
+- `_`로 에러를 무시하지 않는다. 단, 처리가 불가능한 경우(`defer` 내 `Close`, 로그 출력 등)는 `_ =`로 의도적 무시를 명시한다.
 
 ### 에러 메시지 포맷 (MUST)
 
@@ -435,7 +431,7 @@ func TestXxx(t *testing.T) {
 ### 벤치마크 (SHOULD)
 
 - 성능 민감 코드에 벤치마크 작성.
-- `b.Loop()` 사용 (Go 1.24+).
+- 기존 `for i := 0; i < b.N; i++` 루프 대신 `b.Loop()`을 사용한다 (Go 1.24+).
 - `b.ReportAllocs()` 사용.
 
 ```go
@@ -602,7 +598,15 @@ const (
 
 ---
 
-## 23. HTTP 클라이언트
+## 23. 네트워크 I/O 안전
+
+- 신뢰할 수 없는 외부 데이터를 읽을 때 `io.LimitReader`로 크기를 제한한다 (MUST)
+- `io.ReadAll`은 크기가 보장된 경우에만 사용한다. 외부 응답에 직접 사용하지 않는다 (MUST)
+- 바이트 릴레이 시 `io.Copy` 또는 `io.CopyBuffer`를 사용한다 (SHOULD)
+
+---
+
+## 24. HTTP 클라이언트
 
 - `http.DefaultClient` 사용하지 않는다. 타임아웃 명시 설정 (MUST)
 
@@ -612,7 +616,7 @@ client := &http.Client{Timeout: 30 * time.Second}
 
 ---
 
-## 24. 프로젝트 구조
+## 25. 프로젝트 구조
 
 ```
 main.go                 # Wails 엔트리포인트 (조립만, 로직 없음)
@@ -622,6 +626,7 @@ internal/               # 모든 비즈니스 로직
 
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
 - `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
+- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다 (DESIGN.md 디렉터리 구조와 다름에 주의) (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
 
