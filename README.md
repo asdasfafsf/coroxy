@@ -1,19 +1,72 @@
-# README
+# Coroxy
 
-## About
+Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS(MITM), TCP, UDP 트래픽을 캡처·감시·수정할 수 있는 크로스플랫폼 standalone GUI 프로그램.
 
-This is the official Wails React-TS template.
+## 기술 스택
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+- **Backend**: Go (goroutine 기반 프록시 엔진)
+- **GUI**: Wails v2 (OS 네이티브 WebView)
+- **Frontend**: React + TypeScript + Vite
+- **데이터**: SQLite (세션 저장)
 
-## Live Development
+## 요구 사항
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+- Go 1.26+ ([goenv](https://github.com/go-nv/goenv) 권장, `.go-version` 참조)
+- Node.js 18+
+- [Wails CLI](https://wails.io/docs/gettingstarted/installation) v2
 
-## Building
+## 설치
 
-To build a redistributable, production mode package, use `wails build`.
+```bash
+# 리포지토리 클론
+git clone https://github.com/asdasfafsf/coroxy.git
+cd coroxy
+
+# Go 버전 확인 (goenv 사용 시 자동 적용)
+go version
+
+# Wails CLI 설치
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+
+# 프론트엔드 의존성 설치
+cd frontend && npm install && cd ..
+
+# Git hooks 활성화
+git config core.hooksPath .githooks
+```
+
+## 개발
+
+```bash
+# 개발 서버 실행 (Hot Reload)
+wails dev
+
+# 프론트엔드만 개발 (브라우저에서 http://localhost:34115)
+cd frontend && npm run dev
+```
+
+## 빌드
+
+```bash
+# 프로덕션 빌드
+wails build
+```
+
+## 린트
+
+```bash
+# Go
+make lint
+make lint-fix
+make fmt
+
+# Frontend
+cd frontend
+npm run lint
+npm run lint:fix
+npm run format
+```
+
+## 라이선스
+
+[MIT](./LICENSE)
