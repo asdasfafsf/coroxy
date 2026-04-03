@@ -2,11 +2,25 @@
 
 Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, UDP를 지원하는 크로스플랫폼 standalone GUI 프로그램.
 
-## 참조 문서
+프로젝트 설계는 @DESIGN.md 를 참조한다.
 
-- [설계 문서](./DESIGN.md) - 아키텍처, 모듈 설계, 로드맵
-- [워크플로우](./docs/workflow.md) - Linear 이슈 관리, 브랜치/커밋 컨벤션
-- [Linear API 지시서](./docs/linear.md) - Linear GraphQL API 호출 규칙과 패턴
+## 규칙
+
+`.claude/rules/` 에 자동 로드됨:
+- `git.md` — Git 브랜치, 커밋, PR, 머지 규칙
+- `linear.md` — Linear 이슈 관리 규칙 + 프로젝트 설정값
+
+## 빠른 참조
+
+```
+브랜치: {type}/WON-{번호}-{설명}
+        type: feature, bugfix, refactor, chore, docs, test, hotfix
+```
+
+```
+커밋:   [WON-{번호}] {type}: {설명}
+        type: feat, fix, refactor, chore, docs, test
+```
 
 ## 기술 스택
 

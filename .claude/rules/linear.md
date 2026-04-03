@@ -2,14 +2,34 @@
 
 이 문서는 사람과 AI 에이전트 모두가 따르는 Linear 이슈 관리 규칙이다.
 
-## 목차
+## 프로젝트 설정
 
-- [계층 구조](#계층-구조)
-- [이슈 작성 규칙](#이슈-작성-규칙)
-- [상태 전환](#상태-전환)
-- [사이클](#사이클)
-- [Backlog 관리](#backlog-관리)
-- [AI 에이전트 이슈 생성 플로우](#ai-에이전트-이슈-생성-플로우)
+- **워크스페이스**: Wonkeun
+- **팀**: Wonkeun (ID: `413628b6-c383-4ff3-a2bb-c2fd9bb9f1c2`)
+- **프로젝트**: Coroxy (ID: `74b924c8-ed35-45f6-a721-b07768ecbabd`)
+- **이슈 접두어**: WON (WON-1, WON-2...)
+- **연동**: 환경변수 `LINEAR_API_KEY`로 Linear GraphQL API (`https://api.linear.app/graphql`) 직접 호출
+- **TODO**: `linear-mcp` MCP 서버 OAuth 인증 연동
+
+### 상태 ID
+
+| 상태 | ID |
+|------|----|
+| Backlog | `0758fc7c-0f09-4b3f-916a-a2b7acf0fe79` |
+| Todo | `b7248465-07c3-490f-93a3-ecfd8f6405e8` |
+| In Progress | `348db385-1f70-42e2-aa21-15e5fd1ccdb2` |
+| In Review | `ff5602f0-7e83-4095-aa1f-c72325da9412` |
+| Done | `becf21ad-0b66-45a6-91d3-9d5001b1d871` |
+| Canceled | `11bc88d2-a3aa-49b0-95af-60376f987557` |
+| Duplicate | `f865132a-1abf-47e7-beab-e895f2a6f63b` |
+
+### 라벨 ID
+
+| 라벨 | ID |
+|------|----|
+| Bug | `98df7788-38cf-437c-ac2a-cb86d71568ef` |
+| Feature | `1eac428f-d034-4f32-893a-68b8ab722299` |
+| Improvement | `19cabe3a-1292-47d1-b107-7c6e382ddb32` |
 
 ---
 
@@ -231,6 +251,7 @@ Backlog → Todo → In Progress → In Review → Done
 - 월 1회 Backlog를 점검하여 더 이상 유효하지 않은 이슈를 Canceled 처리한다.
 - Canceled 시 사유를 코멘트로 남긴다.
 - 3개월 이상 방치된 이슈는 여전히 필요한지 재검토한다.
+- Done/Canceled 상태의 이슈는 정기적으로 아카이브하여 활성 이슈 수를 관리한다.
 
 ---
 
@@ -244,7 +265,7 @@ Backlog → Todo → In Progress → In Review → Done
 3. 유형(라벨) 판단이 애매하면 사용자에게 확인
 4. 추정치가 8 이상으로 판단되면 Sub-issue 분할을 사용자에게 제안
 5. 이슈 초안(제목, 유형, 설명)을 사용자에게 보여주고 확인받음
-6. API 호출로 이슈 생성
+6. API 호출로 이슈 생성 (프로젝트 설정 섹션의 ID 값 사용)
 7. 생성된 이슈 번호와 URL을 사용자에게 전달
 ```
 
@@ -267,4 +288,5 @@ Backlog → Todo → In Progress → In Review → Done
 
 - 사용자 동의 없이 임의로 이슈를 생성하지 않는다.
 - 추정치와 우선순위를 임의로 정하지 않는다.
-- 브랜치명과 커밋에 이슈 번호를 반드시 포함한다 ([워크플로우 문서](./workflow.md) 참조).
+- 브랜치명과 커밋에 이슈 번호를 반드시 포함한다 (Git 규칙 참조).
+- 이슈 없이 작업을 시작하지 않는다. 아무리 작은 작업이라도 반드시 이슈를 먼저 만든다.
