@@ -195,7 +195,7 @@ func WithLogger(l *slog.Logger) Option { ... }
 
 - 5개 이하로 유지. 많아지면 옵션 구조체를 사용한다.
 - `context.Context`는 항상 첫 번째 매개변수. `ctx`로 이름 짓는다.
-- Context는 구조체 필드에 저장하지 않는다.
+- Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context는 허용한다.
 
 ### 반환값 (MUST)
 
@@ -268,7 +268,12 @@ if err := validate(req); err != nil {
 
 ### 에러 래핑 (MUST)
 
-- `fmt.Errorf("컨텍스트: %w", err)`로 래핑.
+- `fmt.Errorf("동사구: %w", err)`로 래핑. 영문 동사로 시작.
+
+```go
+return fmt.Errorf("parse config: %w", err)
+return fmt.Errorf("listen on %s: %w", addr, err)
+```
 
 ### 에러 비교 (MUST)
 
@@ -337,7 +342,7 @@ var (
 
 ## 10. 테스트
 
-### Table-Driven Tests (MUST)
+### Table-Driven Tests (SHOULD — 입력-출력 조합 2개 이상인 단위 테스트에 적용)
 
 ```go
 func TestXxx(t *testing.T) {
@@ -557,10 +562,30 @@ client := &http.Client{Timeout: 30 * time.Second}
 ## 24. 프로젝트 구조
 
 ```
-cmd/                    # 엔트리포인트 (main.go만)
+main.go                 # Wails 엔트리포인트 (조립만, 로직 없음)
+app.go                  # Wails 바인딩 구조체
 internal/               # 모든 비즈니스 로직
 ```
 
-- `cmd/`에 로직을 넣지 않는다 (MUST)
+- Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
+- `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
+
+### 컴파일러 디렉티브 위치 (MUST)
+
+- `//go:build` 태그는 `package` 선언 전에 둔다
+- `//go:embed`는 대상 변수 바로 위에 둔다
+- `//go:generate`는 파일 상단 `import` 아래에 둔다
+
+```go
+//go:embed all:frontend/dist
+var assets embed.FS
+```
+
+### Wails 바인딩 규칙 (MUST)
+
+- 바인딩 구조체는 루트 `app.go` 또는 `internal/app/`에 둔다
+- 바인딩 메서드는 에러를 반환할 때 `(결과, error)` 형태를 사용한다
+- 이벤트 emit은 `runtime.EventsEmit(ctx, "이벤트명", 데이터)` 패턴을 사용한다
+- 이벤트 이름은 `coroxy:카테고리:액션` 네임스페이스를 사용한다 (예: `coroxy:session:new`)
