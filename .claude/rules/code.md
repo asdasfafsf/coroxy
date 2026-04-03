@@ -21,7 +21,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 두 규칙이 충돌하면 아래 순서로 판단한다:
 
 1. **쉽고 간단하게** — 복잡한 패턴보다 읽기 쉬운 코드
-2. **확장성은 좋게** — 인터페이스로 교체 가능한 구조
+2. **확장성은 좋게** — 외부 의존(I/O 경계)과 패키지 간 공개 API는 인터페이스로 교체 가능하게. 패키지 내부 구현은 YAGNI 우선
 3. **필요한 것만** — YAGNI. 미래를 위한 코드를 만들지 않음
 4. **SOLID 원칙** — 단일 책임, 개방-폐쇄, 리스코프 치환, 인터페이스 분리, 의존성 역전
 
@@ -117,7 +117,7 @@ import (
 
 ### init() 함수 (MUST)
 
-- `init()` 함수를 사용하지 않는다. 명시적 초기화를 사용한다.
+- `init()` 함수를 사용하지 않는다. 명시적 초기화를 사용한다. 단, 서드파티 드라이버 등록(`import _ "..."`)은 허용.
 
 ### 전역 변수 (MUST)
 
@@ -240,7 +240,7 @@ if err := validate(req); err != nil {
 **포인터 리시버:**
 - 메서드가 리시버를 수정할 때
 - `sync.Mutex` 등 복사하면 안 되는 필드가 있을 때
-- 구조체가 클 때 (공개+비공개 필드 합계 5개 이상)
+- 구조체가 클 때 (공개+비공개 필드 합계 5개 이상. 임베딩은 1개 필드로 센다)
 - 판단이 어려울 때
 
 **값 리시버:**
@@ -293,6 +293,7 @@ var (
 ### 에러 로깅 규칙 (MUST)
 
 - 에러를 로깅한 후 반환하지 않는다. 둘 중 하나만.
+- 예외: goroutine 최상위에서 recover한 panic은 로깅과 에러 반환을 모두 수행한다.
 
 ---
 
@@ -350,6 +351,11 @@ defer cancel()
 - 요청별 goroutine(서버 핸들러 등)에서는 최상위에 recover를 둬서 한 요청의 panic이 서버 전체를 죽이지 않도록 한다.
 - recover 시 에러를 로깅한다.
 
+### Close/Shutdown 패턴 (MUST)
+
+- 리소스를 보유하는 구조체는 `Close() error` 또는 `Shutdown(ctx context.Context) error`를 구현한다.
+- 생성한 쪽이 닫을 책임을 진다.
+
 ### Graceful Shutdown (MUST)
 
 - `context.Context` 취소로 종료 신호 전파.
@@ -389,9 +395,9 @@ func TestXxx(t *testing.T) {
 }
 ```
 
-### 원칙 (MUST)
+### 원칙 (SHOULD)
 
-- 공개 API를 테스트한다. 내부 구현을 테스트하지 않는다.
+- 원칙적으로 공개 API를 통해 테스트한다. 복잡한 내부 로직은 별도 패키지로 분리하여 공개 API로 만들거나, 명확한 이유가 있을 때 내부 테스트를 허용한다.
 - 외부 의존은 인터페이스로 모킹한다.
 - 테스트 헬퍼는 `t.Helper()` 호출.
 - 에러 메시지: `got X, want Y` 포맷.
@@ -493,8 +499,9 @@ port := 8080            // 초기값 있음
 ## 16. panic과 recover
 
 - `panic`은 프로그램 초기화 실패에만 허용 (MUST)
-- 라이브러리 코드에서 `panic` 금지 (MUST)
+- `internal/` 패키지에서도 `panic` 대신 에러를 반환한다 (MUST)
 - `recover`는 최상위 goroutine 경계에서만 (MUST)
+- `unsafe` 패키지를 사용하지 않는다 (MUST)
 
 ---
 
@@ -600,6 +607,11 @@ internal/               # 모든 비즈니스 로직
 //go:embed all:frontend/dist
 var assets embed.FS
 ```
+
+### 빌드 태그와 크로스 컴파일 (SHOULD)
+
+- OS별 동작이 다른 코드는 `//go:build` 태그로 파일을 분리한다 (`xxx_darwin.go`, `xxx_windows.go`, `xxx_linux.go`)
+- 런타임 `runtime.GOOS` 분기는 단순한 경우에만 허용한다
 
 ### Wails 바인딩 규칙 (MUST)
 
