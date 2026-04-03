@@ -21,7 +21,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 두 규칙이 충돌하면 아래 순서로 판단한다:
 
 1. **쉽고 간단하게** — 복잡한 패턴보다 읽기 쉬운 코드
-2. **확장성은 좋게** — 외부 의존(I/O 경계)과 패키지 간 공개 API는 인터페이스로 교체 가능하게. 패키지 내부 구현은 YAGNI 우선
+2. **확장성은 좋게** — 외부 의존(I/O 경계)은 인터페이스로 교체 가능하게. 소비자(caller) 측에서 필요한 인터페이스를 정의한다. 패키지 내부 구현은 YAGNI 우선
 3. **필요한 것만** — YAGNI. 미래를 위한 코드를 만들지 않음
 4. **SOLID 원칙** — 단일 책임, 개방-폐쇄, 리스코프 치환, 인터페이스 분리, 의존성 역전
 
@@ -45,6 +45,11 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 - 테스트 시 교체가 필요하거나 여러 구현이 존재하는 의존성은 인터페이스로 받는다.
 - 단순 값 타입(`string`, `int`, `[]byte` 등)은 인터페이스로 감싸지 않는다.
 - 반환값은 구체 타입을 반환한다.
+
+### 인터페이스 정의 위치 (MUST)
+
+- 인터페이스는 소비자(caller) 패키지에서 정의한다. 구현(producer) 패키지에서 정의하지 않는다.
+- 표준 라이브러리 인터페이스(`io.Reader`, `io.Writer` 등)는 그대로 사용한다.
 
 ### 의존성 방향 (MUST)
 
@@ -128,7 +133,7 @@ import (
 
 ## 4. 타입 정의
 
-### 구조체 필드 순서 (MUST)
+### 구조체 필드 순서 (SHOULD)
 
 ```go
 type Session struct {
@@ -157,7 +162,7 @@ type Session struct {
 
 ### 구조체 초기화 (MUST)
 
-- `new(T)` 대신 `&T{}`를 사용한다.
+- 필드 초기화가 있는 경우 `&T{}`를 사용한다. 필드 초기화가 없는 경우 `new(T)` 또는 `&T{}` 모두 허용.
 - 필드 이름을 항상 명시한다.
 
 ```go
@@ -195,7 +200,7 @@ func WithLogger(l *slog.Logger) Option { ... }
 
 - 5개 이하로 유지. 많아지면 옵션 구조체를 사용한다.
 - `context.Context`는 항상 첫 번째 매개변수. `ctx`로 이름 짓는다.
-- Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context는 허용한다.
+- Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context와 장수명 구조체의 수명 제어용(cancel 전파) context는 허용한다.
 
 ### 반환값 (MUST)
 
@@ -288,6 +293,25 @@ var (
     ErrNotFound   = errors.New("not found")
     ErrNotRunning = errors.New("not running")
 )
+```
+
+### 커스텀 에러 타입 (SHOULD)
+
+- 추가 정보(ID, 코드 등)가 필요할 때만 정의한다.
+- `Error` 접미사를 사용한다: `NotFoundError`, `TimeoutError`
+- `Error() string` 메서드를 구현한다.
+- 래핑된 에러가 있으면 `Unwrap() error` 메서드를 구현한다.
+- 에러 타입은 해당 패키지의 `errors.go` 파일에 모아둔다.
+
+```go
+type NotFoundError struct {
+    Resource string
+    ID       string
+}
+
+func (e *NotFoundError) Error() string {
+    return fmt.Sprintf("%s not found: %s", e.Resource, e.ID)
+}
 ```
 
 ### 에러 로깅 규칙 (MUST)
@@ -476,7 +500,7 @@ port := 8080            // 초기값 있음
 
 ### 맵 (MUST)
 
-- 반드시 `make`로 초기화 후 사용: `m := make(map[string]int)`
+- nil 맵에 쓰지 않는다. 쓰기 전에 반드시 초기화한다: `make(map[K]V)` 또는 리터럴 `map[K]V{"a": 1}`
 
 ---
 
@@ -501,7 +525,10 @@ port := 8080            // 초기값 있음
 - `panic`은 프로그램 초기화 실패에만 허용 (MUST)
 - `internal/` 패키지에서도 `panic` 대신 에러를 반환한다 (MUST)
 - `recover`는 최상위 goroutine 경계에서만 (MUST)
-- `unsafe` 패키지를 사용하지 않는다 (MUST)
+
+### unsafe 패키지 (MUST)
+
+- `unsafe` 패키지를 사용하지 않는다.
 
 ---
 
