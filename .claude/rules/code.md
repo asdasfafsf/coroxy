@@ -46,9 +46,10 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 - 단순 값 타입(`string`, `int`, `[]byte` 등)은 인터페이스로 감싸지 않는다.
 - 반환값은 구체 타입을 반환한다.
 
-### 인터페이스 정의 위치 (MUST)
+### 인터페이스 정의 위치 (SHOULD)
 
-- 인터페이스는 소비자(caller) 패키지에서 정의한다. 구현(producer) 패키지에서 정의하지 않는다.
+- 인터페이스는 소비자(caller) 패키지에서 정의한다.
+- 예외: 플러그인/파이프라인 계약 인터페이스(예: `Interceptor`)는 프레임워크 패키지에서 정의한다.
 - 표준 라이브러리 인터페이스(`io.Reader`, `io.Writer` 등)는 그대로 사용한다.
 
 ### 의존성 방향 (MUST)
@@ -61,7 +62,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 
 ## 2. 파일 구조
 
-### 파일 내 코드 순서 (MUST)
+### 파일 내 코드 순서 (SHOULD)
 
 ```
 1. package 선언
@@ -332,7 +333,7 @@ func (e *NotFoundError) Error() string {
 
 - 업계 표준 약어는 전체 대문자: `HTTP`, `URL`, `ID`, `TLS`, `TCP`, `UDP`, `API`
 
-### 불리언 필드 (MUST)
+### 불리언 필드 (SHOULD)
 
 - 구조체 필드에 `is`, `has` 접두사를 사용하지 않는다: `running`, `closed`, `enabled`
 - 함수/메서드명에서는 `IsValid()`, `HasPrefix()` 등 표준 라이브러리 관행을 따른다 (MAY)
