@@ -130,9 +130,17 @@ import (
 - 가변 전역 변수를 사용하지 않는다.
 - 센티널 에러(`var ErrXxx = errors.New(...)`)와 상수만 패키지 레벨에 허용한다.
 
+### unsafe 패키지 (MUST)
+
+- `unsafe` 패키지를 사용하지 않는다.
+
 ---
 
 ## 4. 타입 정의
+
+### 제로값 유용성 (SHOULD)
+
+- 제로값이 유용하도록 타입을 설계한다. 제로값이 유효하지 않은 타입은 생성자를 통해 초기화하도록 강제한다.
 
 ### 구조체 필드 순서 (SHOULD)
 
@@ -160,10 +168,11 @@ type Session struct {
 - 공개 필드 먼저, 비공개 필드 나중에.
 - 관련 필드끼리 묶고 빈 줄로 구분.
 - `sync.Mutex`는 보호하는 필드 바로 위에 두고, 빈 줄로 비보호 필드와 구분한다.
+- `sync.Mutex` 등 복사 불가 타입을 포함하는 구조체는 포인터로 전달한다 (MUST)
 
 ### 구조체 초기화 (MUST)
 
-- 필드 초기화가 있는 경우 `&T{}`를 사용한다. 필드 초기화가 없는 경우 `new(T)` 또는 `&T{}` 모두 허용.
+- 포인터가 필요한 경우 `&T{}`를 사용한다. 값으로 충분한 경우 `T{}`를 사용한다. 필드 초기화가 없는 포인터는 `new(T)` 또는 `&T{}` 모두 허용.
 - 필드 이름을 항상 명시한다.
 
 ```go
@@ -177,7 +186,7 @@ s := &Session{
 
 - `New` + 타입명: `NewProxy`, `NewStore`
 - 에러 가능하면 `(T, error)` 반환.
-- **선택적 매개변수가 3개 이상(3개 포함)**이면 Functional Options 패턴. 필수 매개변수는 일반 매개변수로 받는다.
+- **호출자가 제어할 수 있는 설정 항목(매개변수 또는 설정 필드 불문)이 3개 이상(3개 포함)**이면 Functional Options 패턴. 필수 매개변수는 일반 매개변수로 받는다.
 
 ```go
 // 필수 1개 + 선택 여러 개
@@ -239,15 +248,17 @@ if err := validate(req); err != nil {
 - 타입의 첫 글자 1~2자. `self`, `this` 사용하지 않는다.
 - 한 타입의 모든 메서드에서 동일한 이름.
 
-### 포인터 vs 값 리시버 (MUST)
-
-한 타입에서 원칙적으로 섞지 않는다 (SHOULD). 단, `String()` 등 상태를 변경하지 않는 메서드를 값 리시버로 두는 것은 허용.
+### 포인터 vs 값 리시버 (SHOULD)
 
 기본은 포인터 리시버를 사용한다. 값 리시버는 아래 조건을 **모두** 만족할 때만 사용한다:
 
 - 메서드가 리시버를 수정하지 않는다
 - `sync.Mutex` 등 복사 불가 필드가 없다
-- 필드 4개 이하의 작은 구조체이거나 기본 타입(`int`, `string` 등)이다
+- 복사 비용이 무시할 수 있는 작은 타입이다
+
+### 리시버 일관성 (SHOULD)
+
+원칙적으로 한 타입에서 포인터/값 리시버를 섞지 않는다. 복사 불가 필드(`sync.Mutex` 등)가 없는 작은 타입에 한해, `fmt.Stringer` 등 읽기 전용 표준 인터페이스 구현 메서드를 값 리시버로 두는 것을 허용하며, 이 경우 리시버 혼용으로 간주하지 않는다. 커스텀 에러 타입의 `Error()` 메서드는 에러 값을 `*T`로 전달하는 관행에 맞춰 포인터 리시버를 사용한다.
 
 ### Getter/Setter (MUST)
 
@@ -265,7 +276,8 @@ if err := validate(req); err != nil {
 ### 에러 메시지 포맷 (MUST)
 
 - 영문 소문자로 시작. 마침표 없음.
-- 동사로 시작: `"listen on %s: %w"`, `"parse config: %w"`
+- `fmt.Errorf` 래핑 메시지는 동사로 시작: `"listen on %s: %w"`, `"parse config: %w"`
+- 센티널 에러(`errors.New`)와 커스텀 에러 타입의 `Error()` 메서드는 상태/명사구 허용: `"not found"`, `"connection refused"`
 - 패키지/함수 이름을 반복하지 않는다.
 
 ### 에러 래핑 (MUST)
@@ -284,6 +296,7 @@ return fmt.Errorf("listen on %s: %w", addr, err)
 ### 센티널 에러 (SHOULD)
 
 - `Err` 접두사. 호출자가 구분해야 할 때만 정의.
+- 단순 분기만 필요하면 센티널 에러, 추가 컨텍스트(리소스명, ID 등)가 필요하면 커스텀 에러 타입을 사용한다.
 
 ```go
 var (
@@ -294,7 +307,7 @@ var (
 
 ### 커스텀 에러 타입 (SHOULD)
 
-- 추가 정보(ID, 코드 등)가 필요할 때만 정의한다.
+- 추가 정보(ID, 코드 등)가 필요할 때만 정의한다. 단순 분기만 필요하면 센티널 에러를 사용한다.
 - `Error` 접미사를 사용한다: `NotFoundError`, `TimeoutError`
 - `Error() string` 메서드를 구현한다.
 - 래핑된 에러가 있으면 `Unwrap() error` 메서드를 구현한다.
@@ -314,7 +327,7 @@ func (e *NotFoundError) Error() string {
 ### 에러 로깅 규칙 (MUST)
 
 - 에러를 로깅한 후 반환하지 않는다. 둘 중 하나만.
-- 예외: goroutine 최상위에서 recover한 panic은 로깅과 에러 반환을 모두 수행한다.
+- 예외: goroutine 최상위에서 recover한 panic은 반드시 로깅한다. `errgroup` 등 에러를 반환할 수 있는 goroutine에서는 이 경우에 한해 로깅과 에러 반환을 둘 다 허용한다.
 
 ---
 
@@ -357,14 +370,24 @@ func (e *NotFoundError) Error() string {
 
 ### Context 전파 (MUST)
 
-- `context.Background()`는 main 또는 최상위 진입점에서만 사용한다.
+- `context.Background()`는 `main()`, 테스트 함수, Wails lifecycle 메서드(`OnStartup` 등)에서만 사용한다.
 - `context.TODO()`는 아직 context가 전달되지 않는 코드에서 임시로만 사용. 최종 코드에 남기지 않는다.
 - 부모 context에서 파생하여 하위로 전달한다.
 - `context.WithCancel` / `context.WithTimeout`을 만든 쪽이 취소 책임을 진다.
+- 블로킹 채널 연산에서는 `select`로 `ctx.Done()`을 함께 검사한다.
 
 ```go
 ctx, cancel := context.WithTimeout(parentCtx, 30*time.Second)
 defer cancel()
+```
+
+```go
+select {
+case data := <-ch:
+    // 처리
+case <-ctx.Done():
+    return ctx.Err()
+}
 ```
 
 ### goroutine panic 복구 (MUST)
@@ -416,13 +439,13 @@ func TestXxx(t *testing.T) {
 }
 ```
 
-### 원칙 (SHOULD)
+### 원칙
 
-- 원칙적으로 공개 API를 통해 테스트한다. 복잡한 내부 로직은 별도 패키지로 분리하여 공개 API로 만들거나, 명확한 이유가 있을 때 내부 테스트를 허용한다.
-- 외부 의존은 인터페이스로 모킹한다.
-- 테스트 헬퍼는 `t.Helper()` 호출.
-- 에러 메시지: `got X, want Y` 포맷.
-- 치명적 실패는 `t.Fatal` / `t.Fatalf`.
+- 원칙적으로 공개 API를 통해 테스트한다. 복잡한 내부 로직은 별도 패키지로 분리하여 공개 API로 만들거나, 명확한 이유가 있을 때 내부 테스트를 허용한다 (SHOULD)
+- 외부 의존은 인터페이스로 모킹한다 (SHOULD)
+- 테스트 헬퍼는 `t.Helper()` 호출 (MUST)
+- 에러 메시지: `got X, want Y` 포맷 (SHOULD)
+- 치명적 실패는 `t.Fatal` / `t.Fatalf` (SHOULD)
 
 ### 테스트 데이터 (SHOULD)
 
@@ -514,6 +537,22 @@ port := 8080            // 초기값 있음
 - 리소스 획득 직후 배치 (MUST)
 - 루프 안에서 사용하지 않는다. 함수로 분리 (MUST)
 - LIFO 순서 인지 (MUST)
+- defer에서 `Close()` 에러를 반영해야 하면 named return을 사용한다 (섹션 5 "반환값" 규칙의 허용 예외)
+
+```go
+func readFile(path string) (data []byte, err error) {
+    f, err := os.Open(path)
+    if err != nil {
+        return nil, fmt.Errorf("open %s: %w", path, err)
+    }
+    defer func() {
+        if cErr := f.Close(); cErr != nil && err == nil {
+            err = fmt.Errorf("close %s: %w", path, cErr)
+        }
+    }()
+    return io.ReadAll(f)
+}
+```
 
 ---
 
@@ -522,10 +561,6 @@ port := 8080            // 초기값 있음
 - `panic`은 프로그램 초기화 실패에만 허용 (MUST)
 - `internal/` 패키지에서도 `panic` 대신 에러를 반환한다 (MUST)
 - `recover`는 최상위 goroutine 경계에서만 (MUST)
-
-### unsafe 패키지 (MUST)
-
-- `unsafe` 패키지를 사용하지 않는다.
 
 ---
 
@@ -563,7 +598,7 @@ const (
 ## 19. 로깅
 
 - 전역 로거 사용하지 않는다. 구조체 필드로 주입 (MUST)
-- `log/slog` 사용 (MUST)
+- `log/slog` 사용 (MUST). Wails 자체 로거는 사용하지 않고, slog 핸들러로 통합한다
 - 구조화된 키-값 쌍 사용 (MUST)
 - 민감 정보 로깅 금지 (MUST)
 
@@ -626,7 +661,7 @@ internal/               # 모든 비즈니스 로직
 
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
 - `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
-- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다 (DESIGN.md 디렉터리 구조와 다름에 주의) (MUST)
+- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다. DESIGN.md의 `internal/app/app.go`는 이 규칙으로 대체한다 (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
 
