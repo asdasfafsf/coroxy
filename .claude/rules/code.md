@@ -91,7 +91,7 @@ import (
 ### 파일 크기 (SHOULD)
 
 - 한 파일에는 하나의 주요 타입과 관련 메서드만 둔다.
-- 응집도가 유지되면 줄 수는 제한하지 않는다.
+- 500줄 초과 시 분리를 검토한다. 단, 하나의 논리적 단위라면 유지해도 된다.
 
 ---
 
@@ -171,7 +171,7 @@ s := &Session{
 
 - `New` + 타입명: `NewProxy`, `NewStore`
 - 에러 가능하면 `(T, error)` 반환.
-- **선택적 매개변수가 3개 이상**이면 Functional Options 패턴. 필수 매개변수는 일반 매개변수로 받는다.
+- **선택적 매개변수가 3개 이상(3개 포함)**이면 Functional Options 패턴. 필수 매개변수는 일반 매개변수로 받는다.
 
 ```go
 // 필수 1개 + 선택 여러 개
@@ -235,12 +235,12 @@ if err := validate(req); err != nil {
 
 ### 포인터 vs 값 리시버 (MUST)
 
-한 타입에서 섞지 않는다.
+한 타입에서 원칙적으로 섞지 않는다 (SHOULD). 단, `String()` 등 상태를 변경하지 않는 메서드를 값 리시버로 두는 것은 허용.
 
 **포인터 리시버:**
 - 메서드가 리시버를 수정할 때
 - `sync.Mutex` 등 복사하면 안 되는 필드가 있을 때
-- 구조체가 클 때 (필드 5개 이상)
+- 구조체가 클 때 (공개+비공개 필드 합계 5개 이상)
 - 판단이 어려울 때
 
 **값 리시버:**
@@ -307,9 +307,10 @@ var (
 
 - 업계 표준 약어는 전체 대문자: `HTTP`, `URL`, `ID`, `TLS`, `TCP`, `UDP`, `API`
 
-### 불리언 (MUST)
+### 불리언 필드 (MUST)
 
-- `is`, `has` 접두사를 사용하지 않는다: `running`, `closed`, `enabled`
+- 구조체 필드에 `is`, `has` 접두사를 사용하지 않는다: `running`, `closed`, `enabled`
+- 함수/메서드명에서는 `IsValid()`, `HasPrefix()` 등 표준 라이브러리 관행을 따른다 (MAY)
 
 ### 인터페이스 (SHOULD)
 
@@ -331,6 +332,23 @@ var (
 - 데이터 전달: 채널
 - 상태 보호: `sync.Mutex` / `sync.RWMutex`
 - 버퍼 채널 크기에는 이유가 있어야 한다.
+
+### Context 전파 (MUST)
+
+- `context.Background()`는 main 또는 최상위 진입점에서만 사용한다.
+- `context.TODO()`는 아직 context가 전달되지 않는 코드에서 임시로만 사용. 최종 코드에 남기지 않는다.
+- 부모 context에서 파생하여 하위로 전달한다.
+- `context.WithCancel` / `context.WithTimeout`을 만든 쪽이 취소 책임을 진다.
+
+```go
+ctx, cancel := context.WithTimeout(parentCtx, 30*time.Second)
+defer cancel()
+```
+
+### goroutine panic 복구 (MUST)
+
+- 요청별 goroutine(서버 핸들러 등)에서는 최상위에 recover를 둬서 한 요청의 panic이 서버 전체를 죽이지 않도록 한다.
+- recover 시 에러를 로깅한다.
 
 ### Graceful Shutdown (MUST)
 
@@ -496,7 +514,7 @@ if !ok { ... }
 
 - enum 제로값은 Unknown/Invalid (MUST)
 - 타입 있는 상수 사용 (MUST)
-- `String()` 메서드 구현 (MUST)
+- 외부에 노출되는 enum은 `String()` 메서드 구현 (SHOULD)
 
 ```go
 type Protocol int
@@ -576,7 +594,7 @@ internal/               # 모든 비즈니스 로직
 
 - `//go:build` 태그는 `package` 선언 전에 둔다
 - `//go:embed`는 대상 변수 바로 위에 둔다
-- `//go:generate`는 파일 상단 `import` 아래에 둔다
+- `//go:generate`는 `import` 블록 직후에 둔다
 
 ```go
 //go:embed all:frontend/dist
@@ -585,7 +603,7 @@ var assets embed.FS
 
 ### Wails 바인딩 규칙 (MUST)
 
-- 바인딩 구조체는 루트 `app.go` 또는 `internal/app/`에 둔다
+- 바인딩 구조체는 루트 `app.go`에 둔다 (Wails 기본 구조 유지)
 - 바인딩 메서드는 에러를 반환할 때 `(결과, error)` 형태를 사용한다
 - 이벤트 emit은 `runtime.EventsEmit(ctx, "이벤트명", 데이터)` 패턴을 사용한다
 - 이벤트 이름은 `coroxy:카테고리:액션` 네임스페이스를 사용한다 (예: `coroxy:session:new`)
