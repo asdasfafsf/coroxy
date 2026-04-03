@@ -3,9 +3,20 @@
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 
-# main에 직접 push 차단
-if echo "$COMMAND" | grep -qE 'git push.*(origin|upstream)\s+main'; then
-  echo "main에 직접 push할 수 없습니다. dev → main은 릴리스 시 ff-only 머지만 허용됩니다." >&2
+# main에 push하는 모든 패턴 차단
+# - git push origin main
+# - git push --force origin main
+# - git push -f origin main
+# - git push origin HEAD:main
+# - git push origin dev:main
+# - git push origin HEAD:refs/heads/main
+if echo "$COMMAND" | grep -qE 'git push.*(:main\b|:refs/heads/main\b)'; then
+  echo "main에 직접 push할 수 없습니다. PR을 통해서만 머지 가능합니다." >&2
+  exit 2
+fi
+
+if echo "$COMMAND" | grep -qE 'git push\s+((-[a-zA-Z]+|--[a-z-]+)\s+)*(origin|upstream)\s+main(\s|$)'; then
+  echo "main에 직접 push할 수 없습니다. PR을 통해서만 머지 가능합니다." >&2
   exit 2
 fi
 
