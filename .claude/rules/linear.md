@@ -8,8 +8,7 @@
 - **팀**: Wonkeun (ID: `413628b6-c383-4ff3-a2bb-c2fd9bb9f1c2`)
 - **프로젝트**: Coroxy (ID: `74b924c8-ed35-45f6-a721-b07768ecbabd`)
 - **이슈 접두어**: WON (WON-1, WON-2...)
-- **연동**: 환경변수 `LINEAR_API_KEY`로 Linear GraphQL API (`https://api.linear.app/graphql`) 직접 호출
-- **TODO**: `linear-mcp` MCP 서버 OAuth 인증 연동
+- **연동**: `linear-server` MCP 도구 우선 사용. MCP 실패 시 환경변수 `LINEAR_API_KEY`로 GraphQL API (`https://api.linear.app/graphql`) 직접 호출
 
 ### 상태 ID
 
@@ -265,7 +264,7 @@ Backlog → Todo → In Progress → In Review → Done
 3. 유형(라벨) 판단이 애매하면 사용자에게 확인
 4. 추정치가 8 이상으로 판단되면 Sub-issue 분할을 사용자에게 제안
 5. 이슈 초안(제목, 유형, 설명)을 사용자에게 보여주고 확인받음
-6. API 호출로 이슈 생성 (프로젝트 설정 섹션의 ID 값 사용)
+6. linear-server MCP 도구로 이슈 생성. MCP 실패 시 LINEAR_API_KEY로 GraphQL API 직접 호출
 7. 생성된 이슈 번호와 URL을 사용자에게 전달
 ```
 
