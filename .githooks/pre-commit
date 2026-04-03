@@ -1,0 +1,50 @@
+#!/bin/sh
+
+STAGED_GO=$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$' || true)
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+STAGED_CSS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(css)$' || true)
+
+FAILED=0
+
+# Go lint (변경된 .go 파일이 있을 때만)
+if [ -n "$STAGED_GO" ]; then
+  echo "Running Go lint..."
+  golangci-lint run ./...
+  if [ $? -ne 0 ]; then
+    echo "Go lint failed."
+    FAILED=1
+  fi
+else
+  echo "No Go files changed, skipping Go lint."
+fi
+
+# Frontend lint + format (변경된 .ts/.tsx/.css 파일이 있을 때만)
+if [ -n "$STAGED_TS" ] || [ -n "$STAGED_CSS" ]; then
+  echo "Running frontend lint..."
+  cd frontend
+
+  if [ -n "$STAGED_TS" ]; then
+    npm run lint 2>/dev/null
+    if [ $? -ne 0 ]; then
+      echo "Frontend lint failed."
+      FAILED=1
+    fi
+  fi
+
+  npm run format:check 2>/dev/null
+  if [ $? -ne 0 ]; then
+    echo "Frontend format check failed. Run 'npm run format' in frontend/."
+    FAILED=1
+  fi
+
+  cd ..
+else
+  echo "No frontend files changed, skipping frontend lint."
+fi
+
+if [ $FAILED -ne 0 ]; then
+  echo "Pre-commit checks failed. Fix errors before committing."
+  exit 1
+fi
+
+echo "All checks passed."
