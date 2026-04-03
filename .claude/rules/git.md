@@ -157,13 +157,25 @@ Transfer-Encoding 헤더가 중복으로 들어오는 경우를 처리하지 못
 | 방향 | 머지 방식 | 커밋 메시지 |
 |------|-----------|------------|
 | 기능 브랜치 → `dev` | squash merge | PR 제목을 사용한다 |
-| `dev` → `main` | merge commit | 기본 머지 메시지를 사용한다 |
-| `hotfix` → `main`, `dev` | merge commit | 기본 머지 메시지를 사용한다 |
+| `dev` → `main` | **fast-forward only** | 별도 커밋 없음 (`git merge --ff-only`) |
+| `hotfix` → `main` | fast-forward only | `git merge --ff-only` |
+| `hotfix` → `dev` | merge commit | 기본 머지 메시지를 사용한다 |
 
 - 셀프 리뷰 후 머지를 허용한다.
 - 머지 후 기능 브랜치는 삭제한다.
-- `dev` → `main` 머지는 프로젝트(Phase) 단위 또는 릴리스 시점에 수행한다.
 - 기능 브랜치에서 충돌 발생 시 `dev`를 기능 브랜치에 merge하여 해결한다 (rebase 하지 않는다).
+
+### dev → main 머지 시점
+
+- **릴리스 시에만** dev를 main에 머지한다 (Phase 완료, 버전 태그 등).
+- 수시로 머지하지 않는다. dev에서 작업하다가 릴리스할 때만 올린다.
+- main에 직접 커밋하지 않는다. 모든 변경은 dev를 거친다 (hotfix 제외).
+- main과 dev가 diverge하면 안 된다. ff-only를 사용하여 항상 동일 히스토리를 유지한다.
+
+### 브랜치 보호
+
+- **main**: GitHub branch protection 설정됨. 직접 push 불가, PR을 통해서만 머지.
+- **dev**: 보호 없음. 기능 브랜치에서 squash merge로 머지.
 
 ### PR 예시
 
