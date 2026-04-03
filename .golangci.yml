@@ -1,0 +1,31 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gosimple
+    - ineffassign
+    - typecheck
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+
+linters-settings:
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/asdasfafsf/coroxy
+  revive:
+    rules:
+      - name: exported
+        disabled: true
+
+issues:
+  exclude-dirs:
+    - frontend
+    - build

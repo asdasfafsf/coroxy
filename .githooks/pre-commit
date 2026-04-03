@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Go lint
+echo "Running Go lint..."
+golangci-lint run ./...
+if [ $? -ne 0 ]; then
+  echo "Go lint failed. Fix errors before committing."
+  exit 1
+fi
+
+echo "All checks passed."
