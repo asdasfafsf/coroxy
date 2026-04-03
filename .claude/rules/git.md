@@ -14,9 +14,7 @@
 Linear 이슈 기반으로 생성한다.
 
 ```
-{type}/WON-{번호}-{간단한-설명}
-
-예: feature/WON-5-git-workflow
+{type}/WON-{번호}
 ```
 
 **type 종류:**
@@ -24,7 +22,7 @@ Linear 이슈 기반으로 생성한다.
 | type | 사용 시점 |
 |------|----------|
 | `feature` | 새 기능 |
-| `bugfix` | 버그 수정 |
+| `fix` | 버그 수정 |
 | `refactor` | 리팩터링 |
 | `chore` | 빌드, 설정, 의존성 등 |
 | `docs` | 문서 작업 |
@@ -33,9 +31,9 @@ Linear 이슈 기반으로 생성한다.
 
 예시:
 ```
-feature/WON-1-git-workflow
-bugfix/WON-5-chunked-encoding
-docs/WON-12-api-docs
+feature/WON-5
+fix/WON-12
+docs/WON-15
 ```
 
 ### 브랜치 생성 규칙

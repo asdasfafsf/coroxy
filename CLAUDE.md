@@ -13,8 +13,8 @@ Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, U
 ## 빠른 참조
 
 ```
-브랜치: {type}/WON-{번호}-{설명}
-        type: feature, bugfix, refactor, chore, docs, test, hotfix
+브랜치: {type}/WON-{번호}
+        type: feature, fix, refactor, chore, docs, test, hotfix
 ```
 
 ```
