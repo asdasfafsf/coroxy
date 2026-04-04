@@ -21,6 +21,8 @@ func isWebSocketUpgrade(r *http.Request) bool {
 }
 
 // handleWebSocket upgrades the connection and relays WebSocket frames.
+// Note: WebSocket frames are relayed as raw bytes without passing through
+// the interceptor pipeline. Frame-level interception is not supported yet.
 func (h *HTTPProxy) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Connect to the target server.
 	targetAddr := r.Host

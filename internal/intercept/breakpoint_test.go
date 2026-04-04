@@ -105,7 +105,7 @@ func TestBreakpointDrop(t *testing.T) {
 
 func TestBreakpointNoMatchForwards(t *testing.T) {
 	rules := []*model.Rule{makeBreakpointRule("other.com")}
-	bp := NewBreakpoint(func() []*model.Rule { return rules }, nil)
+	bp := NewBreakpoint(func() []*model.Rule { return rules }, func(*PendingRequest) {})
 
 	req, _ := http.NewRequest("GET", "http://example.com/test", nil)
 	req.Host = "example.com"
@@ -128,7 +128,7 @@ func TestBreakpointNoMatchForwards(t *testing.T) {
 func TestBreakpointDisabledRule(t *testing.T) {
 	r := makeBreakpointRule("example.com")
 	r.Enabled = false
-	bp := NewBreakpoint(func() []*model.Rule { return []*model.Rule{r} }, nil)
+	bp := NewBreakpoint(func() []*model.Rule { return []*model.Rule{r} }, func(*PendingRequest) {})
 
 	req, _ := http.NewRequest("GET", "http://example.com/test", nil)
 	req.Host = "example.com"
