@@ -5,18 +5,24 @@ package cert
 import (
 	"crypto/x509"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 )
 
-// installCAToDarwin installs the Root CA into the macOS system keychain
-// using osascript to trigger a native password prompt (GUI-compatible).
-func installCAToDarwin(certPath string) error {
-	script := fmt.Sprintf(
-		`do shell script "security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain %s" with administrator privileges`,
-		certPath,
-	)
+// loginKeychainPath returns the path to the user's login keychain.
+func loginKeychainPath() string {
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, "Library", "Keychains", "login.keychain-db")
+}
 
-	cmd := exec.Command("osascript", "-e", script)
+// installCAToDarwin installs the Root CA into the user's login keychain.
+// Uses user trust domain — no admin password required.
+func installCAToDarwin(certPath string) error {
+	keychain := loginKeychainPath()
+
+	// Add certificate to login keychain.
+	cmd := exec.Command("security", "add-trusted-cert", "-r", "trustRoot", "-k", keychain, certPath)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("install CA: %s: %w", string(out), err)
@@ -24,15 +30,12 @@ func installCAToDarwin(certPath string) error {
 	return nil
 }
 
-// uninstallCAFromDarwin removes the Root CA from the macOS system keychain
-// using osascript to trigger a native password prompt.
+// uninstallCAFromDarwin removes the Root CA from the user's login keychain.
 func uninstallCAFromDarwin(certPath string) error {
-	script := fmt.Sprintf(
-		`do shell script "security remove-trusted-cert -d %s" with administrator privileges`,
-		certPath,
-	)
+	keychain := loginKeychainPath()
 
-	cmd := exec.Command("osascript", "-e", script)
+	// Remove certificate from login keychain.
+	cmd := exec.Command("security", "remove-trusted-cert", "-k", keychain, certPath)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("uninstall CA: %s: %w", string(out), err)
