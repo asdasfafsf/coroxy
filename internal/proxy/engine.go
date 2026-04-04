@@ -103,7 +103,14 @@ func (e *Engine) Start(ctx context.Context) error {
 			if err != nil {
 				return // listener closed
 			}
-			go socksProxy.HandleConn(conn)
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						e.logger.Error("socks5 handler panic", slog.Any("panic", r))
+					}
+				}()
+				socksProxy.HandleConn(conn)
+			}()
 		}
 	}()
 

@@ -26,7 +26,10 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, mitm MITMProvid
 		&net.Dialer{Timeout: 30 * time.Second},
 		"tcp",
 		host,
-		&tls.Config{InsecureSkipVerify: true},
+		// InsecureSkipVerify is intentional: MITM proxy must connect to the target
+		// regardless of its certificate validity to obtain CN/SAN for leaf cert generation.
+		// The original cert's validity is not our concern — we replicate, not validate.
+		&tls.Config{InsecureSkipVerify: true}, //nolint:gosec
 	)
 	if err != nil {
 		h.logger.Warn("mitm: tls dial failed, falling back to passthrough",

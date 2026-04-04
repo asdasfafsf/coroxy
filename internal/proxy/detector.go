@@ -6,19 +6,6 @@ import (
 	"coroxy/internal/constant"
 )
 
-// httpMethods lists the HTTP method prefixes used for detection.
-var httpMethods = [][]byte{
-	[]byte("GET "),
-	[]byte("POST "),
-	[]byte("PUT "),
-	[]byte("DELETE "),
-	[]byte("HEAD "),
-	[]byte("OPTIONS "),
-	[]byte("PATCH "),
-	[]byte("CONNECT "),
-	[]byte("TRACE "),
-}
-
 // DetectProtocol identifies the protocol from the first bytes of a connection.
 //
 // Detection rules:
@@ -42,7 +29,11 @@ func DetectProtocol(peek []byte) constant.Protocol {
 	}
 
 	// HTTP: starts with a known method
-	for _, method := range httpMethods {
+	for _, method := range [][]byte{
+		[]byte("GET "), []byte("POST "), []byte("PUT "), []byte("DELETE "),
+		[]byte("HEAD "), []byte("OPTIONS "), []byte("PATCH "),
+		[]byte("CONNECT "), []byte("TRACE "),
+	} {
 		if len(peek) >= len(method) && bytes.Equal(peek[:len(method)], method) {
 			return constant.ProtocolHTTP
 		}
