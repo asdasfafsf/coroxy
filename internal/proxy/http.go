@@ -33,10 +33,11 @@ var hopByHopHeaders = []string{
 
 // HTTPProxy handles HTTP forward proxy requests.
 type HTTPProxy struct {
-	logger    *slog.Logger
-	transport *http.Transport
-	onSession adapter.SessionCallback
-	caManager *cert.Manager
+	logger     *slog.Logger
+	transport  *http.Transport
+	onSession  adapter.SessionCallback
+	caManager  *cert.Manager
+	forceMITM  bool // skip IsCAInstalled check (for testing)
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
@@ -146,8 +147,10 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// MITM: if CA manager is available, intercept TLS to capture decrypted traffic.
-	if h.caManager != nil {
+	// MITM: only intercept if CA is installed in OS trust store.
+	// If CA is not installed, passthrough to avoid certificate errors (Fiddler behavior).
+	caInstalled, _ := h.isMITMEnabled()
+	if caInstalled {
 		_ = targetConn.Close() // MITM handler makes its own TLS connection
 		if h.handleMITM(clientConn, host, h.caManager) {
 			return // MITM handled (success or client rejected cert)
@@ -229,6 +232,19 @@ func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
 	}
 
 	h.onSession(session)
+}
+
+// isMITMEnabled checks if MITM should be active.
+// Returns true only if CA manager exists AND CA is installed in OS trust store.
+// In test mode (forceMITM), skips the installation check.
+func (h *HTTPProxy) isMITMEnabled() (bool, error) {
+	if h.caManager == nil {
+		return false, nil
+	}
+	if h.forceMITM {
+		return true, nil
+	}
+	return h.caManager.IsCAInstalled()
 }
 
 // splitHostPort parses host:port with a default port fallback.

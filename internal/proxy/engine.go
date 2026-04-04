@@ -22,6 +22,8 @@ type Engine struct {
 	onSession adapter.SessionCallback
 	caManager *cert.Manager
 
+	forceMITM bool // skip IsCAInstalled check (for testing)
+
 	mu            sync.Mutex
 	state         constant.EngineState
 	cancel        context.CancelFunc
@@ -59,6 +61,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	e.cancel = cancel
 
 	httpProxy := NewHTTPProxy(e.logger, e.onSession, e.caManager)
+	httpProxy.forceMITM = e.forceMITM
 	listener, err := net.Listen("tcp", e.config.HTTPAddr)
 	if err != nil {
 		e.state = constant.EngineStateStopped
