@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -89,6 +90,14 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	outReq.RequestURI = ""
 	removeHopByHopHeaders(outReq.Header)
 
+	// Capture request body (limit to maxCaptureSize).
+	var reqBody []byte
+	if outReq.Body != nil {
+		reqBody, _ = readLimited(outReq.Body, maxCaptureSize)
+		outReq.Body = io.NopCloser(bytes.NewReader(reqBody))
+		outReq.ContentLength = int64(len(reqBody))
+	}
+
 	// Run interceptor pipeline on request.
 	if h.pipeline != nil && h.pipeline.Count() > 0 {
 		if h.pipeline.ProcessRequest(outReq, nil) == adapter.ActionDrop {
@@ -121,7 +130,11 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
-	written, copyErr := io.Copy(w, resp.Body)
+	// Capture response body while forwarding to client.
+	var respBodyBuf bytes.Buffer
+	respReader := io.TeeReader(resp.Body, &limitWriter{w: &respBodyBuf, n: maxCaptureSize})
+
+	written, copyErr := io.Copy(w, respReader)
 	if copyErr != nil {
 		h.logger.Error("copy response body",
 			slog.String("host", r.Host),
@@ -129,7 +142,7 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	h.captureHTTPSession(r, resp, written, start)
+	h.captureHTTPSession(r, resp, reqBody, respBodyBuf.Bytes(), written, start)
 }
 
 // handleConnect establishes a TCP tunnel for CONNECT requests (HTTPS passthrough).
@@ -221,8 +234,11 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
+// maxCaptureSize is the maximum body size to capture per request/response.
+const maxCaptureSize = 2 << 20 // 2MB
+
 // captureHTTPSession creates a session from an HTTP request/response and notifies the callback.
-func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bodySize int64, start time.Time) {
+func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, reqBody, respBody []byte, bodySize int64, start time.Time) {
 	if h.onSession == nil {
 		return
 	}
@@ -235,14 +251,17 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bod
 		Source:   endpointFromAddr(r.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
 		Request: &model.HTTPMessage{
-			Method:  r.Method,
-			URL:     r.URL.String(),
-			Headers: r.Header.Clone(),
+			Method:   r.Method,
+			URL:      r.URL.String(),
+			Headers:  r.Header.Clone(),
+			Body:     reqBody,
+			BodySize: int64(len(reqBody)),
 		},
 		Response: &model.HTTPMessage{
 			StatusCode: resp.StatusCode,
 			StatusText: resp.Status,
 			Headers:    resp.Header.Clone(),
+			Body:       respBody,
 			BodySize:   bodySize,
 		},
 		State:     constant.SessionStateCompleted,
@@ -251,6 +270,29 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bod
 	}
 
 	h.onSession(session)
+}
+
+// readLimited reads up to maxBytes from r.
+func readLimited(r io.Reader, maxBytes int64) ([]byte, error) {
+	return io.ReadAll(io.LimitReader(r, maxBytes))
+}
+
+// limitWriter wraps an io.Writer and stops writing after n bytes.
+type limitWriter struct {
+	w io.Writer
+	n int64
+}
+
+func (lw *limitWriter) Write(p []byte) (int, error) {
+	if lw.n <= 0 {
+		return len(p), nil // discard silently
+	}
+	if int64(len(p)) > lw.n {
+		p = p[:lw.n]
+	}
+	n, err := lw.w.Write(p)
+	lw.n -= int64(n)
+	return n, err
 }
 
 // captureTunnelSession creates a session for a completed CONNECT tunnel.

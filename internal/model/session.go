@@ -33,5 +33,6 @@ type HTTPMessage struct {
 	StatusCode int         `json:"status_code,omitempty"`
 	StatusText string      `json:"status_text,omitempty"`
 	Headers    http.Header `json:"headers,omitempty"`
+	Body       []byte      `json:"body,omitempty"`
 	BodySize   int64       `json:"body_size"`
 }

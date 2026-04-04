@@ -121,6 +121,14 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 		req.RequestURI = ""
 		removeHopByHopHeaders(req.Header)
 
+		// Capture request body before forwarding.
+		var reqBody []byte
+		if req.Body != nil {
+			reqBody, _ = readLimited(req.Body, maxCaptureSize)
+			req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			req.ContentLength = int64(len(reqBody))
+		}
+
 		// Forward to target.
 		if err := req.Write(targetConn); err != nil {
 			h.logger.Error("write to target",
@@ -167,12 +175,12 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 		}
 
 		// Capture session.
-		h.captureMITMSession(req, resp, int64(len(bodyBytes)), host, start)
+		h.captureMITMSession(req, resp, reqBody, bodyBytes, host, start)
 	}
 }
 
 // captureMITMSession creates a session from decrypted HTTPS traffic.
-func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, bodySize int64, host string, start time.Time) {
+func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, reqBody, respBody []byte, host string, start time.Time) {
 	if h.onSession == nil {
 		return
 	}
@@ -185,15 +193,18 @@ func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, b
 		Source:   endpointFromAddr(req.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
 		Request: &model.HTTPMessage{
-			Method:  req.Method,
-			URL:     req.URL.String(),
-			Headers: req.Header.Clone(),
+			Method:   req.Method,
+			URL:      req.URL.String(),
+			Headers:  req.Header.Clone(),
+			Body:     reqBody,
+			BodySize: int64(len(reqBody)),
 		},
 		Response: &model.HTTPMessage{
 			StatusCode: resp.StatusCode,
 			StatusText: resp.Status,
 			Headers:    resp.Header.Clone(),
-			BodySize:   bodySize,
+			Body:       respBody,
+			BodySize:   int64(len(respBody)),
 		},
 		State:     constant.SessionStateCompleted,
 		CreatedAt: start,
