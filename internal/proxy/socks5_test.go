@@ -112,7 +112,7 @@ func TestSOCKS5Connect(t *testing.T) {
 		captured = append(captured, s)
 	})
 
-	proxy := NewSOCKS5Proxy(slog.Default(), onSession)
+	proxy := NewSOCKS5Proxy(slog.Default(), onSession, nil)
 	proxyAddr := startSOCKS5Server(t, proxy)
 
 	// Connect through SOCKS5 proxy.
@@ -162,7 +162,7 @@ func TestSOCKS5ConnectDomain(t *testing.T) {
 		}
 	}()
 
-	proxy := NewSOCKS5Proxy(slog.Default(), nil)
+	proxy := NewSOCKS5Proxy(slog.Default(), nil, nil)
 	proxyAddr := startSOCKS5Server(t, proxy)
 
 	// Connect using domain name (localhost resolves to 127.0.0.1).
@@ -178,7 +178,7 @@ func TestSOCKS5ConnectDomain(t *testing.T) {
 }
 
 func TestSOCKS5TargetUnreachable(t *testing.T) {
-	proxy := NewSOCKS5Proxy(slog.Default(), nil)
+	proxy := NewSOCKS5Proxy(slog.Default(), nil, nil)
 	proxyAddr := startSOCKS5Server(t, proxy)
 
 	conn, err := net.DialTimeout("tcp", proxyAddr, 5*time.Second)
