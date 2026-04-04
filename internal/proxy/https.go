@@ -188,24 +188,12 @@ func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, r
 	targetHost, targetPort := splitHostPort(host, 443)
 
 	session := &model.Session{
-		ID:       uuid.NewString(),
-		Protocol: constant.ProtocolTLS,
-		Source:   endpointFromAddr(req.RemoteAddr),
-		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		Request: &model.HTTPMessage{
-			Method:   req.Method,
-			URL:      req.URL.String(),
-			Headers:  req.Header.Clone(),
-			Body:     reqBody,
-			BodySize: int64(len(reqBody)),
-		},
-		Response: &model.HTTPMessage{
-			StatusCode: resp.StatusCode,
-			StatusText: resp.Status,
-			Headers:    resp.Header.Clone(),
-			Body:       respBody,
-			BodySize:   int64(len(respBody)),
-		},
+		ID:        uuid.NewString(),
+		Protocol:  constant.ProtocolTLS,
+		Source:    endpointFromAddr(req.RemoteAddr),
+		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
+		Request:   buildRequestMessage(req, reqBody),
+		Response:  buildResponseMessage(resp, respBody, int64(len(respBody))),
 		State:     constant.SessionStateCompleted,
 		CreatedAt: start,
 		Duration:  time.Since(start),

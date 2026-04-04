@@ -250,26 +250,85 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, req
 		Protocol: constant.ProtocolHTTP,
 		Source:   endpointFromAddr(r.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		Request: &model.HTTPMessage{
-			Method:   r.Method,
-			URL:      r.URL.String(),
-			Headers:  r.Header.Clone(),
-			Body:     reqBody,
-			BodySize: int64(len(reqBody)),
-		},
-		Response: &model.HTTPMessage{
-			StatusCode: resp.StatusCode,
-			StatusText: resp.Status,
-			Headers:    resp.Header.Clone(),
-			Body:       respBody,
-			BodySize:   bodySize,
-		},
-		State:     constant.SessionStateCompleted,
+		Request:  buildRequestMessage(r, reqBody),
+		Response: buildResponseMessage(resp, respBody, bodySize),
+		State:    constant.SessionStateCompleted,
 		CreatedAt: start,
 		Duration:  time.Since(start),
 	}
 
 	h.onSession(session)
+}
+
+// buildRequestMessage extracts all HTTP request data into an HTTPMessage.
+func buildRequestMessage(r *http.Request, body []byte) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		Method:      r.Method,
+		URL:         r.URL.String(),
+		HTTPVersion: r.Proto,
+		Headers:     r.Header.Clone(),
+		Body:        body,
+		BodySize:    int64(len(body)),
+		ContentType: r.Header.Get("Content-Type"),
+	}
+
+	// Parse query parameters.
+	for name, values := range r.URL.Query() {
+		for _, v := range values {
+			msg.QueryParams = append(msg.QueryParams, model.QueryParam{Name: name, Value: v})
+		}
+	}
+
+	// Parse request cookies.
+	for _, c := range r.Cookies() {
+		msg.Cookies = append(msg.Cookies, model.HTTPCookie{
+			Name:  c.Name,
+			Value: c.Value,
+		})
+	}
+
+	return msg
+}
+
+// buildResponseMessage extracts all HTTP response data into an HTTPMessage.
+func buildResponseMessage(resp *http.Response, body []byte, bodySize int64) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		StatusCode:      resp.StatusCode,
+		StatusText:      resp.Status,
+		HTTPVersion:     resp.Proto,
+		Headers:         resp.Header.Clone(),
+		Body:            body,
+		BodySize:        bodySize,
+		ContentType:     resp.Header.Get("Content-Type"),
+		ContentEncoding: resp.Header.Get("Content-Encoding"),
+	}
+
+	// Parse Set-Cookie response headers.
+	for _, c := range resp.Cookies() {
+		cookie := model.HTTPCookie{
+			Name:     c.Name,
+			Value:    c.Value,
+			Domain:   c.Domain,
+			Path:     c.Path,
+			Secure:   c.Secure,
+			HTTPOnly: c.HttpOnly,
+			MaxAge:   c.MaxAge,
+		}
+		if !c.Expires.IsZero() {
+			cookie.Expires = c.Expires.Format("2006-01-02T15:04:05Z")
+		}
+		switch c.SameSite {
+		case http.SameSiteLaxMode:
+			cookie.SameSite = "Lax"
+		case http.SameSiteStrictMode:
+			cookie.SameSite = "Strict"
+		case http.SameSiteNoneMode:
+			cookie.SameSite = "None"
+		}
+		msg.Cookies = append(msg.Cookies, cookie)
+	}
+
+	return msg
 }
 
 // readLimited reads up to maxBytes from r.
