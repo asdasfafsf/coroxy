@@ -289,13 +289,15 @@ type Session struct {
 ```
 coroxy/
 ├── main.go                          # Wails 엔트리포인트 (조립만, 로직 없음)
-├── app.go                           # Wails 바인딩 구조체
 ├── go.mod
 ├── go.sum
 ├── wails.json                       # Wails 빌드 설정
 ├── build/                           # 빌드 에셋 (아이콘 등)
 │
 ├── internal/
+│   ├── app/
+│   │   └── app.go                   # Wails 바인딩 구조체, GUI↔Core 브릿지
+│   │
 │   ├── adapter/                     # 공유 인터페이스 (의존성 역전 계층)
 │   │   ├── proxy.go                 # ProxyEngine 인터페이스
 │   │   ├── session.go               # SessionStore 인터페이스
