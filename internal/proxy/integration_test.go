@@ -42,7 +42,7 @@ func TestFullProxyIntegration(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: ":0",
 	}
-	engine := NewEngine(config, slog.Default(), onSession)
+	engine := NewEngine(config, slog.Default(), onSession, nil)
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
@@ -99,7 +99,7 @@ func TestProxyEndToEnd(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: ":0",
 	}
-	engine := NewEngine(config, slog.Default(), onSession)
+	engine := NewEngine(config, slog.Default(), onSession, nil)
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
@@ -117,7 +117,7 @@ func TestProxyEndToEnd(t *testing.T) {
 	// For this test, we'll use the HTTPProxy directly (already tested in http_test.go).
 
 	// Create a direct proxy client using the test helper
-	proxy := NewHTTPProxy(slog.Default(), onSession)
+	proxy := NewHTTPProxy(slog.Default(), onSession, nil)
 	proxyAddr := startProxyServer(t, proxy)
 
 	proxyURL, _ := url.Parse("http://" + proxyAddr)
