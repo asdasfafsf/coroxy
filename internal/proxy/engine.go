@@ -17,7 +17,6 @@ type Engine struct {
 
 	mu     sync.Mutex
 	state  constant.EngineState
-	ctx    context.Context
 	cancel context.CancelFunc
 }
 
@@ -41,8 +40,7 @@ func (e *Engine) Start(ctx context.Context) error {
 
 	e.state = constant.EngineStateStarting
 
-	ctx, cancel := context.WithCancel(ctx)
-	e.ctx = ctx
+	_, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
 	e.state = constant.EngineStateRunning
@@ -68,7 +66,6 @@ func (e *Engine) Stop(_ context.Context) error {
 	if e.cancel != nil {
 		e.cancel()
 		e.cancel = nil
-		e.ctx = nil
 	}
 
 	e.state = constant.EngineStateStopped
