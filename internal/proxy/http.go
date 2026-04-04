@@ -67,6 +67,11 @@ func (h *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.isWebSocket(r) {
+		h.handleWebSocket(w, r)
+		return
+	}
+
 	h.handleHTTP(w, r)
 }
 
