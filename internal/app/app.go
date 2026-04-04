@@ -11,16 +11,18 @@ import (
 
 // App is the Wails binding struct that bridges GUI and Core.
 type App struct {
-	ctx    context.Context
-	engine adapter.ProxyEngine
-	store  adapter.SessionStore
+	ctx       context.Context
+	engine    adapter.ProxyEngine
+	store     adapter.SessionStore
+	caManager adapter.CAManager
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(engine adapter.ProxyEngine, store adapter.SessionStore) *App {
+func NewApp(engine adapter.ProxyEngine, store adapter.SessionStore, caManager adapter.CAManager) *App {
 	return &App{
-		engine: engine,
-		store:  store,
+		engine:    engine,
+		store:     store,
+		caManager: caManager,
 	}
 }
 
@@ -57,6 +59,26 @@ func (a *App) GetSessions() []*model.Session {
 // ClearSessions removes all captured sessions.
 func (a *App) ClearSessions() {
 	a.store.Clear()
+}
+
+// InstallCA installs the Root CA into the OS trust store.
+func (a *App) InstallCA() error {
+	return a.caManager.InstallCA()
+}
+
+// UninstallCA removes the Root CA from the OS trust store.
+func (a *App) UninstallCA() error {
+	return a.caManager.UninstallCA()
+}
+
+// GetCAInfo returns metadata about the Root CA.
+func (a *App) GetCAInfo() model.CAInfo {
+	return a.caManager.CAInfo()
+}
+
+// ExportCA exports the Root CA certificate to the given path.
+func (a *App) ExportCA(path string) error {
+	return a.caManager.ExportCA(path)
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.
