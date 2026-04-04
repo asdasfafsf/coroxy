@@ -22,7 +22,7 @@ import (
 // --- HTTP Proxy error cases ---
 
 func TestHTTPProxyTargetDNSFailure(t *testing.T) {
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -47,7 +47,7 @@ func TestHTTPProxyLargeHeaders(t *testing.T) {
 	}))
 	defer target.Close()
 
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -73,7 +73,7 @@ func TestHTTPProxyTargetSlowResponse(t *testing.T) {
 	}))
 	defer target.Close()
 
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -97,7 +97,7 @@ func TestHTTPProxyMultipleSequentialRequests(t *testing.T) {
 	}))
 	defer target.Close()
 
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -122,7 +122,7 @@ func TestHTTPProxyEmptyBody(t *testing.T) {
 	}))
 	defer target.Close()
 
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -144,7 +144,7 @@ func TestHTTPProxyPOSTWithBody(t *testing.T) {
 	}))
 	defer target.Close()
 
-	proxy := NewHTTPProxy(slog.Default(), nil, nil)
+	proxy := NewHTTPProxy(slog.Default(), nil, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 	client := proxyClient(t, proxyAddr)
 
@@ -170,7 +170,7 @@ func TestMITMTargetCertificatePinning(t *testing.T) {
 	defer target.Close()
 
 	caManager, _ := cert.NewManager(t.TempDir())
-	proxy := NewHTTPProxy(slog.Default(), nil, NewTestMITM(caManager))
+	proxy := NewHTTPProxy(slog.Default(), nil, NewTestMITM(caManager), nil)
 	proxyAddr := startProxyServer(t, proxy)
 
 	// Client does NOT trust our CA — simulates certificate pinning.
@@ -206,7 +206,7 @@ func TestEngineStartPortConflict(t *testing.T) {
 		HTTPAddr:  occupiedAddr, // already taken
 		SOCKSAddr: "127.0.0.1:0",
 	}
-	engine := NewEngine(config, slog.Default(), nil, nil)
+	engine := NewEngine(config, slog.Default(), nil, nil, nil)
 
 	err = engine.Start(context.Background())
 	if err == nil {
@@ -231,7 +231,7 @@ func TestEngineStartSOCKSPortConflict(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: listener.Addr().String(), // already taken
 	}
-	engine := NewEngine(config, slog.Default(), nil, nil)
+	engine := NewEngine(config, slog.Default(), nil, nil, nil)
 
 	err = engine.Start(context.Background())
 	if err == nil {
@@ -248,7 +248,7 @@ func TestEngineRestartAfterStop(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: "127.0.0.1:0",
 	}
-	engine := NewEngine(config, slog.Default(), nil, nil)
+	engine := NewEngine(config, slog.Default(), nil, nil, nil)
 
 	ctx := context.Background()
 
@@ -289,7 +289,7 @@ func TestEngineHTTPSMITMRealTraffic(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: "127.0.0.1:0",
 	}
-	engine := NewEngine(config, slog.Default(), nil, NewTestMITM(caManager))
+	engine := NewEngine(config, slog.Default(), nil, NewTestMITM(caManager), nil)
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
