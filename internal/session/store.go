@@ -20,8 +20,12 @@ func NewMemoryStore() *MemoryStore {
 	}
 }
 
-// Add stores a new session.
+// Add stores a new session. Panics if session is nil.
 func (s *MemoryStore) Add(session *model.Session) {
+	if session == nil {
+		return
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -53,8 +57,12 @@ func (s *MemoryStore) List() []*model.Session {
 	return result
 }
 
-// Update replaces an existing session. Does nothing if the session does not exist.
+// Update replaces an existing session. Does nothing if the session does not exist or is nil.
 func (s *MemoryStore) Update(session *model.Session) {
+	if session == nil {
+		return
+	}
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
