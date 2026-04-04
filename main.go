@@ -2,6 +2,13 @@ package main
 
 import (
 	"embed"
+	"log"
+	"log/slog"
+
+	"coroxy/internal/app"
+	"coroxy/internal/model"
+	"coroxy/internal/proxy"
+	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -12,10 +19,18 @@ import (
 var assets embed.FS
 
 func main() {
-	// Create an instance of the app structure
-	app := NewApp()
+	logger := slog.Default()
+	store := session.NewMemoryStore()
 
-	// Create application with options
+	a := app.NewApp(nil, store) // engine set after creation for callback wiring
+
+	engine := proxy.NewEngine(
+		model.DefaultProxyConfig(),
+		logger,
+		a.HandleNewSession,
+	)
+	a.SetEngine(engine)
+
 	err := wails.Run(&options.App{
 		Title:  "Coroxy",
 		Width:  1024,
@@ -24,13 +39,13 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnStartup:        a.Startup,
 		Bind: []interface{}{
-			app,
+			a,
 		},
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal(err)
 	}
 }
