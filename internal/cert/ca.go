@@ -177,7 +177,11 @@ func (m *Manager) load() error {
 	}
 
 	// Validate key pair matches certificate.
-	if key.PublicKey.N.Cmp(cert.PublicKey.(*rsa.PublicKey).N) != 0 {
+	rsaPub, ok := cert.PublicKey.(*rsa.PublicKey)
+	if !ok {
+		return fmt.Errorf("CA cert has non-RSA public key")
+	}
+	if key.PublicKey.N.Cmp(rsaPub.N) != 0 {
 		return fmt.Errorf("CA cert and key do not match")
 	}
 
@@ -193,25 +197,33 @@ func (m *Manager) load() error {
 }
 
 // saveCert writes the CA certificate to disk in PEM format.
-func (m *Manager) saveCert(certDER []byte) error {
+func (m *Manager) saveCert(certDER []byte) (err error) {
 	path := filepath.Join(m.dataDir, caFileName)
-	f, err := os.Create(path)
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return fmt.Errorf("create CA cert file: %w", err)
 	}
-	defer func() { _ = f.Close() }()
+	defer func() {
+		if cErr := f.Close(); cErr != nil && err == nil {
+			err = fmt.Errorf("close CA cert file: %w", cErr)
+		}
+	}()
 
 	return pem.Encode(f, &pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 }
 
 // saveKey writes the CA private key to disk in PEM format with restricted permissions.
-func (m *Manager) saveKey(key *rsa.PrivateKey) error {
+func (m *Manager) saveKey(key *rsa.PrivateKey) (err error) {
 	path := filepath.Join(m.dataDir, caKeyName)
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		return fmt.Errorf("create CA key file: %w", err)
 	}
-	defer func() { _ = f.Close() }()
+	defer func() {
+		if cErr := f.Close(); cErr != nil && err == nil {
+			err = fmt.Errorf("close CA key file: %w", cErr)
+		}
+	}()
 
 	return pem.Encode(f, &pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 }

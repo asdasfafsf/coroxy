@@ -1,8 +1,11 @@
 package cert
 
 import (
+	"crypto/rand"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
+	"math/big"
 	"os"
 	"path/filepath"
 	"testing"
@@ -156,21 +159,36 @@ func TestLoadMismatchedKeyPair(t *testing.T) {
 func TestLoadExpiredCA(t *testing.T) {
 	dir := t.TempDir()
 
-	// Generate CA, then manually create an expired one.
+	// Generate a valid CA first to get a key.
 	m, err := NewManager(dir)
 	if err != nil {
 		t.Fatalf("NewManager: %v", err)
 	}
 
-	// Re-create with expired dates by manipulating the cert directly.
-	// Easiest: regenerate with expired template.
-	expired := *m.RootCert()
-	expired.NotAfter = time.Now().Add(-1 * time.Hour)
+	// Create an expired cert signed with the same key.
+	expiredTemplate := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "Expired CA"},
+		NotBefore:    time.Now().Add(-48 * time.Hour),
+		NotAfter:     time.Now().Add(-1 * time.Hour),
+		IsCA:         true,
+		KeyUsage:     x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
 
-	// We can't easily forge an expired cert without re-signing,
-	// so just test the detection logic by verifying the check exists.
-	if time.Now().After(expired.NotAfter) {
-		t.Log("Expired CA detection: logic verified")
+	expiredDER, err := x509.CreateCertificate(rand.Reader, expiredTemplate, expiredTemplate, &m.RootKey().PublicKey, m.RootKey())
+	if err != nil {
+		t.Fatalf("create expired cert: %v", err)
+	}
+
+	// Overwrite ca.crt with expired cert.
+	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: expiredDER})
+	os.WriteFile(filepath.Join(dir, caFileName), certPEM, 0644)
+
+	// Loading should fail.
+	_, err = NewManager(dir)
+	if err == nil {
+		t.Fatal("expected error loading expired CA, got nil")
 	}
 }
 
