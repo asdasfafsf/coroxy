@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
+	"net/http"
 	"sync"
 
 	"coroxy/internal/constant"
@@ -15,9 +17,10 @@ type Engine struct {
 	config model.ProxyConfig // immutable after construction
 	logger *slog.Logger
 
-	mu     sync.Mutex
-	state  constant.EngineState
-	cancel context.CancelFunc
+	mu         sync.Mutex
+	state      constant.EngineState
+	cancel     context.CancelFunc
+	httpServer *http.Server
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
@@ -43,17 +46,36 @@ func (e *Engine) Start(ctx context.Context) error {
 	_, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
+	httpProxy := NewHTTPProxy(e.logger)
+	listener, err := net.Listen("tcp", e.config.HTTPAddr)
+	if err != nil {
+		e.state = constant.EngineStateStopped
+		e.cancel()
+		e.cancel = nil
+		return fmt.Errorf("listen on %s: %w", e.config.HTTPAddr, err)
+	}
+
+	e.httpServer = &http.Server{
+		Handler:  httpProxy,
+		ErrorLog: slog.NewLogLogger(e.logger.Handler(), slog.LevelError),
+	}
+
+	go func() {
+		if err := e.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+			e.logger.Error("http server error", slog.String("error", err.Error()))
+		}
+	}()
+
 	e.state = constant.EngineStateRunning
 	e.logger.Info("proxy engine started",
 		slog.String("http_addr", e.config.HTTPAddr),
-		slog.String("socks_addr", e.config.SOCKSAddr),
 	)
 
 	return nil
 }
 
 // Stop gracefully shuts down all listeners.
-func (e *Engine) Stop(_ context.Context) error {
+func (e *Engine) Stop(ctx context.Context) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -62,6 +84,13 @@ func (e *Engine) Stop(_ context.Context) error {
 	}
 
 	e.state = constant.EngineStateStopping
+
+	if e.httpServer != nil {
+		if err := e.httpServer.Shutdown(ctx); err != nil {
+			e.logger.Error("shutdown http server", slog.String("error", err.Error()))
+		}
+		e.httpServer = nil
+	}
 
 	if e.cancel != nil {
 		e.cancel()
