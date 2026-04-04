@@ -1,6 +1,7 @@
 package session
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -140,6 +141,62 @@ func TestMemoryStoreCount(t *testing.T) {
 
 	if store.Count() != 2 {
 		t.Fatalf("Count: got %d, want 2", store.Count())
+	}
+}
+
+func TestMemoryStoreListEmpty(t *testing.T) {
+	store := NewMemoryStore()
+
+	list := store.List()
+	if list == nil {
+		t.Fatal("List() on empty store: got nil, want empty slice")
+	}
+	if len(list) != 0 {
+		t.Fatalf("List() len: got %d, want 0", len(list))
+	}
+}
+
+func TestMemoryStoreAddNil(t *testing.T) {
+	store := NewMemoryStore()
+	store.Add(nil) // should not panic
+
+	if store.Count() != 0 {
+		t.Fatalf("Count after Add(nil): got %d, want 0", store.Count())
+	}
+}
+
+func TestMemoryStoreUpdateNil(t *testing.T) {
+	store := NewMemoryStore()
+	store.Update(nil) // should not panic
+
+	if store.Count() != 0 {
+		t.Fatalf("Count after Update(nil): got %d, want 0", store.Count())
+	}
+}
+
+func TestMemoryStoreConcurrency(t *testing.T) {
+	store := NewMemoryStore()
+	done := make(chan struct{})
+
+	// Concurrent writers.
+	for i := 0; i < 10; i++ {
+		go func(id int) {
+			defer func() { done <- struct{}{} }()
+			s := newTestSession(fmt.Sprintf("s%d", id), time.Now())
+			store.Add(s)
+			store.Get(s.ID)
+			store.List()
+			s.State = constant.SessionStateCompleted
+			store.Update(s)
+		}(i)
+	}
+
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+
+	if store.Count() != 10 {
+		t.Fatalf("Count after concurrent adds: got %d, want 10", store.Count())
 	}
 }
 
