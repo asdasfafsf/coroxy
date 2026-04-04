@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -103,7 +104,7 @@ func (b *Breakpoint) Drop(pendingID string) {
 
 	if ok {
 		// Signal resume but mark request as dropped via header.
-		pending.Request.Header.Set("X-Coroxy-Breakpoint-Dropped", "true")
+		pending.Request.Header.Set(constant.HeaderBreakpointDropped, "true")
 		pending.once.Do(func() { close(pending.resume) })
 	}
 }
