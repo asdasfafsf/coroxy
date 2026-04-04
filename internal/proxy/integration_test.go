@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/cert"
 	"coroxy/internal/model"
 )
 
@@ -42,7 +44,7 @@ func TestFullProxyIntegration(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: ":0",
 	}
-	engine := NewEngine(config, slog.Default(), onSession, nil)
+	engine := NewEngine(config, slog.Default(), onSession, nil, nil)
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
@@ -99,7 +101,7 @@ func TestProxyEndToEnd(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: ":0",
 	}
-	engine := NewEngine(config, slog.Default(), onSession, nil)
+	engine := NewEngine(config, slog.Default(), onSession, nil, nil)
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
@@ -117,7 +119,7 @@ func TestProxyEndToEnd(t *testing.T) {
 	// For this test, we'll use the HTTPProxy directly (already tested in http_test.go).
 
 	// Create a direct proxy client using the test helper
-	proxy := NewHTTPProxy(slog.Default(), onSession, nil)
+	proxy := NewHTTPProxy(slog.Default(), onSession, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 
 	proxyURL, _ := url.Parse("http://" + proxyAddr)
@@ -161,4 +163,228 @@ func TestProxyEndToEnd(t *testing.T) {
 	}
 
 	t.Logf("E2E: captured session %s %s → %d", s.Request.Method, s.Target.Host, s.Response.StatusCode)
+}
+
+// TestMITMEndToEnd tests the full MITM pipeline:
+// CA Manager → Engine with MITM → HTTPS request → decrypted session captured.
+func TestMITMEndToEnd(t *testing.T) {
+	// 1. Target HTTPS server.
+	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Secret", "mitm-visible")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "mitm e2e body")
+	}))
+	defer target.Close()
+
+	// 2. CA Manager.
+	caManager, err := cert.NewManager(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	// 3. Session capture.
+	var mu sync.Mutex
+	var captured []*model.Session
+	onSession := adapter.SessionCallback(func(s *model.Session) {
+		mu.Lock()
+		defer mu.Unlock()
+		captured = append(captured, s)
+	})
+
+	// 4. Proxy with MITM via HTTPProxy directly.
+	proxy := NewHTTPProxy(slog.Default(), onSession, NewTestMITM(caManager), nil)
+	proxyAddr := startProxyServer(t, proxy)
+
+	// 5. Client trusts our CA.
+	pool := x509.NewCertPool()
+	pool.AddCert(caManager.RootCert())
+
+	proxyURL, _ := url.Parse("http://" + proxyAddr)
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyURL(proxyURL),
+			TLSClientConfig: &tls.Config{RootCAs: pool},
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	// 6. HTTPS request through MITM proxy.
+	resp, err := client.Get(target.URL + "/secret")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	// 7. Verify response came through correctly.
+	if resp.StatusCode != 200 {
+		t.Fatalf("status: got %d, want 200", resp.StatusCode)
+	}
+	if string(body) != "mitm e2e body" {
+		t.Fatalf("body: got %q, want %q", string(body), "mitm e2e body")
+	}
+
+	// 8. Verify session captured with decrypted content.
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(captured) != 1 {
+		t.Fatalf("captured: got %d, want 1", len(captured))
+	}
+
+	s := captured[0]
+	if s.Protocol != "TLS" {
+		t.Fatalf("protocol: got %s, want TLS", s.Protocol)
+	}
+	if s.Request == nil {
+		t.Fatal("request: nil")
+	}
+	if s.Request.Method != "GET" {
+		t.Fatalf("method: got %s, want GET", s.Request.Method)
+	}
+	if s.Response == nil {
+		t.Fatal("response: nil")
+	}
+	if s.Response.StatusCode != 200 {
+		t.Fatalf("status: got %d, want 200", s.Response.StatusCode)
+	}
+	if s.Response.BodySize != int64(len("mitm e2e body")) {
+		t.Fatalf("body size: got %d, want %d", s.Response.BodySize, len("mitm e2e body"))
+	}
+
+	t.Logf("MITM E2E: %s %s → %d (body %d bytes)", s.Request.Method, s.Request.URL, s.Response.StatusCode, s.Response.BodySize)
+}
+
+// TestEngineFullStack tests the complete proxy engine with real network traffic.
+// Engine.Start → HTTP request → session captured → HTTPS MITM → session captured → Engine.Stop.
+func TestEngineFullStack(t *testing.T) {
+	// 1. HTTP target.
+	httpTarget := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "http ok")
+	}))
+	defer httpTarget.Close()
+
+	// 2. HTTPS target.
+	httpsTarget := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "https ok")
+	}))
+	defer httpsTarget.Close()
+
+	// 3. CA Manager.
+	caManager, err := cert.NewManager(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	// 4. Session capture.
+	var mu sync.Mutex
+	var captured []*model.Session
+	onSession := adapter.SessionCallback(func(s *model.Session) {
+		mu.Lock()
+		defer mu.Unlock()
+		captured = append(captured, s)
+	})
+
+	// 5. Start engine with random ports.
+	config := model.ProxyConfig{
+		HTTPAddr:  "127.0.0.1:0",
+		SOCKSAddr: "127.0.0.1:0",
+	}
+	engine := NewEngine(config, slog.Default(), onSession, NewTestMITM(caManager), nil)
+
+	ctx := context.Background()
+	if err := engine.Start(ctx); err != nil {
+		t.Fatalf("engine start: %v", err)
+	}
+	defer func() {
+		stopCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		_ = engine.Stop(stopCtx)
+	}()
+
+	proxyAddr := engine.HTTPAddr()
+	if proxyAddr == "" {
+		t.Fatal("HTTPAddr empty after start")
+	}
+	t.Logf("Engine listening on HTTP=%s, SOCKS=%s", proxyAddr, engine.SOCKSAddr())
+
+	// 6. Test HTTP proxy through the engine.
+	proxyURL, _ := url.Parse("http://" + proxyAddr)
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := httpClient.Get(httpTarget.URL + "/test")
+	if err != nil {
+		t.Fatalf("HTTP get: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("HTTP status: got %d, want 200", resp.StatusCode)
+	}
+	if string(body) != "http ok" {
+		t.Fatalf("HTTP body: got %q, want %q", string(body), "http ok")
+	}
+	t.Log("HTTP proxy: OK")
+
+	// 7. Test HTTPS MITM through the engine.
+	pool := x509.NewCertPool()
+	pool.AddCert(caManager.RootCert())
+
+	httpsClient := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyURL(proxyURL),
+			TLSClientConfig: &tls.Config{RootCAs: pool},
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err = httpsClient.Get(httpsTarget.URL + "/secret")
+	if err != nil {
+		t.Fatalf("HTTPS get: %v", err)
+	}
+	body, _ = io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("HTTPS status: got %d, want 200", resp.StatusCode)
+	}
+	if string(body) != "https ok" {
+		t.Fatalf("HTTPS body: got %q, want %q", string(body), "https ok")
+	}
+	t.Log("HTTPS MITM: OK")
+
+	// 8. Verify sessions captured.
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(captured) < 2 {
+		t.Fatalf("captured: got %d, want >= 2 (HTTP + HTTPS)", len(captured))
+	}
+
+	var hasHTTP, hasTLS bool
+	for _, s := range captured {
+		if s.Protocol == "HTTP" && s.Response != nil && s.Response.StatusCode == 200 {
+			hasHTTP = true
+		}
+		if s.Protocol == "TLS" && s.Response != nil && s.Response.StatusCode == 200 {
+			hasTLS = true
+		}
+	}
+
+	if !hasHTTP {
+		t.Fatal("no HTTP session captured")
+	}
+	if !hasTLS {
+		t.Fatal("no TLS/MITM session captured")
+	}
+
+	t.Logf("Full stack: %d sessions captured (HTTP=%v, TLS=%v)", len(captured), hasHTTP, hasTLS)
 }

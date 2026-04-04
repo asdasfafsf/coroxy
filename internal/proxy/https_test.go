@@ -44,7 +44,7 @@ func TestMITMCapturesHTTPSContent(t *testing.T) {
 	})
 
 	// 4. Proxy with MITM.
-	proxy := NewHTTPProxy(slog.Default(), onSession, caManager)
+	proxy := NewHTTPProxy(slog.Default(), onSession, NewTestMITM(caManager), nil)
 	proxyAddr := startProxyServer(t, proxy)
 
 	// 5. Client trusts our CA.
@@ -124,7 +124,7 @@ func TestMITMWithoutCAFallsBackToPassthrough(t *testing.T) {
 	})
 
 	// No CA manager — should fall back to passthrough.
-	proxy := NewHTTPProxy(slog.Default(), onSession, nil)
+	proxy := NewHTTPProxy(slog.Default(), onSession, nil, nil)
 	proxyAddr := startProxyServer(t, proxy)
 
 	proxyURL, _ := url.Parse("http://" + proxyAddr)
@@ -148,6 +148,9 @@ func TestMITMWithoutCAFallsBackToPassthrough(t *testing.T) {
 	if string(body) != "passthrough" {
 		t.Fatalf("body: got %q, want %q", string(body), "passthrough")
 	}
+
+	client.CloseIdleConnections()
+	time.Sleep(100 * time.Millisecond)
 
 	// Passthrough should capture a tunnel session (no request/response details).
 	mu.Lock()

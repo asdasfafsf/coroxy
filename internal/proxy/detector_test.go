@@ -26,7 +26,7 @@ func TestDetectProtocol(t *testing.T) {
 		{"HTTP TRACE", []byte("TRACE / HTTP/1.1\r\n"), constant.ProtocolHTTP},
 		{"Raw binary", []byte{0x00, 0x01, 0x02, 0x03}, constant.ProtocolRaw},
 		{"Random text", []byte("hello world"), constant.ProtocolRaw},
-		{"SOCKS5 (treated as raw for now)", []byte{0x05, 0x01, 0x00}, constant.ProtocolRaw},
+		{"SOCKS5", []byte{0x05, 0x01, 0x00}, constant.ProtocolTCP},
 		{"Empty", []byte{}, constant.ProtocolRaw},
 		{"Single byte", []byte{0x16}, constant.ProtocolRaw},
 		{"Almost TLS", []byte{0x16, 0x04}, constant.ProtocolRaw},

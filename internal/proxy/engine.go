@@ -10,8 +10,8 @@ import (
 	"sync"
 
 	"coroxy/internal/adapter"
-	"coroxy/internal/cert"
 	"coroxy/internal/constant"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 )
 
@@ -20,23 +20,28 @@ type Engine struct {
 	config    model.ProxyConfig // immutable after construction
 	logger    *slog.Logger
 	onSession adapter.SessionCallback
-	caManager *cert.Manager
+	mitm      MITMProvider
+	pipeline  *intercept.Pipeline
 
-	mu         sync.Mutex
-	state      constant.EngineState
-	cancel     context.CancelFunc
-	httpServer *http.Server
-	wg         sync.WaitGroup
+	mu            sync.Mutex
+	state         constant.EngineState
+	cancel        context.CancelFunc
+	httpServer    *http.Server
+	httpAddr      string
+	socksListener net.Listener
+	socksAddr     string
+	wg            sync.WaitGroup
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
 // If caManager is provided, HTTPS MITM interception is enabled.
-func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback, caManager *cert.Manager) *Engine {
+func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback, mitm MITMProvider, pipeline *intercept.Pipeline) *Engine {
 	return &Engine{
 		config:    config,
 		logger:    logger,
 		onSession: onSession,
-		caManager: caManager,
+		mitm:      mitm,
+		pipeline:  pipeline,
 		state:     constant.EngineStateStopped,
 	}
 }
@@ -55,7 +60,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	engineCtx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
-	httpProxy := NewHTTPProxy(e.logger, e.onSession, e.caManager)
+	httpProxy := NewHTTPProxy(e.logger, e.onSession, e.mitm, e.pipeline)
 	listener, err := net.Listen("tcp", e.config.HTTPAddr)
 	if err != nil {
 		e.state = constant.EngineStateStopped
@@ -81,9 +86,44 @@ func (e *Engine) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Start SOCKS5 listener.
+	socksListener, err := net.Listen("tcp", e.config.SOCKSAddr)
+	if err != nil {
+		_ = e.httpServer.Close()
+		e.state = constant.EngineStateStopped
+		e.cancel()
+		e.cancel = nil
+		return fmt.Errorf("listen socks on %s: %w", e.config.SOCKSAddr, err)
+	}
+	e.socksListener = socksListener
+
+	socksProxy := NewSOCKS5Proxy(e.logger, e.onSession)
+	e.wg.Add(1)
+	go func() {
+		defer e.wg.Done()
+		for {
+			conn, err := socksListener.Accept()
+			if err != nil {
+				return // listener closed
+			}
+			go func() {
+				defer func() {
+					if r := recover(); r != nil {
+						e.logger.Error("socks5 handler panic", slog.Any("panic", r))
+					}
+				}()
+				socksProxy.HandleConn(conn)
+			}()
+		}
+	}()
+
+	e.httpAddr = listener.Addr().String()
+	e.socksAddr = socksListener.Addr().String()
+
 	e.state = constant.EngineStateRunning
 	e.logger.Info("proxy engine started",
-		slog.String("http_addr", listener.Addr().String()),
+		slog.String("http_addr", e.httpAddr),
+		slog.String("socks_addr", e.socksAddr),
 	)
 
 	return nil
@@ -105,6 +145,11 @@ func (e *Engine) Stop(ctx context.Context) error {
 			e.logger.Error("shutdown http server", slog.String("error", err.Error()))
 		}
 		e.httpServer = nil
+	}
+
+	if e.socksListener != nil {
+		_ = e.socksListener.Close()
+		e.socksListener = nil
 	}
 
 	if e.cancel != nil {
@@ -135,4 +180,14 @@ func (e *Engine) State() constant.EngineState {
 // Config returns the current proxy configuration.
 func (e *Engine) Config() model.ProxyConfig {
 	return e.config
+}
+
+// HTTPAddr returns the actual HTTP proxy listen address (available after Start).
+func (e *Engine) HTTPAddr() string {
+	return e.httpAddr
+}
+
+// SOCKSAddr returns the actual SOCKS5 proxy listen address (available after Start).
+func (e *Engine) SOCKSAddr() string {
+	return e.socksAddr
 }

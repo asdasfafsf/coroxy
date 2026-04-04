@@ -20,12 +20,12 @@ import (
 
 func newTestHTTPProxy(t *testing.T) *HTTPProxy {
 	t.Helper()
-	return NewHTTPProxy(slog.Default(), nil, nil)
+	return NewHTTPProxy(slog.Default(), nil, nil, nil)
 }
 
 func newTestHTTPProxyWithCallback(t *testing.T, cb adapter.SessionCallback) *HTTPProxy {
 	t.Helper()
-	return NewHTTPProxy(slog.Default(), cb, nil)
+	return NewHTTPProxy(slog.Default(), cb, nil, nil)
 }
 
 func startProxyServer(t *testing.T, handler http.Handler) string {
@@ -288,6 +288,8 @@ func TestHTTPProxyConnectSessionCapture(t *testing.T) {
 		t.Fatalf("get via connect: %v", err)
 	}
 	_ = resp.Body.Close()
+	client.CloseIdleConnections()
+	time.Sleep(100 * time.Millisecond) // wait for async session capture
 
 	mu.Lock()
 	defer mu.Unlock()

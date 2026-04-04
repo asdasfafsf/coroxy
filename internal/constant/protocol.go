@@ -7,5 +7,7 @@ const (
 	ProtocolUnknown Protocol = "unknown"
 	ProtocolHTTP    Protocol = "HTTP"
 	ProtocolTLS     Protocol = "TLS"
+	ProtocolTCP     Protocol = "TCP"
+	ProtocolUDP     Protocol = "UDP"
 	ProtocolRaw     Protocol = "raw"
 )

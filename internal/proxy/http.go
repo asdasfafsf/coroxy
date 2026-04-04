@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,8 +13,8 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
-	"coroxy/internal/cert"
 	"coroxy/internal/constant"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -20,15 +22,15 @@ import (
 
 // hopByHopHeaders lists headers that must not be forwarded by a proxy.
 // https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
-var hopByHopHeaders = []string{
-	"Connection",
-	"Keep-Alive",
-	"Proxy-Authenticate",
-	"Proxy-Authorization",
-	"TE",
-	"Trailers",
-	"Transfer-Encoding",
-	"Upgrade",
+// MITMProvider abstracts the MITM capabilities needed by the HTTP proxy.
+// This allows testing without OS-level CA installation.
+type MITMProvider interface {
+	// ShouldIntercept returns true if MITM should be active for CONNECT requests.
+	ShouldIntercept() bool
+
+	// IssueCert generates a leaf certificate for the given host,
+	// copying CN/SAN from the original server certificate.
+	IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error)
 }
 
 // HTTPProxy handles HTTP forward proxy requests.
@@ -36,16 +38,18 @@ type HTTPProxy struct {
 	logger    *slog.Logger
 	transport *http.Transport
 	onSession adapter.SessionCallback
-	caManager *cert.Manager
+	mitm      MITMProvider
+	pipeline  *intercept.Pipeline
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
-// If caManager is provided, CONNECT requests are intercepted for MITM.
-func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, caManager *cert.Manager) *HTTPProxy {
+// If mitm is provided, CONNECT requests are intercepted for MITM.
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm MITMProvider, pipeline *intercept.Pipeline) *HTTPProxy {
 	return &HTTPProxy{
 		logger:    logger,
 		onSession: onSession,
-		caManager: caManager,
+		mitm:      mitm,
+		pipeline:  pipeline,
 		transport: &http.Transport{
 			DialContext:           (&net.Dialer{Timeout: 30 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -79,6 +83,14 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	outReq.RequestURI = ""
 	removeHopByHopHeaders(outReq.Header)
 
+	// Run interceptor pipeline on request.
+	if h.pipeline != nil && h.pipeline.Count() > 0 {
+		if h.pipeline.ProcessRequest(outReq, nil) == adapter.ActionDrop {
+			http.Error(w, "proxy: request dropped by interceptor", http.StatusForbidden)
+			return
+		}
+	}
+
 	resp, err := h.transport.RoundTrip(outReq)
 	if err != nil {
 		h.logger.Error("forward request",
@@ -91,6 +103,15 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = resp.Body.Close() }()
 
 	removeHopByHopHeaders(resp.Header)
+
+	// Run interceptor pipeline on response.
+	if h.pipeline != nil && h.pipeline.Count() > 0 {
+		if h.pipeline.ProcessResponse(resp, nil) == adapter.ActionDrop {
+			http.Error(w, "proxy: response dropped by interceptor", http.StatusForbidden)
+			return
+		}
+	}
+
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
@@ -146,26 +167,46 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// MITM: if CA manager is available, intercept TLS to capture decrypted traffic.
-	if h.caManager != nil {
+	// MITM: only intercept if CA is installed in OS trust store.
+	// If CA is not installed, passthrough to avoid certificate errors (Fiddler behavior).
+	if h.mitm != nil && h.mitm.ShouldIntercept() {
 		_ = targetConn.Close() // MITM handler makes its own TLS connection
-		h.handleMITM(clientConn, host, h.caManager)
-		return
+		if h.handleMITM(clientConn, host, h.mitm) {
+			return // MITM handled (success or client rejected cert)
+		}
+
+		// MITM setup failed (target TLS unreachable, cert issue, etc.)
+		// Fall back to passthrough with a new target connection.
+		var err error
+		targetConn, err = net.DialTimeout("tcp", host, 30*time.Second)
+		if err != nil {
+			_ = clientConn.Close()
+			return
+		}
 	}
 
 	// Passthrough: no MITM, just relay bytes.
-	h.captureTunnelSession(r, host)
+	start := time.Now()
 
+	done := make(chan struct{}, 2)
 	go func() {
 		defer func() { _ = clientConn.Close() }()
 		defer func() { _ = targetConn.Close() }()
 		_, _ = io.Copy(targetConn, clientConn)
+		done <- struct{}{}
 	}()
 
 	go func() {
 		defer func() { _ = targetConn.Close() }()
 		defer func() { _ = clientConn.Close() }()
 		_, _ = io.Copy(clientConn, targetConn)
+		done <- struct{}{}
+	}()
+
+	// Wait for one direction to finish, then capture session.
+	go func() {
+		<-done
+		h.captureTunnelSession(r, host, time.Since(start))
 	}()
 }
 
@@ -201,8 +242,8 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bod
 	h.onSession(session)
 }
 
-// captureTunnelSession creates a session for a CONNECT tunnel.
-func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
+// captureTunnelSession creates a session for a completed CONNECT tunnel.
+func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string, duration time.Duration) {
 	if h.onSession == nil {
 		return
 	}
@@ -214,8 +255,9 @@ func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
 		Protocol: constant.ProtocolTLS,
 		Source:   endpointFromAddr(r.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		State:    constant.SessionStateActive,
-		CreatedAt: time.Now(),
+		State:     constant.SessionStateCompleted,
+		CreatedAt: time.Now().Add(-duration),
+		Duration:  duration,
 	}
 
 	h.onSession(session)
@@ -252,7 +294,10 @@ func removeHopByHopHeaders(h http.Header) {
 		}
 	}
 
-	for _, header := range hopByHopHeaders {
+	for _, header := range []string{
+		"Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+		"TE", "Trailers", "Transfer-Encoding", "Upgrade",
+	} {
 		h.Del(header)
 	}
 }

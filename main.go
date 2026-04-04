@@ -9,6 +9,7 @@ import (
 
 	"coroxy/internal/app"
 	"coroxy/internal/cert"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
 	"coroxy/internal/session"
@@ -40,11 +41,14 @@ func main() {
 
 	a := app.NewApp(nil, store, caManager)
 
+	pipeline := intercept.NewPipeline()
+
 	engine := proxy.NewEngine(
 		model.DefaultProxyConfig(),
 		logger,
 		a.HandleNewSession,
-		caManager,
+		proxy.NewProductionMITM(caManager),
+		pipeline,
 	)
 	a.SetEngine(engine)
 

@@ -1,21 +1,10 @@
 package proxy
 
 import (
+	"bytes"
+
 	"coroxy/internal/constant"
 )
-
-// httpMethods lists the HTTP method prefixes used for detection.
-var httpMethods = [][]byte{
-	[]byte("GET "),
-	[]byte("POST "),
-	[]byte("PUT "),
-	[]byte("DELETE "),
-	[]byte("HEAD "),
-	[]byte("OPTIONS "),
-	[]byte("PATCH "),
-	[]byte("CONNECT "),
-	[]byte("TRACE "),
-}
 
 // DetectProtocol identifies the protocol from the first bytes of a connection.
 //
@@ -36,28 +25,19 @@ func DetectProtocol(peek []byte) constant.Protocol {
 
 	// SOCKS5: version byte 0x05
 	if peek[0] == 0x05 {
-		return constant.ProtocolRaw // SOCKS5 detection reserved for Phase 3
+		return constant.ProtocolTCP
 	}
 
 	// HTTP: starts with a known method
-	for _, method := range httpMethods {
-		if len(peek) >= len(method) && bytesEqual(peek[:len(method)], method) {
+	for _, method := range [][]byte{
+		[]byte("GET "), []byte("POST "), []byte("PUT "), []byte("DELETE "),
+		[]byte("HEAD "), []byte("OPTIONS "), []byte("PATCH "),
+		[]byte("CONNECT "), []byte("TRACE "),
+	} {
+		if len(peek) >= len(method) && bytes.Equal(peek[:len(method)], method) {
 			return constant.ProtocolHTTP
 		}
 	}
 
 	return constant.ProtocolRaw
-}
-
-// bytesEqual compares two byte slices for equality.
-func bytesEqual(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

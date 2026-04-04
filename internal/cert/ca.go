@@ -24,7 +24,6 @@ const (
 	caValidYears = 3
 )
 
-// Manager manages Root CA generation, loading, and storage.
 // Manager manages Root CA generation, loading, storage, and leaf certificate issuance.
 type Manager struct {
 	dataDir string
@@ -90,8 +89,8 @@ func (m *Manager) RootCert() *x509.Certificate {
 	return m.rootCA
 }
 
-// RootKey returns the Root CA private key.
-func (m *Manager) RootKey() *rsa.PrivateKey {
+// rootPrivateKey returns the Root CA private key. Internal use only.
+func (m *Manager) rootPrivateKey() *rsa.PrivateKey {
 	return m.rootKey
 }
 
