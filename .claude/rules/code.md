@@ -108,9 +108,11 @@ import (
 - 짧고, 소문자, 한 단어. 목적을 나타낸다.
 
 ```go
-// 좋은 예: proxy, session, cert
+// 좋은 예: proxy, session, cert, adapter, model, constant
 // 나쁜 예: models, utils, helpers, common, types
 ```
+
+> `model`(단수, 명확한 역할)과 `models`(복수, 무분별한 모음)는 다르다. 역할이 명확한 단수형 패키지명은 허용한다.
 
 ### 캡슐화 (MUST)
 
@@ -656,12 +658,20 @@ client := &http.Client{Timeout: 30 * time.Second}
 ```
 main.go                 # Wails 엔트리포인트 (조립만, 로직 없음)
 app.go                  # Wails 바인딩 구조체
-internal/               # 모든 비즈니스 로직
+internal/
+├── adapter/            # 공유 인터페이스 (의존성 역전 계층)
+├── model/              # 공유 데이터 구조체
+├── constant/           # enum, 프로토콜 상수
+├── proxy/              # 프록시 엔진 구현
+├── session/            # 세션 저장소 구현
+└── ...                 # 기능별 패키지
 ```
 
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
 - `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
-- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다. DESIGN.md의 `internal/app/app.go`는 이 규칙으로 대체한다 (MUST)
+- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다 (MUST)
+- 공유 타입은 역할별로 분리한다: 인터페이스(`adapter/`), 구조체(`model/`), 상수(`constant/`) (MUST)
+- `adapter/`, `model/`, `constant/`는 다른 `internal/` 패키지를 import하지 않는다 (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
 

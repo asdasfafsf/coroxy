@@ -288,15 +288,27 @@ type Session struct {
 
 ```
 coroxy/
-├── main.go                          # Wails 엔트리포인트
+├── main.go                          # Wails 엔트리포인트 (조립만, 로직 없음)
+├── app.go                           # Wails 바인딩 구조체
 ├── go.mod
 ├── go.sum
 ├── wails.json                       # Wails 빌드 설정
 ├── build/                           # 빌드 에셋 (아이콘 등)
 │
 ├── internal/
-│   ├── app/
-│   │   └── app.go                   # Wails 바인딩, GUI↔Core 브릿지
+│   ├── adapter/                     # 공유 인터페이스 (의존성 역전 계층)
+│   │   ├── proxy.go                 # ProxyEngine 인터페이스
+│   │   ├── session.go               # SessionStore 인터페이스
+│   │   └── intercept.go             # Interceptor 인터페이스
+│   │
+│   ├── model/                       # 공유 데이터 구조체
+│   │   ├── session.go               # Session, HTTPMessage
+│   │   ├── rule.go                  # Rule, MatchCondition
+│   │   └── endpoint.go              # Endpoint, TCPFrame, UDPPacket
+│   │
+│   ├── constant/                    # enum, 프로토콜 상수
+│   │   ├── protocol.go              # Protocol (HTTP, HTTPS, TCP, UDP)
+│   │   └── state.go                 # SessionState, Action
 │   │
 │   ├── proxy/
 │   │   ├── engine.go                # 프록시 엔진 (시작/중지/설정)
@@ -316,7 +328,6 @@ coroxy/
 │   │
 │   ├── rule/
 │   │   ├── engine.go                # 룰 매칭 엔진
-│   │   ├── rule.go                  # 룰 모델
 │   │   └── store.go                 # 룰 저장/로드
 │   │
 │   ├── cert/
@@ -325,7 +336,6 @@ coroxy/
 │   │   └── trust.go                 # OS 신뢰 저장소 설치
 │   │
 │   ├── session/
-│   │   ├── session.go               # 세션 모델
 │   │   ├── store.go                 # 세션 저장소 (메모리 + SQLite)
 │   │   └── export.go                # HAR/JSON/PCAP 내보내기
 │   │
