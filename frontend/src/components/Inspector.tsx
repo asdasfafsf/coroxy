@@ -5,8 +5,8 @@ interface InspectorProps {
   session: model.Session | null;
 }
 
-type RequestTab = 'headers' | 'query' | 'cookies' | 'body' | 'raw';
-type ResponseTab = 'headers' | 'cookies' | 'body' | 'raw';
+type RequestTab = 'headers' | 'query' | 'cookies' | 'webforms' | 'body' | 'hex' | 'raw';
+type ResponseTab = 'headers' | 'cookies' | 'body' | 'hex' | 'raw';
 
 export function Inspector({ session }: InspectorProps) {
   const [reqTab, setReqTab] = useState<RequestTab>('headers');
@@ -30,7 +30,9 @@ export function Inspector({ session }: InspectorProps) {
             { key: 'headers', label: 'Headers' },
             { key: 'query', label: `Query${countBadge(session.request?.query_params)}` },
             { key: 'cookies', label: `Cookies${countBadge(session.request?.cookies)}` },
+            { key: 'webforms', label: 'WebForms' },
             { key: 'body', label: 'Body' },
+            { key: 'hex', label: 'Hex' },
             { key: 'raw', label: 'Raw' },
           ]}
           active={reqTab}
@@ -40,7 +42,9 @@ export function Inspector({ session }: InspectorProps) {
           {reqTab === 'headers' && <RequestHeaders session={session} />}
           {reqTab === 'query' && <QueryView params={session.request?.query_params} />}
           {reqTab === 'cookies' && <CookieTable cookies={session.request?.cookies} />}
+          {reqTab === 'webforms' && <WebFormsView body={session.request?.body} contentType={session.request?.content_type} />}
           {reqTab === 'body' && <BodyContent body={session.request?.body} contentType={session.request?.content_type} size={session.request?.body_size} />}
+          {reqTab === 'hex' && <HexView body={session.request?.body} />}
           {reqTab === 'raw' && <RawRequest session={session} />}
         </div>
       </div>
@@ -53,6 +57,7 @@ export function Inspector({ session }: InspectorProps) {
             { key: 'headers', label: 'Headers' },
             { key: 'cookies', label: `Cookies${countBadge(session.response?.cookies)}` },
             { key: 'body', label: 'Body' },
+            { key: 'hex', label: 'Hex' },
             { key: 'raw', label: 'Raw' },
           ]}
           active={resTab}
@@ -62,6 +67,7 @@ export function Inspector({ session }: InspectorProps) {
           {resTab === 'headers' && <ResponseHeaders session={session} />}
           {resTab === 'cookies' && <CookieTable cookies={session.response?.cookies} />}
           {resTab === 'body' && <BodyContent body={session.response?.body} contentType={session.response?.content_type} size={session.response?.body_size} />}
+          {resTab === 'hex' && <HexView body={session.response?.body} />}
           {resTab === 'raw' && <RawResponse session={session} />}
         </div>
       </div>
@@ -324,6 +330,103 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="text-[#89b4fa] w-40 shrink-0 truncate">{label}</span>
       <span className="text-[#cdd6f4] break-all">{value}</span>
     </div>
+  );
+}
+
+// --- WebForms View ---
+
+function WebFormsView({ body, contentType }: { body: number[] | Uint8Array | string | undefined | null; contentType?: string }) {
+  const decoded = decodeBody(body);
+  if (!decoded) return <div className="text-[#6c7086] text-xs">No form data</div>;
+
+  const isForm = contentType?.includes('x-www-form-urlencoded');
+  if (!isForm) {
+    return <div className="text-[#6c7086] text-xs">Content-Type is not application/x-www-form-urlencoded</div>;
+  }
+
+  const params: { name: string; value: string }[] = [];
+  for (const pair of decoded.split('&')) {
+    const [name, ...rest] = pair.split('=');
+    if (name) {
+      params.push({
+        name: decodeURIComponent(name),
+        value: decodeURIComponent(rest.join('=')),
+      });
+    }
+  }
+
+  if (params.length === 0) {
+    return <div className="text-[#6c7086] text-xs">Empty form data</div>;
+  }
+
+  return (
+    <table className="w-full text-xs">
+      <thead>
+        <tr className="text-[#a6adc8] border-b border-[#313244]">
+          <th className="text-left py-1 px-2 w-1/3">Name</th>
+          <th className="text-left py-1 px-2">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {params.map((p, i) => (
+          <tr key={i} className="border-b border-[#313244]/50">
+            <td className="py-1 px-2 text-[#89b4fa]">{p.name}</td>
+            <td className="py-1 px-2 text-[#cdd6f4] break-all">{p.value}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+// --- Hex View ---
+
+function HexView({ body }: { body: number[] | Uint8Array | string | undefined | null }) {
+  if (!body) return <div className="text-[#6c7086] text-xs">No data</div>;
+
+  const bytes = typeof body === 'string'
+    ? new TextEncoder().encode(body)
+    : body instanceof Uint8Array ? body : new Uint8Array(body);
+
+  if (bytes.length === 0) return <div className="text-[#6c7086] text-xs">Empty body</div>;
+
+  const rows: string[] = [];
+  const bytesPerRow = 16;
+  const limit = Math.min(bytes.length, 8192); // Cap at 8KB for perf
+
+  for (let offset = 0; offset < limit; offset += bytesPerRow) {
+    const chunk = bytes.slice(offset, offset + bytesPerRow);
+
+    // Offset
+    const offsetStr = offset.toString(16).padStart(8, '0');
+
+    // Hex
+    const hexParts: string[] = [];
+    for (let i = 0; i < bytesPerRow; i++) {
+      if (i < chunk.length) {
+        hexParts.push(chunk[i].toString(16).padStart(2, '0'));
+      } else {
+        hexParts.push('  ');
+      }
+    }
+    const hexStr = hexParts.slice(0, 8).join(' ') + '  ' + hexParts.slice(8).join(' ');
+
+    // ASCII
+    const asciiStr = Array.from(chunk).map(b => (b >= 0x20 && b <= 0x7e) ? String.fromCharCode(b) : '.').join('');
+
+    rows.push(`${offsetStr}  ${hexStr}  |${asciiStr}|`);
+  }
+
+  if (bytes.length > limit) {
+    rows.push(`... (${bytes.length - limit} more bytes truncated)`);
+  }
+
+  return (
+    <pre className="text-[#cdd6f4] text-[11px] leading-4 font-mono whitespace-pre">
+      <span className="text-[#6c7086]">{'Offset    00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  |ASCII           |'}</span>
+      {'\n'}
+      {rows.join('\n')}
+    </pre>
   );
 }
 
