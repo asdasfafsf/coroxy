@@ -136,11 +136,16 @@ func convertResponse(msg *model.HTTPMessage) HARResponse {
 }
 
 func convertHeaders(headers map[string][]string) []HARNameValue {
-	if headers == nil {
+	if headers == nil || len(headers) == 0 {
 		return []HARNameValue{}
 	}
 
-	result := make([]HARNameValue, 0)
+	count := 0
+	for _, values := range headers {
+		count += len(values)
+	}
+
+	result := make([]HARNameValue, 0, count)
 	for name, values := range headers {
 		for _, value := range values {
 			result = append(result, HARNameValue{Name: name, Value: value})

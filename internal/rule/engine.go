@@ -47,7 +47,7 @@ func (e *Engine) OnResponse(_ *http.Response, _ *model.Session) adapter.Action {
 	return adapter.ActionForward
 }
 
-// AddRule adds a rule and re-sorts by priority (highest first).
+// AddRule inserts a rule in priority order (highest first).
 func (e *Engine) AddRule(r *model.Rule) {
 	if r == nil {
 		return
@@ -56,10 +56,12 @@ func (e *Engine) AddRule(r *model.Rule) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	e.rules = append(e.rules, r)
-	sort.Slice(e.rules, func(i, j int) bool {
-		return e.rules[i].Priority > e.rules[j].Priority
+	idx := sort.Search(len(e.rules), func(i int) bool {
+		return e.rules[i].Priority < r.Priority
 	})
+	e.rules = append(e.rules, nil)
+	copy(e.rules[idx+1:], e.rules[idx:])
+	e.rules[idx] = r
 }
 
 // RemoveRule removes a rule by ID.
