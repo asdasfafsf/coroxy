@@ -1,0 +1,98 @@
+import { model } from '../../wailsjs/go/models';
+
+interface SessionListProps {
+  sessions: model.Session[];
+}
+
+function formatTime(createdAt: string | number | Date): string {
+  const date = new Date(createdAt);
+  return date.toLocaleTimeString('en-US', { hour12: false });
+}
+
+function formatDuration(ns: number): string {
+  if (ns <= 0) return '-';
+  const ms = ns / 1_000_000;
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function statusClass(code: number | undefined): string {
+  if (!code) return '';
+  if (code >= 200 && code < 300) return 'text-[#a6e3a1]';
+  if (code >= 300 && code < 400) return 'text-[#89b4fa]';
+  if (code >= 400 && code < 500) return 'text-[#f9e2af]';
+  if (code >= 500) return 'text-[#f38ba8]';
+  return '';
+}
+
+function protoBadgeClass(protocol: string): string {
+  const base = 'text-[11px] font-semibold px-1.5 py-0.5 rounded';
+  switch (protocol.toUpperCase()) {
+    case 'HTTP': return `${base} bg-[#89b4fa22] text-[#89b4fa]`;
+    case 'TLS':  return `${base} bg-[#a6e3a122] text-[#a6e3a1]`;
+    case 'TCP':  return `${base} bg-[#f9e2af22] text-[#f9e2af]`;
+    case 'UDP':  return `${base} bg-[#cba6f722] text-[#cba6f7]`;
+    default:     return `${base} bg-[#6c708622] text-[#6c7086]`;
+  }
+}
+
+function getPath(url: string | undefined): string {
+  if (!url) return '-';
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url;
+  }
+}
+
+export function SessionList({ sessions }: SessionListProps) {
+  const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap sticky top-0 z-10';
+  const cellClass = 'px-2.5 py-1 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
+
+  return (
+    <div className="flex-1 overflow-auto bg-[#1e1e2e]">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className={`${headerClass} w-10`}>#</th>
+            <th className={`${headerClass} w-15`}>Proto</th>
+            <th className={headerClass}>Host</th>
+            <th className={`${headerClass} w-15`}>Method</th>
+            <th className={headerClass}>Path</th>
+            <th className={`${headerClass} w-15 text-center`}>Status</th>
+            <th className={`${headerClass} w-20 text-right`}>Duration</th>
+            <th className={`${headerClass} w-20`}>Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sessions.length === 0 ? (
+            <tr>
+              <td colSpan={8} className="text-center text-[#6c7086] py-10 text-sm">
+                No sessions captured
+              </td>
+            </tr>
+          ) : (
+            sessions.map((session, index) => (
+              <tr key={session.id} className="hover:bg-[#313244] cursor-pointer">
+                <td className={`${cellClass} w-10 text-[#6c7086]`}>{index + 1}</td>
+                <td className={`${cellClass} w-15`}>
+                  <span className={protoBadgeClass(session.protocol)}>{session.protocol}</span>
+                </td>
+                <td className={`${cellClass} max-w-[200px]`}>{session.target?.host || '-'}</td>
+                <td className={`${cellClass} w-15`}>{session.request?.method || '-'}</td>
+                <td className={`${cellClass} max-w-[300px]`} title={session.request?.url}>
+                  {getPath(session.request?.url)}
+                </td>
+                <td className={`${cellClass} w-15 text-center ${statusClass(session.response?.status_code)}`}>
+                  {session.response?.status_code || '-'}
+                </td>
+                <td className={`${cellClass} w-20 text-right`}>{formatDuration(session.duration)}</td>
+                <td className={`${cellClass} w-20 text-[#6c7086]`}>{formatTime(session.created_at)}</td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
