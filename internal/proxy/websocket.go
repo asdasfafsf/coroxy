@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"coroxy/internal/constant"
@@ -70,20 +71,27 @@ func (h *HTTPProxy) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	h.captureWebSocketSession(r)
 
 	// Relay bidirectional traffic.
-	done := make(chan struct{}, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
-		defer func() { _ = clientConn.Close() }()
-		defer func() { _ = targetConn.Close() }()
+		defer wg.Done()
 		_, _ = io.Copy(targetConn, clientConn)
-		done <- struct{}{}
+		// 클라이언트→타겟 종료 시 타겟 write 종료를 알림.
+		if tc, ok := targetConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
 	go func() {
-		defer func() { _ = targetConn.Close() }()
-		defer func() { _ = clientConn.Close() }()
+		defer wg.Done()
 		_, _ = io.Copy(clientConn, targetConn)
-		done <- struct{}{}
+		// 타겟→클라이언트 종료 시 클라이언트 write 종료를 알림.
+		if tc, ok := clientConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
-	<-done
+	wg.Wait()
+	_ = clientConn.Close()
+	_ = targetConn.Close()
 }
 
 // captureWebSocketSession creates a session for a WebSocket connection.
