@@ -47,6 +47,28 @@ function getPath(url: string | undefined): string {
   }
 }
 
+function formatBytes(bytes: number | undefined): string {
+  if (!bytes || bytes <= 0) return '-';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function shortContentType(ct: string | undefined): string {
+  if (!ct) return '-';
+  // "application/json; charset=utf-8" → "json"
+  const mime = ct.split(';')[0].trim();
+  const sub = mime.split('/')[1];
+  if (!sub) return mime;
+  // "x-www-form-urlencoded" → "form"
+  if (sub.includes('form')) return 'form';
+  // "javascript" → "js"
+  if (sub === 'javascript') return 'js';
+  // "octet-stream" → "binary"
+  if (sub === 'octet-stream') return 'binary';
+  return sub;
+}
+
 export function SessionList({ sessions, selectedId, onSelect }: SessionListProps) {
   const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap sticky top-0 z-10';
   const cellClass = 'px-2.5 py-1 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
@@ -62,6 +84,8 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
             <th className={`${headerClass} w-15`}>Method</th>
             <th className={headerClass}>Path</th>
             <th className={`${headerClass} w-15 text-center`}>Status</th>
+            <th className={`${headerClass} w-16`}>Type</th>
+            <th className={`${headerClass} w-18 text-right`}>Size</th>
             <th className={`${headerClass} w-20 text-right`}>Duration</th>
             <th className={`${headerClass} w-20`}>Time</th>
           </tr>
@@ -69,7 +93,7 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
         <tbody>
           {sessions.length === 0 ? (
             <tr>
-              <td colSpan={8} className="text-center text-[#6c7086] py-10 text-sm">
+              <td colSpan={10} className="text-center text-[#6c7086] py-10 text-sm">
                 No sessions captured
               </td>
             </tr>
@@ -92,6 +116,8 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
                 <td className={`${cellClass} w-15 text-center ${statusClass(session.response?.status_code)}`}>
                   {session.response?.status_code || '-'}
                 </td>
+                <td className={`${cellClass} w-16 text-[#6c7086]`}>{shortContentType(session.response?.content_type)}</td>
+                <td className={`${cellClass} w-18 text-right text-[#6c7086]`}>{formatBytes(session.response?.body_size)}</td>
                 <td className={`${cellClass} w-20 text-right`}>{formatDuration(session.duration)}</td>
                 <td className={`${cellClass} w-20 text-[#6c7086]`}>{formatTime(session.created_at)}</td>
               </tr>
