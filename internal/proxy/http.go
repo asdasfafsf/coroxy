@@ -21,17 +21,6 @@ import (
 
 // hopByHopHeaders lists headers that must not be forwarded by a proxy.
 // https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
-var hopByHopHeaders = []string{
-	"Connection",
-	"Keep-Alive",
-	"Proxy-Authenticate",
-	"Proxy-Authorization",
-	"TE",
-	"Trailers",
-	"Transfer-Encoding",
-	"Upgrade",
-}
-
 // MITMProvider abstracts the MITM capabilities needed by the HTTP proxy.
 // This allows testing without OS-level CA installation.
 type MITMProvider interface {
@@ -285,7 +274,10 @@ func removeHopByHopHeaders(h http.Header) {
 		}
 	}
 
-	for _, header := range hopByHopHeaders {
+	for _, header := range []string{
+		"Connection", "Keep-Alive", "Proxy-Authenticate", "Proxy-Authorization",
+		"TE", "Trailers", "Transfer-Encoding", "Upgrade",
+	} {
 		h.Del(header)
 	}
 }

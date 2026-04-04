@@ -20,7 +20,7 @@ func NewMemoryStore() *MemoryStore {
 	}
 }
 
-// Add stores a new session. Panics if session is nil.
+// Add stores a new session. Does nothing if session is nil.
 func (s *MemoryStore) Add(session *model.Session) {
 	if session == nil {
 		return
