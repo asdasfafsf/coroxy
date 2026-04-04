@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log/slog"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/cert"
 	"coroxy/internal/model"
 )
 
@@ -161,4 +163,94 @@ func TestProxyEndToEnd(t *testing.T) {
 	}
 
 	t.Logf("E2E: captured session %s %s → %d", s.Request.Method, s.Target.Host, s.Response.StatusCode)
+}
+
+// TestMITMEndToEnd tests the full MITM pipeline:
+// CA Manager → Engine with MITM → HTTPS request → decrypted session captured.
+func TestMITMEndToEnd(t *testing.T) {
+	// 1. Target HTTPS server.
+	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Secret", "mitm-visible")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "mitm e2e body")
+	}))
+	defer target.Close()
+
+	// 2. CA Manager.
+	caManager, err := cert.NewManager(t.TempDir())
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+
+	// 3. Session capture.
+	var mu sync.Mutex
+	var captured []*model.Session
+	onSession := adapter.SessionCallback(func(s *model.Session) {
+		mu.Lock()
+		defer mu.Unlock()
+		captured = append(captured, s)
+	})
+
+	// 4. Proxy with MITM via HTTPProxy directly.
+	proxy := NewHTTPProxy(slog.Default(), onSession, caManager)
+	proxyAddr := startProxyServer(t, proxy)
+
+	// 5. Client trusts our CA.
+	pool := x509.NewCertPool()
+	pool.AddCert(caManager.RootCert())
+
+	proxyURL, _ := url.Parse("http://" + proxyAddr)
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyURL(proxyURL),
+			TLSClientConfig: &tls.Config{RootCAs: pool},
+		},
+		Timeout: 10 * time.Second,
+	}
+
+	// 6. HTTPS request through MITM proxy.
+	resp, err := client.Get(target.URL + "/secret")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+
+	// 7. Verify response came through correctly.
+	if resp.StatusCode != 200 {
+		t.Fatalf("status: got %d, want 200", resp.StatusCode)
+	}
+	if string(body) != "mitm e2e body" {
+		t.Fatalf("body: got %q, want %q", string(body), "mitm e2e body")
+	}
+
+	// 8. Verify session captured with decrypted content.
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(captured) != 1 {
+		t.Fatalf("captured: got %d, want 1", len(captured))
+	}
+
+	s := captured[0]
+	if s.Protocol != "TLS" {
+		t.Fatalf("protocol: got %s, want TLS", s.Protocol)
+	}
+	if s.Request == nil {
+		t.Fatal("request: nil")
+	}
+	if s.Request.Method != "GET" {
+		t.Fatalf("method: got %s, want GET", s.Request.Method)
+	}
+	if s.Response == nil {
+		t.Fatal("response: nil")
+	}
+	if s.Response.StatusCode != 200 {
+		t.Fatalf("status: got %d, want 200", s.Response.StatusCode)
+	}
+	if s.Response.BodySize != int64(len("mitm e2e body")) {
+		t.Fatalf("body size: got %d, want %d", s.Response.BodySize, len("mitm e2e body"))
+	}
+
+	t.Logf("MITM E2E: %s %s → %d (body %d bytes)", s.Request.Method, s.Request.URL, s.Response.StatusCode, s.Response.BodySize)
 }
