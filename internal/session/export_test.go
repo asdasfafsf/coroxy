@@ -98,3 +98,41 @@ func TestExportHAREmpty(t *testing.T) {
 		t.Fatalf("entries: got %d, want 0", len(har.Log.Entries))
 	}
 }
+
+func TestExportJSON(t *testing.T) {
+	sessions := []*model.Session{
+		{
+			ID:       "s1",
+			Protocol: constant.ProtocolHTTP,
+			Request:  &model.HTTPMessage{Method: "GET", URL: "http://example.com"},
+		},
+	}
+
+	data, err := ExportJSON(sessions)
+	if err != nil {
+		t.Fatalf("ExportJSON: %v", err)
+	}
+
+	var parsed []model.Session
+	if err := json.Unmarshal(data, &parsed); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if len(parsed) != 1 {
+		t.Fatalf("sessions: got %d, want 1", len(parsed))
+	}
+	if parsed[0].ID != "s1" {
+		t.Fatalf("ID: got %s, want s1", parsed[0].ID)
+	}
+}
+
+func TestExportJSONEmpty(t *testing.T) {
+	data, err := ExportJSON([]*model.Session{})
+	if err != nil {
+		t.Fatalf("ExportJSON: %v", err)
+	}
+
+	if string(data) != "[]" {
+		t.Fatalf("empty: got %s, want []", string(data))
+	}
+}
