@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"coroxy/internal/adapter"
@@ -76,16 +77,23 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 	start := time.Now()
 
 	// Relay bidirectional traffic.
-	done := make(chan struct{}, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
+		defer wg.Done()
 		_, _ = io.Copy(targetConn, clientConn)
-		done <- struct{}{}
+		if tc, ok := targetConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
 	go func() {
+		defer wg.Done()
 		_, _ = io.Copy(clientConn, targetConn)
-		done <- struct{}{}
+		if tc, ok := clientConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
-	<-done
+	wg.Wait()
 
 	s.captureSession(targetAddr, time.Since(start))
 }
