@@ -80,14 +80,51 @@ function HeadersView({ session }: { session: model.Session }) {
 }
 
 function BodyView({ session }: { session: model.Session }) {
-  const bodySize = session.response?.body_size || 0;
+  const reqBody = decodeBody(session.request?.body);
+  const respBody = decodeBody(session.response?.body);
 
   return (
-    <div className="text-[#6c7086]">
-      <p>Response body: {bodySize} bytes</p>
-      <p className="mt-2 text-xs">Body content capture will be available in a future update.</p>
+    <div className="space-y-4">
+      {reqBody && (
+        <Section title={`Request Body (${session.request?.body_size || 0} bytes)`}>
+          <pre className="whitespace-pre-wrap text-[#cdd6f4] text-xs leading-5 bg-[#11111b] p-2 rounded max-h-64 overflow-auto">
+            {formatBody(reqBody, session.request?.headers?.['Content-Type']?.[0])}
+          </pre>
+        </Section>
+      )}
+      <Section title={`Response Body (${session.response?.body_size || 0} bytes)`}>
+        {respBody ? (
+          <pre className="whitespace-pre-wrap text-[#cdd6f4] text-xs leading-5 bg-[#11111b] p-2 rounded max-h-96 overflow-auto">
+            {formatBody(respBody, session.response?.headers?.['Content-Type']?.[0])}
+          </pre>
+        ) : (
+          <p className="text-[#6c7086] text-xs">No body content</p>
+        )}
+      </Section>
     </div>
   );
+}
+
+function decodeBody(body: number[] | Uint8Array | string | undefined | null): string | null {
+  if (!body) return null;
+  if (typeof body === 'string') return body;
+  try {
+    const bytes = body instanceof Uint8Array ? body : new Uint8Array(body);
+    return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+function formatBody(text: string, contentType?: string): string {
+  if (contentType?.includes('json')) {
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+      return text;
+    }
+  }
+  return text;
 }
 
 function RawView({ session }: { session: model.Session }) {
