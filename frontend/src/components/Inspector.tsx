@@ -488,11 +488,42 @@ function decodeBody(body: number[] | Uint8Array | string | undefined | null): st
   }
 }
 
-function formatBody(text: string, contentType?: string): string {
+function formatBody(text: string, contentType?: string): React.ReactNode {
   if (contentType?.includes('json')) {
     try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
   }
+  if (contentType?.includes('xml') || contentType?.includes('html')) {
+    return highlightMarkup(text);
+  }
   return text;
+}
+
+function highlightMarkup(text: string): React.ReactNode {
+  // Simple regex-based XML/HTML syntax highlighting.
+  const parts: React.ReactNode[] = [];
+  const tagRegex = /(<\/?[\w-]+)((?:\s+[\w-]+(?:=(?:"[^"]*"|'[^']*'|[^\s>]*))?)*)(\/?>)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagRegex.exec(text)) !== null) {
+    // Text before tag.
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const [, tagName, attrs, close] = match;
+    parts.push(
+      <span key={match.index}>
+        <span className="text-[#f38ba8]">{tagName}</span>
+        <span className="text-[#a6e3a1]">{attrs}</span>
+        <span className="text-[#f38ba8]">{close}</span>
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+  return <>{parts}</>;
 }
 
 function formatSize(bytes: number | undefined): string {

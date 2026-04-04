@@ -27,6 +27,20 @@ function statusClass(code: number | undefined): string {
   return '';
 }
 
+// Row tint based on Content-Type and status (Fiddler-style).
+function rowTintClass(session: model.Session): string {
+  const status = session.response?.status_code;
+  if (status && status >= 400) return 'bg-[#f38ba810]'; // red tint for errors
+  if (status && status >= 300) return 'bg-[#f9e2af08]'; // yellow tint for redirects
+
+  const ct = session.response?.content_type?.toLowerCase() || '';
+  if (ct.includes('javascript')) return 'bg-[#a6e3a108]'; // green tint
+  if (ct.includes('css')) return 'bg-[#89b4fa08]'; // blue tint
+  if (ct.includes('image')) return 'bg-[#cba6f708]'; // purple tint
+  if (ct.includes('html')) return 'bg-[#fab38708]'; // orange tint
+  return '';
+}
+
 function protoBadgeClass(protocol: string): string {
   const base = 'text-[11px] font-semibold px-1.5 py-0.5 rounded';
   switch (protocol.toUpperCase()) {
@@ -101,7 +115,7 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
             sessions.map((session, index) => (
               <tr
                 key={session.id}
-                className={`hover:bg-[#313244] cursor-pointer ${selectedId === session.id ? 'bg-[#313244]' : ''}`}
+                className={`hover:bg-[#313244] cursor-pointer ${selectedId === session.id ? 'bg-[#313244]' : rowTintClass(session)}`}
                 onClick={() => onSelect(session)}
               >
                 <td className={`${cellClass} w-10 text-[#6c7086]`}>{index + 1}</td>
