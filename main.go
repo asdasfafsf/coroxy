@@ -44,7 +44,7 @@ func main() {
 		model.DefaultProxyConfig(),
 		logger,
 		a.HandleNewSession,
-		caManager,
+		proxy.NewProductionMITM(caManager),
 	)
 	a.SetEngine(engine)
 
