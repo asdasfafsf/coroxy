@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"log"
 
 	"coroxy/internal/app"
 
@@ -33,6 +34,6 @@ func main() {
 	})
 
 	if err != nil {
-		println("Error:", err.Error())
+		log.Fatal(err)
 	}
 }

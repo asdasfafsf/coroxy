@@ -12,11 +12,12 @@ import (
 
 // Engine is the core proxy engine that manages listeners and handles traffic.
 type Engine struct {
-	config model.ProxyConfig
+	config model.ProxyConfig // immutable after construction
 	logger *slog.Logger
 
 	mu     sync.Mutex
 	state  constant.EngineState
+	ctx    context.Context
 	cancel context.CancelFunc
 }
 
@@ -40,7 +41,8 @@ func (e *Engine) Start(ctx context.Context) error {
 
 	e.state = constant.EngineStateStarting
 
-	_, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	e.ctx = ctx
 	e.cancel = cancel
 
 	e.state = constant.EngineStateRunning
@@ -66,6 +68,7 @@ func (e *Engine) Stop(_ context.Context) error {
 	if e.cancel != nil {
 		e.cancel()
 		e.cancel = nil
+		e.ctx = nil
 	}
 
 	e.state = constant.EngineStateStopped
