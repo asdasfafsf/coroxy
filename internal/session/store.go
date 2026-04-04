@@ -2,6 +2,7 @@ package session
 
 import (
 	"sort"
+	"strings"
 	"sync"
 
 	"coroxy/internal/model"
@@ -57,6 +58,25 @@ func (s *MemoryStore) List() []*model.Session {
 	return result
 }
 
+// ListWithFilter returns sessions matching the given filter, ordered by creation time (newest first).
+func (s *MemoryStore) ListWithFilter(filter model.SessionFilter) []*model.Session {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]*model.Session, 0)
+	for _, session := range s.sessions {
+		if matchSession(session, filter) {
+			result = append(result, session)
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.After(result[j].CreatedAt)
+	})
+
+	return result
+}
+
 // Update replaces an existing session. Does nothing if the session does not exist or is nil.
 func (s *MemoryStore) Update(session *model.Session) {
 	if session == nil {
@@ -93,4 +113,35 @@ func (s *MemoryStore) Count() int {
 	defer s.mu.RUnlock()
 
 	return len(s.sessions)
+}
+
+// matchSession checks if a session matches the filter criteria.
+func matchSession(s *model.Session, f model.SessionFilter) bool {
+	if f.Protocol != "" && s.Protocol != f.Protocol {
+		return false
+	}
+	if f.Host != "" && !strings.Contains(strings.ToLower(s.Target.Host), strings.ToLower(f.Host)) {
+		return false
+	}
+	if f.Method != "" && (s.Request == nil || !strings.EqualFold(s.Request.Method, f.Method)) {
+		return false
+	}
+	if f.StatusCode != 0 && (s.Response == nil || s.Response.StatusCode != f.StatusCode) {
+		return false
+	}
+	if f.State != "" && s.State != f.State {
+		return false
+	}
+	if f.Query != "" {
+		q := strings.ToLower(f.Query)
+		matched := strings.Contains(strings.ToLower(s.Target.Host), q)
+		if s.Request != nil {
+			matched = matched || strings.Contains(strings.ToLower(s.Request.URL), q)
+			matched = matched || strings.Contains(strings.ToLower(s.Request.Method), q)
+		}
+		if !matched {
+			return false
+		}
+	}
+	return true
 }
