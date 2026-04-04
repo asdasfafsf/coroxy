@@ -19,7 +19,7 @@ func newTestEngine(t *testing.T) *Engine {
 	}
 	logger := slog.Default()
 
-	return NewEngine(config, logger)
+	return NewEngine(config, logger, nil)
 }
 
 func TestEngineStartStop(t *testing.T) {
@@ -82,7 +82,7 @@ func TestEngineConfig(t *testing.T) {
 		HTTPAddr:  ":9090",
 		SOCKSAddr: ":1090",
 	}
-	e := NewEngine(config, slog.Default())
+	e := NewEngine(config, slog.Default(), nil)
 
 	got := e.Config()
 	if got.HTTPAddr != config.HTTPAddr {

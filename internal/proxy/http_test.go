@@ -15,7 +15,7 @@ import (
 
 func newTestHTTPProxy(t *testing.T) *HTTPProxy {
 	t.Helper()
-	return NewHTTPProxy(slog.Default())
+	return NewHTTPProxy(slog.Default(), nil)
 }
 
 func startProxyServer(t *testing.T, handler http.Handler) string {
