@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -21,6 +22,7 @@ type Engine struct {
 	state      constant.EngineState
 	cancel     context.CancelFunc
 	httpServer *http.Server
+	wg         sync.WaitGroup
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
@@ -43,7 +45,7 @@ func (e *Engine) Start(ctx context.Context) error {
 
 	e.state = constant.EngineStateStarting
 
-	_, cancel := context.WithCancel(ctx)
+	engineCtx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
 	httpProxy := NewHTTPProxy(e.logger)
@@ -57,18 +59,23 @@ func (e *Engine) Start(ctx context.Context) error {
 
 	e.httpServer = &http.Server{
 		Handler:  httpProxy,
+		BaseContext: func(_ net.Listener) context.Context {
+			return engineCtx
+		},
 		ErrorLog: slog.NewLogLogger(e.logger.Handler(), slog.LevelError),
 	}
 
+	e.wg.Add(1)
 	go func() {
-		if err := e.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+		defer e.wg.Done()
+		if err := e.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			e.logger.Error("http server error", slog.String("error", err.Error()))
 		}
 	}()
 
 	e.state = constant.EngineStateRunning
 	e.logger.Info("proxy engine started",
-		slog.String("http_addr", e.config.HTTPAddr),
+		slog.String("http_addr", listener.Addr().String()),
 	)
 
 	return nil
@@ -77,9 +84,9 @@ func (e *Engine) Start(ctx context.Context) error {
 // Stop gracefully shuts down all listeners.
 func (e *Engine) Stop(ctx context.Context) error {
 	e.mu.Lock()
-	defer e.mu.Unlock()
 
 	if e.state != constant.EngineStateRunning {
+		e.mu.Unlock()
 		return fmt.Errorf("stop engine: not running (state: %s)", e.state)
 	}
 
@@ -97,7 +104,13 @@ func (e *Engine) Stop(ctx context.Context) error {
 		e.cancel = nil
 	}
 
+	e.mu.Unlock()
+	e.wg.Wait()
+
+	e.mu.Lock()
 	e.state = constant.EngineStateStopped
+	e.mu.Unlock()
+
 	e.logger.Info("proxy engine stopped")
 
 	return nil
