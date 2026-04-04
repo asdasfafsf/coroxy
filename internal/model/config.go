@@ -9,7 +9,7 @@ type ProxyConfig struct {
 // DefaultProxyConfig returns a ProxyConfig with sensible defaults.
 func DefaultProxyConfig() ProxyConfig {
 	return ProxyConfig{
-		HTTPAddr:  ":8080",
-		SOCKSAddr: ":1080",
+		HTTPAddr:  ":8673",
+		SOCKSAddr: ":8674",
 	}
 }
