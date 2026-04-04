@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sync"
 
+	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
@@ -17,7 +18,7 @@ import (
 type Engine struct {
 	config    model.ProxyConfig // immutable after construction
 	logger    *slog.Logger
-	onSession SessionCallback
+	onSession adapter.SessionCallback
 
 	mu         sync.Mutex
 	state      constant.EngineState
@@ -27,7 +28,7 @@ type Engine struct {
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
-func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession SessionCallback) *Engine {
+func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback) *Engine {
 	return &Engine{
 		config:    config,
 		logger:    logger,

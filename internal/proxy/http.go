@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
@@ -29,18 +30,15 @@ var hopByHopHeaders = []string{
 	"Upgrade",
 }
 
-// SessionCallback is called when a new session is captured.
-type SessionCallback func(session *model.Session)
-
 // HTTPProxy handles HTTP forward proxy requests.
 type HTTPProxy struct {
 	logger    *slog.Logger
 	transport *http.Transport
-	onSession SessionCallback
+	onSession adapter.SessionCallback
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
-func NewHTTPProxy(logger *slog.Logger, onSession SessionCallback) *HTTPProxy {
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback) *HTTPProxy {
 	return &HTTPProxy{
 		logger:    logger,
 		onSession: onSession,
