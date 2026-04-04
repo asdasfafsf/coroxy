@@ -6,6 +6,9 @@ import (
 	"log/slog"
 
 	"coroxy/internal/app"
+	"coroxy/internal/model"
+	"coroxy/internal/proxy"
+	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -17,7 +20,16 @@ var assets embed.FS
 
 func main() {
 	logger := slog.Default()
-	a := app.NewApp(logger)
+	store := session.NewMemoryStore()
+
+	a := app.NewApp(nil, store) // engine set after creation for callback wiring
+
+	engine := proxy.NewEngine(
+		model.DefaultProxyConfig(),
+		logger,
+		a.HandleNewSession,
+	)
+	a.SetEngine(engine)
 
 	err := wails.Run(&options.App{
 		Title:  "Coroxy",

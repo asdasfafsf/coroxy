@@ -2,12 +2,9 @@ package app
 
 import (
 	"context"
-	"log/slog"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
-	"coroxy/internal/proxy"
-	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -15,28 +12,21 @@ import (
 // App is the Wails binding struct that bridges GUI and Core.
 type App struct {
 	ctx    context.Context
-	logger *slog.Logger
-	engine *proxy.Engine
+	engine adapter.ProxyEngine
 	store  adapter.SessionStore
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(logger *slog.Logger) *App {
-	store := session.NewMemoryStore()
-
-	a := &App{
-		logger: logger,
+func NewApp(engine adapter.ProxyEngine, store adapter.SessionStore) *App {
+	return &App{
+		engine: engine,
 		store:  store,
 	}
+}
 
-	engine := proxy.NewEngine(
-		model.DefaultProxyConfig(),
-		logger,
-		a.handleNewSession,
-	)
+// SetEngine sets the proxy engine. Used for wiring callbacks during assembly.
+func (a *App) SetEngine(engine adapter.ProxyEngine) {
 	a.engine = engine
-
-	return a
 }
 
 // Startup is called when the Wails app starts.
@@ -69,8 +59,8 @@ func (a *App) ClearSessions() {
 	a.store.Clear()
 }
 
-// handleNewSession is called by the proxy when a new session is captured.
-func (a *App) handleNewSession(s *model.Session) {
+// HandleNewSession is called by the proxy when a new session is captured.
+func (a *App) HandleNewSession(s *model.Session) {
 	a.store.Add(s)
 
 	if a.ctx != nil {
