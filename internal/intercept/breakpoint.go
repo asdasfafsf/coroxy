@@ -32,7 +32,12 @@ type Breakpoint struct {
 
 // NewBreakpoint creates a Breakpoint interceptor.
 // onPause is called when a request hits a breakpoint (for GUI notification).
+// onPause must not be nil — if no callback is provided, matched requests
+// will block forever since there is no way to call Resume.
 func NewBreakpoint(rules func() []*model.Rule, onPause func(*PendingRequest)) *Breakpoint {
+	if onPause == nil {
+		panic("breakpoint: onPause callback must not be nil")
+	}
 	return &Breakpoint{
 		rules:   rules,
 		onPause: onPause,
@@ -67,9 +72,7 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 			b.mu.Unlock()
 		}()
 
-		if b.onPause != nil {
-			b.onPause(pending)
-		}
+		b.onPause(pending)
 
 		// Block until Resume is called.
 		<-pending.resume

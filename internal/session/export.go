@@ -42,7 +42,7 @@ type HARRequest struct {
 	Headers     []HARNameValue  `json:"headers"`
 	QueryString []HARNameValue  `json:"queryString"`
 	HeadersSize int             `json:"headersSize"`
-	BodySize    int             `json:"bodySize"`
+	BodySize    int64           `json:"bodySize"`
 }
 
 // HARResponse represents an HTTP response in HAR format.

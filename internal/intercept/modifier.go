@@ -58,6 +58,7 @@ func (m *Modifier) OnResponse(resp *http.Response, _ *model.Session) adapter.Act
 }
 
 // applyHeaderMod applies a single header modification.
+// Valid operations: "set", "add", "delete". Unknown operations are ignored.
 func applyHeaderMod(h http.Header, mod model.HeaderModification) {
 	switch mod.Operation {
 	case "set":
@@ -66,5 +67,8 @@ func applyHeaderMod(h http.Header, mod model.HeaderModification) {
 		h.Add(mod.Name, mod.Value)
 	case "delete":
 		h.Del(mod.Name)
+	default:
+		// Unknown operation — silently ignored.
+		// Rule validation should catch this at creation time.
 	}
 }
