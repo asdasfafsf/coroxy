@@ -9,14 +9,16 @@ import (
 	"net/http"
 	"sync"
 
+	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
 // Engine is the core proxy engine that manages listeners and handles traffic.
 type Engine struct {
-	config model.ProxyConfig // immutable after construction
-	logger *slog.Logger
+	config    model.ProxyConfig // immutable after construction
+	logger    *slog.Logger
+	onSession adapter.SessionCallback
 
 	mu         sync.Mutex
 	state      constant.EngineState
@@ -26,11 +28,12 @@ type Engine struct {
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
-func NewEngine(config model.ProxyConfig, logger *slog.Logger) *Engine {
+func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback) *Engine {
 	return &Engine{
-		config: config,
-		logger: logger,
-		state:  constant.EngineStateStopped,
+		config:    config,
+		logger:    logger,
+		onSession: onSession,
+		state:     constant.EngineStateStopped,
 	}
 }
 
@@ -48,7 +51,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	engineCtx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
-	httpProxy := NewHTTPProxy(e.logger)
+	httpProxy := NewHTTPProxy(e.logger, e.onSession)
 	listener, err := net.Listen("tcp", e.config.HTTPAddr)
 	if err != nil {
 		e.state = constant.EngineStateStopped
@@ -65,10 +68,11 @@ func (e *Engine) Start(ctx context.Context) error {
 		ErrorLog: slog.NewLogLogger(e.logger.Handler(), slog.LevelError),
 	}
 
+	server := e.httpServer
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()
-		if err := e.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			e.logger.Error("http server error", slog.String("error", err.Error()))
 		}
 	}()

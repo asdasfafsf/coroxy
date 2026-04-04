@@ -9,13 +9,23 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
+
+	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
+	"coroxy/internal/model"
 )
 
 func newTestHTTPProxy(t *testing.T) *HTTPProxy {
 	t.Helper()
-	return NewHTTPProxy(slog.Default())
+	return NewHTTPProxy(slog.Default(), nil)
+}
+
+func newTestHTTPProxyWithCallback(t *testing.T, cb adapter.SessionCallback) *HTTPProxy {
+	t.Helper()
+	return NewHTTPProxy(slog.Default(), cb)
 }
 
 func startProxyServer(t *testing.T, handler http.Handler) string {
@@ -200,5 +210,94 @@ func TestHTTPProxyTargetServerError(t *testing.T) {
 
 	if resp.StatusCode != http.StatusInternalServerError {
 		t.Fatalf("status: got %d, want %d", resp.StatusCode, http.StatusInternalServerError)
+	}
+}
+
+func TestHTTPProxySessionCapture(t *testing.T) {
+	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "captured")
+	}))
+	defer target.Close()
+
+	var mu sync.Mutex
+	var captured []*model.Session
+
+	cb := func(s *model.Session) {
+		mu.Lock()
+		defer mu.Unlock()
+		captured = append(captured, s)
+	}
+
+	proxy := newTestHTTPProxyWithCallback(t, cb)
+	proxyAddr := startProxyServer(t, proxy)
+	client := proxyClient(t, proxyAddr)
+
+	resp, err := client.Get(target.URL + "/test")
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(captured) != 1 {
+		t.Fatalf("captured sessions: got %d, want 1", len(captured))
+	}
+
+	s := captured[0]
+	if s.Protocol != constant.ProtocolHTTP {
+		t.Fatalf("protocol: got %s, want HTTP", s.Protocol)
+	}
+	if s.Request == nil {
+		t.Fatal("request: got nil")
+	}
+	if s.Request.Method != "GET" {
+		t.Fatalf("method: got %s, want GET", s.Request.Method)
+	}
+	if s.Response == nil {
+		t.Fatal("response: got nil")
+	}
+	if s.Response.StatusCode != 200 {
+		t.Fatalf("status code: got %d, want 200", s.Response.StatusCode)
+	}
+}
+
+func TestHTTPProxyConnectSessionCapture(t *testing.T) {
+	target := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "tls captured")
+	}))
+	defer target.Close()
+
+	var mu sync.Mutex
+	var captured []*model.Session
+
+	cb := func(s *model.Session) {
+		mu.Lock()
+		defer mu.Unlock()
+		captured = append(captured, s)
+	}
+
+	proxy := newTestHTTPProxyWithCallback(t, cb)
+	proxyAddr := startProxyServer(t, proxy)
+	client := proxyClient(t, proxyAddr)
+
+	resp, err := client.Get(target.URL)
+	if err != nil {
+		t.Fatalf("get via connect: %v", err)
+	}
+	_ = resp.Body.Close()
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if len(captured) != 1 {
+		t.Fatalf("captured sessions: got %d, want 1", len(captured))
+	}
+
+	s := captured[0]
+	if s.Protocol != constant.ProtocolTLS {
+		t.Fatalf("protocol: got %s, want TLS", s.Protocol)
 	}
 }

@@ -6,8 +6,15 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
+
+	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
+	"coroxy/internal/model"
+
+	"github.com/google/uuid"
 )
 
 // hopByHopHeaders lists headers that must not be forwarded by a proxy.
@@ -27,12 +34,14 @@ var hopByHopHeaders = []string{
 type HTTPProxy struct {
 	logger    *slog.Logger
 	transport *http.Transport
+	onSession adapter.SessionCallback
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
-func NewHTTPProxy(logger *slog.Logger) *HTTPProxy {
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback) *HTTPProxy {
 	return &HTTPProxy{
-		logger: logger,
+		logger:    logger,
+		onSession: onSession,
 		transport: &http.Transport{
 			DialContext:           (&net.Dialer{Timeout: 30 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -60,6 +69,8 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	start := time.Now()
+
 	outReq := r.Clone(r.Context())
 	outReq.RequestURI = ""
 	removeHopByHopHeaders(outReq.Header)
@@ -79,12 +90,15 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
-	if _, err := io.Copy(w, resp.Body); err != nil {
+	written, copyErr := io.Copy(w, resp.Body)
+	if copyErr != nil {
 		h.logger.Error("copy response body",
 			slog.String("host", r.Host),
-			slog.String("error", err.Error()),
+			slog.String("error", copyErr.Error()),
 		)
 	}
+
+	h.captureHTTPSession(r, resp, written, start)
 }
 
 // handleConnect establishes a TCP tunnel for CONNECT requests (HTTPS passthrough).
@@ -128,6 +142,8 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.captureTunnelSession(r, host)
+
 	go func() {
 		defer func() { _ = clientConn.Close() }()
 		defer func() { _ = targetConn.Close() }()
@@ -139,6 +155,79 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		defer func() { _ = clientConn.Close() }()
 		_, _ = io.Copy(clientConn, targetConn)
 	}()
+}
+
+// captureHTTPSession creates a session from an HTTP request/response and notifies the callback.
+func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bodySize int64, start time.Time) {
+	if h.onSession == nil {
+		return
+	}
+
+	targetHost, targetPort := splitHostPort(r.Host, 80)
+
+	session := &model.Session{
+		ID:       uuid.NewString(),
+		Protocol: constant.ProtocolHTTP,
+		Source:   endpointFromAddr(r.RemoteAddr),
+		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
+		Request: &model.HTTPMessage{
+			Method:  r.Method,
+			URL:     r.URL.String(),
+			Headers: r.Header.Clone(),
+		},
+		Response: &model.HTTPMessage{
+			StatusCode: resp.StatusCode,
+			StatusText: resp.Status,
+			Headers:    resp.Header.Clone(),
+			BodySize:   bodySize,
+		},
+		State:     constant.SessionStateCompleted,
+		CreatedAt: start,
+		Duration:  time.Since(start),
+	}
+
+	h.onSession(session)
+}
+
+// captureTunnelSession creates a session for a CONNECT tunnel.
+func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
+	if h.onSession == nil {
+		return
+	}
+
+	targetHost, targetPort := splitHostPort(host, 443)
+
+	session := &model.Session{
+		ID:       uuid.NewString(),
+		Protocol: constant.ProtocolTLS,
+		Source:   endpointFromAddr(r.RemoteAddr),
+		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
+		State:    constant.SessionStateActive,
+		CreatedAt: time.Now(),
+	}
+
+	h.onSession(session)
+}
+
+// splitHostPort parses host:port with a default port fallback.
+func splitHostPort(addr string, defaultPort int) (string, int) {
+	host, portStr, err := net.SplitHostPort(addr)
+	if err != nil {
+		return addr, defaultPort
+	}
+
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return host, defaultPort
+	}
+
+	return host, port
+}
+
+// endpointFromAddr parses a remote address string into an Endpoint.
+func endpointFromAddr(addr string) model.Endpoint {
+	host, port := splitHostPort(addr, 0)
+	return model.Endpoint{Host: host, Port: port}
 }
 
 // removeHopByHopHeaders removes hop-by-hop headers from h.

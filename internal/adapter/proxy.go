@@ -7,6 +7,9 @@ import (
 	"coroxy/internal/model"
 )
 
+// SessionCallback is called when a new session is captured.
+type SessionCallback func(session *model.Session)
+
 // ProxyEngine defines the interface for controlling the proxy engine.
 type ProxyEngine interface {
 	// Start begins listening on configured addresses.
