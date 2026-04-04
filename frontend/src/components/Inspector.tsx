@@ -237,6 +237,11 @@ function CookieTable({ cookies }: { cookies: model.HTTPCookie[] | undefined | nu
 // --- Body View ---
 
 function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array | string | undefined | null; contentType?: string; size?: number }) {
+  // Image preview for image/* content types.
+  if (contentType?.startsWith('image/') && body) {
+    return <ImagePreview body={body} contentType={contentType} size={size} />;
+  }
+
   const decoded = decodeBody(body);
 
   if (!decoded) {
@@ -251,6 +256,41 @@ function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array 
       <pre className="whitespace-pre-wrap text-[#cdd6f4] text-xs leading-5 bg-[#11111b] p-3 rounded max-h-[400px] overflow-auto">
         {formatBody(decoded, contentType)}
       </pre>
+    </div>
+  );
+}
+
+function ImagePreview({ body, contentType, size }: { body: number[] | Uint8Array | string; contentType: string; size?: number }) {
+  const bytes = typeof body === 'string'
+    ? new TextEncoder().encode(body)
+    : body instanceof Uint8Array ? body : new Uint8Array(body);
+
+  // SVG can be displayed as text.
+  if (contentType.includes('svg')) {
+    const svgText = new TextDecoder().decode(bytes);
+    return (
+      <div>
+        <div className="text-[#6c7086] text-xs mb-2">{formatSize(size)} · {contentType}</div>
+        <div className="bg-[#11111b] p-4 rounded flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgText }} />
+      </div>
+    );
+  }
+
+  // Binary images: convert to data URL.
+  const mime = contentType.split(';')[0].trim();
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = btoa(binary);
+  const dataUrl = `data:${mime};base64,${base64}`;
+
+  return (
+    <div>
+      <div className="text-[#6c7086] text-xs mb-2">{formatSize(size)} · {contentType}</div>
+      <div className="bg-[#11111b] p-4 rounded flex items-center justify-center">
+        <img src={dataUrl} alt="Response body" className="max-w-full max-h-[400px] object-contain" />
+      </div>
     </div>
   );
 }
