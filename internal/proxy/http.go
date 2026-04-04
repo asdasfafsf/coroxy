@@ -177,18 +177,27 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Passthrough: no MITM, just relay bytes.
-	h.captureTunnelSession(r, host)
+	start := time.Now()
 
+	done := make(chan struct{}, 2)
 	go func() {
 		defer func() { _ = clientConn.Close() }()
 		defer func() { _ = targetConn.Close() }()
 		_, _ = io.Copy(targetConn, clientConn)
+		done <- struct{}{}
 	}()
 
 	go func() {
 		defer func() { _ = targetConn.Close() }()
 		defer func() { _ = clientConn.Close() }()
 		_, _ = io.Copy(clientConn, targetConn)
+		done <- struct{}{}
+	}()
+
+	// Wait for one direction to finish, then capture session.
+	go func() {
+		<-done
+		h.captureTunnelSession(r, host, time.Since(start))
 	}()
 }
 
@@ -224,8 +233,8 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bod
 	h.onSession(session)
 }
 
-// captureTunnelSession creates a session for a CONNECT tunnel.
-func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
+// captureTunnelSession creates a session for a completed CONNECT tunnel.
+func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string, duration time.Duration) {
 	if h.onSession == nil {
 		return
 	}
@@ -237,8 +246,9 @@ func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
 		Protocol: constant.ProtocolTLS,
 		Source:   endpointFromAddr(r.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		State:    constant.SessionStateActive,
-		CreatedAt: time.Now(),
+		State:     constant.SessionStateCompleted,
+		CreatedAt: time.Now().Add(-duration),
+		Duration:  duration,
 	}
 
 	h.onSession(session)
