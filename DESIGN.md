@@ -88,8 +88,8 @@ Fiddler와 유사한 네트워크 디버깅 프록시 프로그램을 새로 만
 
 | Listener | 포트 | 역할 |
 |----------|------|------|
-| **HTTP(S) Proxy** | 기본 8080 | 브라우저/앱이 HTTP 프록시로 설정하면 여기로 연결. CONNECT 메서드로 HTTPS 터널링 |
-| **SOCKS5 Proxy** | 기본 1080 | 임의의 TCP 연결을 중계. DB, gRPC, 커스텀 프로토콜 등 HTTP가 아닌 TCP 트래픽 캡처 |
+| **HTTP(S) Proxy** | 기본 8673 | 브라우저/앱이 HTTP 프록시로 설정하면 여기로 연결. CONNECT 메서드로 HTTPS 터널링 |
+| **SOCKS5 Proxy** | 기본 8674 | 임의의 TCP 연결을 중계. DB, gRPC, 커스텀 프로토콜 등 HTTP가 아닌 TCP 트래픽 캡처 |
 | **UDP Listener** | 설정 가능 | 특정 포트별 UDP 패킷 포워딩. DNS(53), 게임 트래픽 등 |
 
 ### 2. Protocol Detector
@@ -267,7 +267,7 @@ type Session struct {
 │                                │  │                  │  │
 │                                │  └──────────────────┘  │
 ├────────────────────────────────┴────────────────────────┤
-│ Status: Listening on :8080 (HTTP) :1080 (SOCKS5)  │ 42 │
+│ Status: Listening on :8673 (HTTP) :8674 (SOCKS5)  │ 42 │
 └─────────────────────────────────────────────────────────┘
 ```
 
