@@ -68,10 +68,11 @@ func (e *Engine) Start(ctx context.Context) error {
 		ErrorLog: slog.NewLogLogger(e.logger.Handler(), slog.LevelError),
 	}
 
+	server := e.httpServer
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()
-		if err := e.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			e.logger.Error("http server error", slog.String("error", err.Error()))
 		}
 	}()
