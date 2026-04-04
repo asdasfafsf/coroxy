@@ -111,7 +111,7 @@ func (s *SOCKS5Proxy) handshake(conn net.Conn) error {
 		}
 	}
 	if !hasNoAuth {
-		conn.Write([]byte{socks5Version, 0xFF}) // no acceptable method
+		_, _ = conn.Write([]byte{socks5Version, 0xFF}) // no acceptable method
 		return fmt.Errorf("no acceptable auth method")
 	}
 

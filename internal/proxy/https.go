@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"coroxy/internal/cert"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
@@ -21,7 +20,7 @@ import (
 // handleMITM performs HTTPS MITM interception on a CONNECT tunnel.
 // Returns true if MITM succeeded (caller should not do anything else).
 // Returns false if MITM setup failed (caller should fall back to passthrough).
-func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert.Manager) bool {
+func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, mitm MITMProvider) bool {
 	// 1. Connect to target server via TLS to obtain original certificate.
 	targetTLSConn, err := tls.DialWithDialer(
 		&net.Dialer{Timeout: 30 * time.Second},
@@ -46,7 +45,7 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert
 	}
 
 	// 3. Issue leaf certificate for this host.
-	leafCert, err := caManager.IssueCert(hostOnly(host), originalCert)
+	leafCert, err := mitm.IssueCert(hostOnly(host), originalCert)
 	if err != nil {
 		_ = targetTLSConn.Close()
 		h.logger.Warn("mitm: issue cert failed, falling back to passthrough",
@@ -140,9 +139,17 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 
 		removeHopByHopHeaders(resp.Header)
 
-		// Read response body for capture.
-		bodyBytes, _ := io.ReadAll(resp.Body)
+		// Read response body for capture (limit to 32MB to prevent OOM).
+		const maxBodySize = 32 << 20
+		bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
 		_ = resp.Body.Close()
+		if err != nil {
+			h.logger.Error("read response body",
+				slog.String("host", host),
+				slog.String("error", err.Error()),
+			)
+			return
+		}
 
 		// Replace body so resp.Write sends the full content.
 		resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))

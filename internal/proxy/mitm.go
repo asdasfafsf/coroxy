@@ -1,6 +1,9 @@
 package proxy
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+
 	"coroxy/internal/cert"
 )
 
@@ -21,9 +24,9 @@ func (p *ProductionMITM) ShouldIntercept() bool {
 	return installed
 }
 
-// CertManager returns the underlying cert.Manager.
-func (p *ProductionMITM) CertManager() *cert.Manager {
-	return p.manager
+// IssueCert generates a leaf certificate for the given host.
+func (p *ProductionMITM) IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error) {
+	return p.manager.IssueCert(host, originalCert)
 }
 
 // TestMITM implements MITMProvider for testing.
@@ -42,7 +45,7 @@ func (t *TestMITM) ShouldIntercept() bool {
 	return true
 }
 
-// CertManager returns the underlying cert.Manager.
-func (t *TestMITM) CertManager() *cert.Manager {
-	return t.manager
+// IssueCert generates a leaf certificate for the given host.
+func (t *TestMITM) IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error) {
+	return t.manager.IssueCert(host, originalCert)
 }
