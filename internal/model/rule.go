@@ -8,6 +8,7 @@ const (
 	RuleActionDelay        RuleAction = "delay"
 	RuleActionModifyHeader RuleAction = "modify_header"
 	RuleActionAutoRespond  RuleAction = "auto_respond"
+	RuleActionBreakpoint   RuleAction = "breakpoint"
 )
 
 // MatchCondition defines criteria for matching HTTP traffic.
