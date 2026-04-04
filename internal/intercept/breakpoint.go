@@ -2,10 +2,10 @@ package intercept
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -17,6 +17,7 @@ type PendingRequest struct {
 	Request *http.Request
 	RuleID  string
 	resume  chan struct{}
+	once    sync.Once
 }
 
 // Breakpoint intercepts requests matching breakpoint rules and pauses them
@@ -31,7 +32,12 @@ type Breakpoint struct {
 
 // NewBreakpoint creates a Breakpoint interceptor.
 // onPause is called when a request hits a breakpoint (for GUI notification).
+// onPause must not be nil — if no callback is provided, matched requests
+// will block forever since there is no way to call Resume.
 func NewBreakpoint(rules func() []*model.Rule, onPause func(*PendingRequest)) *Breakpoint {
+	if onPause == nil {
+		panic("breakpoint: onPause callback must not be nil")
+	}
 	return &Breakpoint{
 		rules:   rules,
 		onPause: onPause,
@@ -45,7 +51,7 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 		if !r.Enabled || r.Action != model.RuleActionBreakpoint {
 			continue
 		}
-		if !matchRequestForBreakpoint(r.Match, req) {
+		if !MatchRequest(r.Match, req) {
 			continue
 		}
 
@@ -60,16 +66,16 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 		b.pending[pending.ID] = pending
 		b.mu.Unlock()
 
-		if b.onPause != nil {
-			b.onPause(pending)
-		}
+		defer func() {
+			b.mu.Lock()
+			delete(b.pending, pending.ID)
+			b.mu.Unlock()
+		}()
+
+		b.onPause(pending)
 
 		// Block until Resume is called.
 		<-pending.resume
-
-		b.mu.Lock()
-		delete(b.pending, pending.ID)
-		b.mu.Unlock()
 
 		return adapter.ActionForward
 	}
@@ -89,7 +95,7 @@ func (b *Breakpoint) Resume(pendingID string) {
 	b.mu.Unlock()
 
 	if ok {
-		close(pending.resume)
+		pending.once.Do(func() { close(pending.resume) })
 	}
 }
 
@@ -101,8 +107,8 @@ func (b *Breakpoint) Drop(pendingID string) {
 
 	if ok {
 		// Signal resume but mark request as dropped via header.
-		pending.Request.Header.Set("X-Coroxy-Breakpoint-Dropped", "true")
-		close(pending.resume)
+		pending.Request.Header.Set(constant.HeaderBreakpointDropped, "true")
+		pending.once.Do(func() { close(pending.resume) })
 	}
 }
 
@@ -116,28 +122,4 @@ func (b *Breakpoint) PendingRequests() []*PendingRequest {
 		result = append(result, p)
 	}
 	return result
-}
-
-func matchRequestForBreakpoint(cond model.MatchCondition, req *http.Request) bool {
-	if cond.Method != "" && !strings.EqualFold(cond.Method, req.Method) {
-		return false
-	}
-	if cond.Host != "" && !matchHostForBreakpoint(cond.Host, req.Host) {
-		return false
-	}
-	if cond.Path != "" && !strings.HasPrefix(req.URL.Path, cond.Path) {
-		return false
-	}
-	return true
-}
-
-func matchHostForBreakpoint(pattern, host string) bool {
-	if idx := strings.LastIndex(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	if strings.HasPrefix(pattern, "*.") {
-		suffix := pattern[1:]
-		return strings.HasSuffix(host, suffix) || host == pattern[2:]
-	}
-	return strings.EqualFold(pattern, host)
 }

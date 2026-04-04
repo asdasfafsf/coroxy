@@ -2,6 +2,7 @@ package intercept
 
 import (
 	"net/http"
+	"sync"
 	"testing"
 
 	"coroxy/internal/adapter"
@@ -116,6 +117,75 @@ func TestPipelineRemove(t *testing.T) {
 	if i2.reqCalls != 1 {
 		t.Fatal("remaining interceptor should be called")
 	}
+}
+
+// safeInterceptor is a thread-safe interceptor for concurrent tests.
+type safeInterceptor struct {
+	reqAction adapter.Action
+}
+
+func (s *safeInterceptor) OnRequest(_ *http.Request, _ *model.Session) adapter.Action {
+	return s.reqAction
+}
+
+func (s *safeInterceptor) OnResponse(_ *http.Response, _ *model.Session) adapter.Action {
+	return adapter.ActionForward
+}
+
+func TestPipelineConcurrentAddRemoveProcess(t *testing.T) {
+	p := NewPipeline()
+
+	var wg sync.WaitGroup
+	const goroutines = 10
+
+	interceptors := make([]*safeInterceptor, goroutines)
+	for i := range interceptors {
+		interceptors[i] = &safeInterceptor{reqAction: adapter.ActionForward}
+	}
+
+	// Concurrent adds.
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			p.Add(interceptors[idx])
+		}(i)
+	}
+
+	// Concurrent process while adds are happening.
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, _ := http.NewRequest("GET", "http://example.com", nil)
+			p.ProcessRequest(req, nil)
+		}()
+	}
+
+	wg.Wait()
+
+	if p.Count() != goroutines {
+		t.Fatalf("count: got %d, want %d", p.Count(), goroutines)
+	}
+
+	// Concurrent remove + process.
+	var wg2 sync.WaitGroup
+	for i := 0; i < goroutines/2; i++ {
+		wg2.Add(1)
+		go func(idx int) {
+			defer wg2.Done()
+			p.Remove(interceptors[idx])
+		}(i)
+	}
+	for i := 0; i < goroutines; i++ {
+		wg2.Add(1)
+		go func() {
+			defer wg2.Done()
+			req, _ := http.NewRequest("GET", "http://example.com", nil)
+			p.ProcessRequest(req, nil)
+		}()
+	}
+	wg2.Wait()
 }
 
 func TestPipelineCount(t *testing.T) {

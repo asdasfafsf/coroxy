@@ -78,7 +78,9 @@ func TestExportHARSkipsNonHTTP(t *testing.T) {
 	}
 
 	var har HAR
-	json.Unmarshal(data, &har)
+	if err := json.Unmarshal(data, &har); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	if len(har.Log.Entries) != 1 {
 		t.Fatalf("entries: got %d, want 1 (TCP should be skipped)", len(har.Log.Entries))
@@ -92,10 +94,47 @@ func TestExportHAREmpty(t *testing.T) {
 	}
 
 	var har HAR
-	json.Unmarshal(data, &har)
+	if err := json.Unmarshal(data, &har); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
 
 	if len(har.Log.Entries) != 0 {
 		t.Fatalf("entries: got %d, want 0", len(har.Log.Entries))
+	}
+}
+
+func TestExportHARRequestOnly(t *testing.T) {
+	sessions := []*model.Session{
+		{
+			ID:        "pending1",
+			Protocol:  constant.ProtocolHTTP,
+			CreatedAt: time.Now(),
+			Request: &model.HTTPMessage{
+				Method: "GET",
+				URL:    "http://example.com/pending",
+			},
+			Response: nil,
+		},
+	}
+
+	data, err := ExportHAR(sessions)
+	if err != nil {
+		t.Fatalf("ExportHAR: %v", err)
+	}
+
+	var har HAR
+	if err := json.Unmarshal(data, &har); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if len(har.Log.Entries) != 1 {
+		t.Fatalf("entries: got %d, want 1", len(har.Log.Entries))
+	}
+	if har.Log.Entries[0].Response.Status != 0 {
+		t.Fatalf("response status: got %d, want 0", har.Log.Entries[0].Response.Status)
+	}
+	if har.Log.Entries[0].Request.Method != "GET" {
+		t.Fatalf("method: got %s, want GET", har.Log.Entries[0].Request.Method)
 	}
 }
 
