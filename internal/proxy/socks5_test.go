@@ -130,6 +130,10 @@ func TestSOCKS5Connect(t *testing.T) {
 		t.Fatalf("echo: got %q, want %q", string(buf[:n]), "hello socks5")
 	}
 
+	// Close connection and wait for session capture.
+	conn.Close()
+	time.Sleep(100 * time.Millisecond)
+
 	// Verify session captured.
 	mu.Lock()
 	defer mu.Unlock()

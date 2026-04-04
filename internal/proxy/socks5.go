@@ -70,7 +70,7 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 
 	s.sendReply(clientConn, socks5Success)
 
-	s.captureSession(targetAddr)
+	start := time.Now()
 
 	// Relay bidirectional traffic.
 	done := make(chan struct{}, 2)
@@ -83,6 +83,8 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 		done <- struct{}{}
 	}()
 	<-done
+
+	s.captureSession(targetAddr, time.Since(start))
 }
 
 // handshake performs SOCKS5 version and auth method negotiation.
@@ -179,8 +181,8 @@ func (s *SOCKS5Proxy) sendReply(conn net.Conn, status byte) {
 	_, _ = conn.Write(reply)
 }
 
-// captureSession creates a TCP session record.
-func (s *SOCKS5Proxy) captureSession(targetAddr string) {
+// captureSession creates a completed TCP session record.
+func (s *SOCKS5Proxy) captureSession(targetAddr string, duration time.Duration) {
 	if s.onSession == nil {
 		return
 	}
@@ -191,8 +193,9 @@ func (s *SOCKS5Proxy) captureSession(targetAddr string) {
 		ID:        uuid.NewString(),
 		Protocol:  constant.ProtocolTCP,
 		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
-		State:     constant.SessionStateActive,
-		CreatedAt: time.Now(),
+		State:     constant.SessionStateCompleted,
+		CreatedAt: time.Now().Add(-duration),
+		Duration:  duration,
 	}
 
 	s.onSession(session)

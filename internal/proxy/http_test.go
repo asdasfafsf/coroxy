@@ -288,6 +288,8 @@ func TestHTTPProxyConnectSessionCapture(t *testing.T) {
 		t.Fatalf("get via connect: %v", err)
 	}
 	_ = resp.Body.Close()
+	client.CloseIdleConnections()
+	time.Sleep(100 * time.Millisecond) // wait for async session capture
 
 	mu.Lock()
 	defer mu.Unlock()

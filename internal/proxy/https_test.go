@@ -149,6 +149,9 @@ func TestMITMWithoutCAFallsBackToPassthrough(t *testing.T) {
 		t.Fatalf("body: got %q, want %q", string(body), "passthrough")
 	}
 
+	client.CloseIdleConnections()
+	time.Sleep(100 * time.Millisecond)
+
 	// Passthrough should capture a tunnel session (no request/response details).
 	mu.Lock()
 	defer mu.Unlock()
