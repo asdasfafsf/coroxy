@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// hop-by-hop headers that must not be forwarded by a proxy.
+// hopByHopHeaders lists headers that must not be forwarded by a proxy.
 // https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
 var hopByHopHeaders = []string{
 	"Connection",
@@ -56,7 +56,7 @@ func (h *HTTPProxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // handleHTTP forwards a regular HTTP request to the target server.
 func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	if !r.URL.IsAbs() {
-		http.Error(w, "absolute URL required for proxy requests", http.StatusBadRequest)
+		http.Error(w, "proxy: absolute URL required", http.StatusBadRequest)
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 			slog.String("host", r.Host),
 			slog.String("error", err.Error()),
 		)
-		http.Error(w, fmt.Sprintf("proxy error: %v", err), http.StatusBadGateway)
+		http.Error(w, "proxy: bad gateway", http.StatusBadGateway)
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()
@@ -89,57 +89,70 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 
 // handleConnect establishes a TCP tunnel for CONNECT requests (HTTPS passthrough).
 func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
-	targetConn, err := net.DialTimeout("tcp", r.Host, 30*time.Second)
+	host := r.Host
+	if _, _, err := net.SplitHostPort(host); err != nil {
+		host = net.JoinHostPort(host, "443")
+	}
+
+	targetConn, err := net.DialTimeout("tcp", host, 30*time.Second)
 	if err != nil {
 		h.logger.Error("connect to target",
-			slog.String("host", r.Host),
+			slog.String("host", host),
 			slog.String("error", err.Error()),
 		)
-		http.Error(w, fmt.Sprintf("connect error: %v", err), http.StatusBadGateway)
+		http.Error(w, "proxy: connection failed", http.StatusBadGateway)
 		return
 	}
 
 	hijacker, ok := w.(http.Hijacker)
 	if !ok {
 		_ = targetConn.Close()
-		http.Error(w, "hijack not supported", http.StatusInternalServerError)
+		http.Error(w, "proxy: hijack not supported", http.StatusInternalServerError)
 		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 
 	clientConn, _, err := hijacker.Hijack()
 	if err != nil {
 		_ = targetConn.Close()
 		h.logger.Error("hijack client connection",
-			slog.String("host", r.Host),
+			slog.String("host", host),
 			slog.String("error", err.Error()),
 		)
 		return
 	}
 
-	go relay(targetConn, clientConn)
-	go relay(clientConn, targetConn)
-}
+	// Write 200 response directly to hijacked connection.
+	if _, err := fmt.Fprint(clientConn, "HTTP/1.1 200 Connection Established\r\n\r\n"); err != nil {
+		_ = clientConn.Close()
+		_ = targetConn.Close()
+		return
+	}
 
-// relay copies data from src to dst and closes dst when done.
-func relay(dst, src net.Conn) {
-	defer func() { _ = dst.Close() }()
-	_, _ = io.Copy(dst, src)
+	go func() {
+		defer func() { _ = clientConn.Close() }()
+		defer func() { _ = targetConn.Close() }()
+		_, _ = io.Copy(targetConn, clientConn)
+	}()
+
+	go func() {
+		defer func() { _ = targetConn.Close() }()
+		defer func() { _ = clientConn.Close() }()
+		_, _ = io.Copy(clientConn, targetConn)
+	}()
 }
 
 // removeHopByHopHeaders removes hop-by-hop headers from h.
-// It also removes headers listed in the Connection header.
+// It also removes headers listed in the Connection header value.
 func removeHopByHopHeaders(h http.Header) {
-	for _, header := range hopByHopHeaders {
-		h.Del(header)
-	}
-
-	// Remove headers listed in the Connection header value.
+	// Remove headers listed in Connection before deleting Connection itself.
 	if conn := h.Get("Connection"); conn != "" {
 		for _, name := range strings.Split(conn, ",") {
 			h.Del(strings.TrimSpace(name))
 		}
+	}
+
+	for _, header := range hopByHopHeaders {
+		h.Del(header)
 	}
 }
 
