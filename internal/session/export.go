@@ -149,6 +149,15 @@ func convertHeaders(headers map[string][]string) []HARNameValue {
 	return result
 }
 
+// ExportJSON converts sessions to a JSON array.
+func ExportJSON(sessions []*model.Session) ([]byte, error) {
+	data, err := json.MarshalIndent(sessions, "", "  ")
+	if err != nil {
+		return nil, fmt.Errorf("marshal JSON: %w", err)
+	}
+	return data, nil
+}
+
 func getContentType(msg *model.HTTPMessage) string {
 	if msg.Headers == nil {
 		return ""
