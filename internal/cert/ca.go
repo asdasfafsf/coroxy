@@ -60,11 +60,14 @@ func NewManager(dataDir string) (*Manager, error) {
 func (m *Manager) CAInfo() model.CAInfo {
 	fingerprint := sha256.Sum256(m.rootCA.Raw)
 
+	installed, _ := m.IsCAInstalled()
+
 	return model.CAInfo{
 		CommonName:  m.rootCA.Subject.CommonName,
 		Fingerprint: fmt.Sprintf("%x", fingerprint),
 		CreatedAt:   m.rootCA.NotBefore,
 		ExpiresAt:   m.rootCA.NotAfter,
+		Installed:   installed,
 	}
 }
 
