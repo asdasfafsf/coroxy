@@ -2,7 +2,6 @@ package intercept
 
 import (
 	"net/http"
-	"strings"
 	"sync"
 
 	"coroxy/internal/adapter"
@@ -46,7 +45,7 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 		if !r.Enabled || r.Action != model.RuleActionBreakpoint {
 			continue
 		}
-		if !matchRequestForBreakpoint(r.Match, req) {
+		if !MatchRequest(r.Match, req) {
 			continue
 		}
 
@@ -119,28 +118,4 @@ func (b *Breakpoint) PendingRequests() []*PendingRequest {
 		result = append(result, p)
 	}
 	return result
-}
-
-func matchRequestForBreakpoint(cond model.MatchCondition, req *http.Request) bool {
-	if cond.Method != "" && !strings.EqualFold(cond.Method, req.Method) {
-		return false
-	}
-	if cond.Host != "" && !matchHostForBreakpoint(cond.Host, req.Host) {
-		return false
-	}
-	if cond.Path != "" && !strings.HasPrefix(req.URL.Path, cond.Path) {
-		return false
-	}
-	return true
-}
-
-func matchHostForBreakpoint(pattern, host string) bool {
-	if idx := strings.LastIndex(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	if strings.HasPrefix(pattern, "*.") {
-		suffix := pattern[1:]
-		return strings.HasSuffix(host, suffix) || host == pattern[2:]
-	}
-	return strings.EqualFold(pattern, host)
 }
