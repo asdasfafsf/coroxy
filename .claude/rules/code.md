@@ -581,18 +581,18 @@ if !ok { ... }
 
 ## 18. 상수와 Enum
 
-- enum 제로값은 Unknown/Invalid (MUST)
+- enum은 `string` 타입을 사용한다. 값만 봐도 사람이 알아볼 수 있도록 한다 (MUST)
+- 제로값(`""`)과 구분하기 위해 Unknown/Invalid 값을 명시 정의한다 (MUST)
 - 타입 있는 상수 사용 (MUST)
-- 외부에 노출되는 enum은 `String()` 메서드 구현 (SHOULD)
 
 ```go
-type Protocol int
+type Protocol string
 
 const (
-    ProtocolUnknown Protocol = iota
-    ProtocolHTTP
-    ProtocolTLS
-    ProtocolRaw
+    ProtocolUnknown Protocol = "unknown"
+    ProtocolHTTP    Protocol = "HTTP"
+    ProtocolTLS     Protocol = "TLS"
+    ProtocolRaw     Protocol = "raw"
 )
 ```
 

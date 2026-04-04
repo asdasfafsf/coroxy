@@ -1,4 +1,4 @@
-module github.com/asdasfafsf/coroxy
+module coroxy
 
 go 1.26
 
