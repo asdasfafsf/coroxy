@@ -149,8 +149,18 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	// MITM: if CA manager is available, intercept TLS to capture decrypted traffic.
 	if h.caManager != nil {
 		_ = targetConn.Close() // MITM handler makes its own TLS connection
-		h.handleMITM(clientConn, host, h.caManager)
-		return
+		if h.handleMITM(clientConn, host, h.caManager) {
+			return // MITM handled (success or client rejected cert)
+		}
+
+		// MITM setup failed (target TLS unreachable, cert issue, etc.)
+		// Fall back to passthrough with a new target connection.
+		var err error
+		targetConn, err = net.DialTimeout("tcp", host, 30*time.Second)
+		if err != nil {
+			_ = clientConn.Close()
+			return
+		}
 	}
 
 	// Passthrough: no MITM, just relay bytes.
