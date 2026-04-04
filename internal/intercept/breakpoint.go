@@ -16,6 +16,7 @@ type PendingRequest struct {
 	Request *http.Request
 	RuleID  string
 	resume  chan struct{}
+	once    sync.Once
 }
 
 // Breakpoint intercepts requests matching breakpoint rules and pauses them
@@ -59,16 +60,18 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 		b.pending[pending.ID] = pending
 		b.mu.Unlock()
 
+		defer func() {
+			b.mu.Lock()
+			delete(b.pending, pending.ID)
+			b.mu.Unlock()
+		}()
+
 		if b.onPause != nil {
 			b.onPause(pending)
 		}
 
 		// Block until Resume is called.
 		<-pending.resume
-
-		b.mu.Lock()
-		delete(b.pending, pending.ID)
-		b.mu.Unlock()
 
 		return adapter.ActionForward
 	}
@@ -88,7 +91,7 @@ func (b *Breakpoint) Resume(pendingID string) {
 	b.mu.Unlock()
 
 	if ok {
-		close(pending.resume)
+		pending.once.Do(func() { close(pending.resume) })
 	}
 }
 
@@ -101,7 +104,7 @@ func (b *Breakpoint) Drop(pendingID string) {
 	if ok {
 		// Signal resume but mark request as dropped via header.
 		pending.Request.Header.Set("X-Coroxy-Breakpoint-Dropped", "true")
-		close(pending.resume)
+		pending.once.Do(func() { close(pending.resume) })
 	}
 }
 
