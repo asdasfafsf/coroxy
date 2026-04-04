@@ -49,7 +49,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 ### 인터페이스 정의 위치 (SHOULD)
 
 - 인터페이스는 소비자(caller) 패키지에서 정의한다.
-- 예외: 플러그인/파이프라인 계약 인터페이스(예: `Interceptor`)는 프레임워크 패키지에서 정의한다.
+- 예외: 여러 패키지가 공유하는 계약 인터페이스(`ProxyEngine`, `SessionStore`, `Interceptor` 등)는 `adapter/`에서 정의한다.
 - 표준 라이브러리 인터페이스(`io.Reader`, `io.Writer` 등)는 그대로 사용한다.
 
 ### 의존성 방향 (MUST)
@@ -662,6 +662,7 @@ internal/
 ├── adapter/            # 공유 인터페이스 (의존성 역전 계층)
 ├── model/              # 공유 데이터 구조체
 ├── constant/           # enum, 프로토콜 상수
+├── errdefs/            # 공유 에러 (센티널 + 커스텀 에러 타입)
 ├── proxy/              # 프록시 엔진 구현
 ├── session/            # 세션 저장소 구현
 └── ...                 # 기능별 패키지
@@ -670,8 +671,9 @@ internal/
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
 - `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
 - `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다 (MUST)
-- 공유 타입은 역할별로 분리한다: 인터페이스(`adapter/`), 구조체(`model/`), 상수(`constant/`) (MUST)
-- `adapter/`, `model/`, `constant/`는 다른 `internal/` 패키지를 import하지 않는다 (MUST)
+- 공유 타입은 역할별로 분리한다: 인터페이스(`adapter/`), 구조체(`model/`), 상수/enum(`constant/`), 공유 에러(`errdefs/`) (MUST)
+- 공유 패키지 간 import 규칙: `adapter/`는 `model/`, `constant/`, `errdefs/`를 import할 수 있다. `model/`은 `constant/`를 import할 수 있다. 그 외 `internal/` 패키지는 import하지 않는다 (MUST)
+- 센티널 에러와 커스텀 에러 타입 중 여러 패키지가 공유하는 것은 `errdefs/`에 둔다. 특정 패키지에서만 쓰는 에러는 해당 패키지의 `errors.go`에 둔다 (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
 
