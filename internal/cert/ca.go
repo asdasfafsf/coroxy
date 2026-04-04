@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -24,10 +25,12 @@ const (
 )
 
 // Manager manages Root CA generation, loading, and storage.
+// Manager manages Root CA generation, loading, storage, and leaf certificate issuance.
 type Manager struct {
 	dataDir string
 	rootCA  *x509.Certificate
 	rootKey *rsa.PrivateKey
+	issuer  *certIssuer
 }
 
 // NewManager creates a CA Manager. It loads an existing CA from dataDir
@@ -46,12 +49,17 @@ func NewManager(dataDir string) (*Manager, error) {
 		if err := m.load(); err != nil {
 			return nil, fmt.Errorf("load existing CA: %w", err)
 		}
-		return m, nil
+	} else {
+		if err := m.generate(); err != nil {
+			return nil, fmt.Errorf("generate new CA: %w", err)
+		}
 	}
 
-	if err := m.generate(); err != nil {
-		return nil, fmt.Errorf("generate new CA: %w", err)
+	issuer, err := newCertIssuer(m.rootCA, m.rootKey)
+	if err != nil {
+		return nil, fmt.Errorf("create cert issuer: %w", err)
 	}
+	m.issuer = issuer
 
 	return m, nil
 }
@@ -69,6 +77,12 @@ func (m *Manager) CAInfo() model.CAInfo {
 		ExpiresAt:   m.rootCA.NotAfter,
 		Installed:   installed,
 	}
+}
+
+// IssueCert generates a leaf certificate for the given host.
+// If originalCert is provided, its CN and SAN are copied.
+func (m *Manager) IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error) {
+	return m.issuer.issueCert(host, originalCert)
 }
 
 // RootCert returns the Root CA certificate.
