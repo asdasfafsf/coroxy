@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
@@ -42,7 +43,7 @@ func (a *AutoResponder) OnRequest(req *http.Request, _ *model.Session) adapter.A
 
 		// Store the auto response in request header for the proxy to pick up.
 		// This is a signal — the proxy checks for this header and writes the response.
-		req.Header.Set("X-Coroxy-Auto-Response-Rule", r.ID)
+		req.Header.Set(constant.HeaderAutoResponseRule, r.ID)
 		return adapter.ActionDrop
 	}
 
