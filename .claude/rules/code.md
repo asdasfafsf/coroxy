@@ -20,6 +20,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 
 두 규칙이 충돌하면 아래 순서로 판단한다:
 
+0. **프로젝트 적합성 우선** — 일반 관행/커뮤니티 컨벤션보다 이 프로젝트의 구조와 원칙에 맞는 것을 선택한다. 관행을 따르지 않는 이유는 ADR에 기록한다
 1. **쉽고 간단하게** — 복잡한 패턴보다 읽기 쉬운 코드
 2. **확장성은 좋게** — 외부 의존(I/O 경계)은 인터페이스로 교체 가능하게. 소비자(caller) 측에서 필요한 인터페이스를 정의한다. 패키지 내부 구현은 YAGNI 우선
 3. **필요한 것만** — YAGNI. 미래를 위한 코드를 만들지 않음
@@ -49,7 +50,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 ### 인터페이스 정의 위치 (SHOULD)
 
 - 인터페이스는 소비자(caller) 패키지에서 정의한다.
-- 예외: 플러그인/파이프라인 계약 인터페이스(예: `Interceptor`)는 프레임워크 패키지에서 정의한다.
+- 예외: 여러 패키지가 공유하는 계약 인터페이스(`ProxyEngine`, `SessionStore`, `Interceptor` 등)는 `adapter/`에서 정의한다.
 - 표준 라이브러리 인터페이스(`io.Reader`, `io.Writer` 등)는 그대로 사용한다.
 
 ### 의존성 방향 (MUST)
@@ -108,9 +109,11 @@ import (
 - 짧고, 소문자, 한 단어. 목적을 나타낸다.
 
 ```go
-// 좋은 예: proxy, session, cert
+// 좋은 예: proxy, session, cert, adapter, model, constant
 // 나쁜 예: models, utils, helpers, common, types
 ```
+
+> `model`(단수, 명확한 역할)과 `models`(복수, 무분별한 모음)는 다르다. 역할이 명확한 단수형 패키지명은 허용한다.
 
 ### 캡슐화 (MUST)
 
@@ -439,10 +442,17 @@ func TestXxx(t *testing.T) {
 }
 ```
 
+### 테스트 필수 규칙 (MUST)
+
+- 모든 PR에 테스트를 포함한다. 테스트 없는 기능 코드 PR은 머지하지 않는다
+- 단위 테스트와 통합 테스트를 모두 작성한다
+- 통합 테스트는 실제 서버를 띄우고 실제 네트워크 요청을 보낸다. mock 서버 대신 `net/http/httptest.Server` 등 실제 리스너를 사용한다
+- 커버리지 수치 목표는 없다. 기능이 의도대로 동작하는지가 기준이다
+
 ### 원칙
 
 - 원칙적으로 공개 API를 통해 테스트한다. 복잡한 내부 로직은 별도 패키지로 분리하여 공개 API로 만들거나, 명확한 이유가 있을 때 내부 테스트를 허용한다 (SHOULD)
-- 외부 의존은 인터페이스로 모킹한다 (SHOULD)
+- 외부 의존은 인터페이스로 모킹하지 않는다. 실제 구현체를 사용하여 통합 테스트한다. 단, 외부 API 등 제어 불가능한 의존은 예외 (MUST)
 - 테스트 헬퍼는 `t.Helper()` 호출 (MUST)
 - 에러 메시지: `got X, want Y` 포맷 (SHOULD)
 - 치명적 실패는 `t.Fatal` / `t.Fatalf` (SHOULD)
@@ -578,18 +588,18 @@ if !ok { ... }
 
 ## 18. 상수와 Enum
 
-- enum 제로값은 Unknown/Invalid (MUST)
+- enum은 `string` 타입을 사용한다. 값만 봐도 사람이 알아볼 수 있도록 한다 (MUST)
+- 제로값(`""`)과 구분하기 위해 Unknown/Invalid 값을 명시 정의한다 (MUST)
 - 타입 있는 상수 사용 (MUST)
-- 외부에 노출되는 enum은 `String()` 메서드 구현 (SHOULD)
 
 ```go
-type Protocol int
+type Protocol string
 
 const (
-    ProtocolUnknown Protocol = iota
-    ProtocolHTTP
-    ProtocolTLS
-    ProtocolRaw
+    ProtocolUnknown Protocol = "unknown"
+    ProtocolHTTP    Protocol = "HTTP"
+    ProtocolTLS     Protocol = "TLS"
+    ProtocolRaw     Protocol = "raw"
 )
 ```
 
@@ -655,13 +665,23 @@ client := &http.Client{Timeout: 30 * time.Second}
 
 ```
 main.go                 # Wails 엔트리포인트 (조립만, 로직 없음)
-app.go                  # Wails 바인딩 구조체
-internal/               # 모든 비즈니스 로직
+internal/
+├── app/                # Wails 바인딩 구조체 + GUI↔Core 브릿지
+├── adapter/            # 공유 인터페이스 (의존성 역전 계층)
+├── model/              # 공유 데이터 구조체
+├── constant/           # enum, 프로토콜 상수
+├── errdefs/            # 공유 에러 (센티널 + 커스텀 에러 타입)
+├── proxy/              # 프록시 엔진 구현
+├── session/            # 세션 저장소 구현
+└── ...                 # 기능별 패키지
 ```
 
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
-- `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
-- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다. DESIGN.md의 `internal/app/app.go`는 이 규칙으로 대체한다 (MUST)
+- `main.go`에 비즈니스 로직을 넣지 않는다. 조립(의존성 주입)만 수행한다 (MUST)
+- Wails 바인딩 구조체는 `internal/app/`에 둔다 (MUST)
+- 공유 타입은 역할별로 분리한다: 인터페이스(`adapter/`), 구조체(`model/`), 상수/enum(`constant/`), 공유 에러(`errdefs/`) (MUST)
+- 공유 패키지 간 import 규칙: `adapter/`는 `model/`, `constant/`, `errdefs/`를 import할 수 있다. `model/`은 `constant/`를 import할 수 있다. 그 외 `internal/` 패키지는 import하지 않는다 (MUST)
+- 센티널 에러와 커스텀 에러 타입 중 여러 패키지가 공유하는 것은 `errdefs/`에 둔다. 특정 패키지에서만 쓰는 에러는 해당 패키지의 `errors.go`에 둔다 (MUST)
 - `pkg/`는 이 프로젝트에서 사용하지 않는다 (MUST)
 - `utils/`, `helpers/`, `common/` 금지 (MUST)
 
@@ -683,7 +703,7 @@ var assets embed.FS
 
 ### Wails 바인딩 규칙 (MUST)
 
-- 바인딩 구조체는 루트 `app.go`에 둔다 (Wails 기본 구조 유지)
+- 바인딩 구조체는 `internal/app/`에 둔다
 - 바인딩 메서드는 에러를 반환할 때 `(결과, error)` 형태를 사용한다
 - 이벤트 emit은 `runtime.EventsEmit(ctx, "이벤트명", 데이터)` 패턴을 사용한다
 - 이벤트 이름은 `coroxy:카테고리:액션` 네임스페이스를 사용한다 (예: `coroxy:session:new`)
