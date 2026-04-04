@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
@@ -98,7 +99,7 @@ func TestBreakpointDrop(t *testing.T) {
 	bp.Drop(paused.ID)
 	actionWg.Wait()
 
-	if req.Header.Get("X-Coroxy-Breakpoint-Dropped") != "true" {
+	if req.Header.Get(constant.HeaderBreakpointDropped) != "true" {
 		t.Fatal("drop signal not set")
 	}
 }

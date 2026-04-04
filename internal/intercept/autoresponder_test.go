@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
@@ -35,7 +36,7 @@ func TestAutoResponderMatchReturnsDropAndSignal(t *testing.T) {
 		t.Fatalf("action: got %s, want drop", action)
 	}
 
-	ruleID := req.Header.Get("X-Coroxy-Auto-Response-Rule")
+	ruleID := req.Header.Get(constant.HeaderAutoResponseRule)
 	if ruleID != "auto1" {
 		t.Fatalf("rule ID signal: got %q, want %q", ruleID, "auto1")
 	}

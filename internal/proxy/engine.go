@@ -97,7 +97,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	}
 	e.socksListener = socksListener
 
-	socksProxy := NewSOCKS5Proxy(e.logger, e.onSession)
+	socksProxy := NewSOCKS5Proxy(e.logger, e.onSession, e.pipeline)
 	e.wg.Add(1)
 	go func() {
 		defer e.wg.Done()

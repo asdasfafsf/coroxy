@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 	"net/http"
-	"strings"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
@@ -36,13 +36,13 @@ func (a *AutoResponder) OnRequest(req *http.Request, _ *model.Session) adapter.A
 		if r.AutoResponse == nil {
 			continue
 		}
-		if !matchRequestForAutoRespond(r.Match, req) {
+		if !MatchRequest(r.Match, req) {
 			continue
 		}
 
 		// Store the auto response in request header for the proxy to pick up.
 		// This is a signal — the proxy checks for this header and writes the response.
-		req.Header.Set("X-Coroxy-Auto-Response-Rule", r.ID)
+		req.Header.Set(constant.HeaderAutoResponseRule, r.ID)
 		return adapter.ActionDrop
 	}
 
@@ -92,29 +92,4 @@ func BuildHTTPResponse(ar *model.AutoResponse, req *http.Request) *http.Response
 		ContentLength: int64(len(body)),
 		Request:       req,
 	}
-}
-
-// matchRequestForAutoRespond checks if a request matches the rule condition.
-func matchRequestForAutoRespond(cond model.MatchCondition, req *http.Request) bool {
-	if cond.Method != "" && !strings.EqualFold(cond.Method, req.Method) {
-		return false
-	}
-	if cond.Host != "" && !matchHostForAutoRespond(cond.Host, req.Host) {
-		return false
-	}
-	if cond.Path != "" && !strings.HasPrefix(req.URL.Path, cond.Path) {
-		return false
-	}
-	return true
-}
-
-func matchHostForAutoRespond(pattern, host string) bool {
-	if idx := strings.LastIndex(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	if strings.HasPrefix(pattern, "*.") {
-		suffix := pattern[1:]
-		return strings.HasSuffix(host, suffix) || host == pattern[2:]
-	}
-	return strings.EqualFold(pattern, host)
 }

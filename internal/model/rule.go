@@ -5,7 +5,6 @@ type RuleAction string
 
 const (
 	RuleActionDrop         RuleAction = "drop"
-	RuleActionDelay        RuleAction = "delay"
 	RuleActionModifyHeader RuleAction = "modify_header"
 	RuleActionAutoRespond  RuleAction = "auto_respond"
 	RuleActionBreakpoint   RuleAction = "breakpoint"

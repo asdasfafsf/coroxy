@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"coroxy/internal/adapter"
@@ -193,24 +194,29 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	// Passthrough: no MITM, just relay bytes.
 	start := time.Now()
 
-	done := make(chan struct{}, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
-		defer func() { _ = clientConn.Close() }()
-		defer func() { _ = targetConn.Close() }()
+		defer wg.Done()
 		_, _ = io.Copy(targetConn, clientConn)
-		done <- struct{}{}
+		if tc, ok := targetConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
 
 	go func() {
-		defer func() { _ = targetConn.Close() }()
-		defer func() { _ = clientConn.Close() }()
+		defer wg.Done()
 		_, _ = io.Copy(clientConn, targetConn)
-		done <- struct{}{}
+		if tc, ok := clientConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
 
-	// Wait for one direction to finish, then capture session.
+	// 양방향 모두 종료 후 정리.
 	go func() {
-		<-done
+		wg.Wait()
+		_ = clientConn.Close()
+		_ = targetConn.Close()
 		h.captureTunnelSession(r, host, time.Since(start))
 	}()
 }

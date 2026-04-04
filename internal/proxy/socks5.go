@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"net"
 	"strconv"
+	"sync"
 	"time"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -32,13 +34,15 @@ const (
 type SOCKS5Proxy struct {
 	logger    *slog.Logger
 	onSession adapter.SessionCallback
+	pipeline  *intercept.Pipeline
 }
 
 // NewSOCKS5Proxy creates a new SOCKS5 proxy handler.
-func NewSOCKS5Proxy(logger *slog.Logger, onSession adapter.SessionCallback) *SOCKS5Proxy {
+func NewSOCKS5Proxy(logger *slog.Logger, onSession adapter.SessionCallback, pipeline *intercept.Pipeline) *SOCKS5Proxy {
 	return &SOCKS5Proxy{
 		logger:    logger,
 		onSession: onSession,
+		pipeline:  pipeline,
 	}
 }
 
@@ -73,16 +77,23 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 	start := time.Now()
 
 	// Relay bidirectional traffic.
-	done := make(chan struct{}, 2)
+	var wg sync.WaitGroup
+	wg.Add(2)
 	go func() {
+		defer wg.Done()
 		_, _ = io.Copy(targetConn, clientConn)
-		done <- struct{}{}
+		if tc, ok := targetConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
 	go func() {
+		defer wg.Done()
 		_, _ = io.Copy(clientConn, targetConn)
-		done <- struct{}{}
+		if tc, ok := clientConn.(*net.TCPConn); ok {
+			_ = tc.CloseWrite()
+		}
 	}()
-	<-done
+	wg.Wait()
 
 	s.captureSession(targetAddr, time.Since(start))
 }

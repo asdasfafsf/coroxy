@@ -28,13 +28,17 @@ func (p *Pipeline) Add(i adapter.Interceptor) {
 }
 
 // Remove removes an interceptor from the pipeline by reference.
+// A new slice is allocated so that concurrent readers of the old slice are safe.
 func (p *Pipeline) Remove(target adapter.Interceptor) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	for i, interceptor := range p.interceptors {
 		if interceptor == target {
-			p.interceptors = append(p.interceptors[:i], p.interceptors[i+1:]...)
+			updated := make([]adapter.Interceptor, 0, len(p.interceptors)-1)
+			updated = append(updated, p.interceptors[:i]...)
+			updated = append(updated, p.interceptors[i+1:]...)
+			p.interceptors = updated
 			return
 		}
 	}

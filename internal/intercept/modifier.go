@@ -2,7 +2,6 @@ package intercept
 
 import (
 	"net/http"
-	"strings"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
@@ -25,7 +24,7 @@ func (m *Modifier) OnRequest(req *http.Request, _ *model.Session) adapter.Action
 		if !r.Enabled || r.Action != model.RuleActionModifyHeader {
 			continue
 		}
-		if !matchRequestForModifier(r.Match, req) {
+		if !MatchRequest(r.Match, req) {
 			continue
 		}
 		for _, mod := range r.Modifications {
@@ -45,7 +44,7 @@ func (m *Modifier) OnResponse(resp *http.Response, _ *model.Session) adapter.Act
 			continue
 		}
 		// Response matching uses the request from response.
-		if resp.Request != nil && !matchRequestForModifier(r.Match, resp.Request) {
+		if resp.Request != nil && !MatchRequest(r.Match, resp.Request) {
 			continue
 		}
 		for _, mod := range r.Modifications {
@@ -72,31 +71,4 @@ func applyHeaderMod(h http.Header, mod model.HeaderModification) {
 		// Unknown operation — silently ignored.
 		// Rule validation should catch this at creation time.
 	}
-}
-
-// matchRequestForModifier checks if a request matches the rule condition.
-// Duplicated from rule/engine.go to avoid circular dependency.
-func matchRequestForModifier(cond model.MatchCondition, req *http.Request) bool {
-	if cond.Method != "" && !strings.EqualFold(cond.Method, req.Method) {
-		return false
-	}
-	if cond.Host != "" && !matchHostForModifier(cond.Host, req.Host) {
-		return false
-	}
-	if cond.Path != "" && !strings.HasPrefix(req.URL.Path, cond.Path) {
-		return false
-	}
-	return true
-}
-
-// matchHostForModifier matches hostname against pattern (supports *.example.com).
-func matchHostForModifier(pattern, host string) bool {
-	if idx := strings.LastIndex(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-	if strings.HasPrefix(pattern, "*.") {
-		suffix := pattern[1:]
-		return strings.HasSuffix(host, suffix) || host == pattern[2:]
-	}
-	return strings.EqualFold(pattern, host)
 }
