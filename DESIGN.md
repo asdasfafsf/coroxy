@@ -310,6 +310,10 @@ coroxy/
 │   │   ├── protocol.go              # Protocol (HTTP, HTTPS, TCP, UDP)
 │   │   └── state.go                 # SessionState, Action
 │   │
+│   ├── errdefs/                     # 공유 에러 (도메인별 파일 분리)
+│   │   ├── session.go               # 세션 관련 에러
+│   │   └── proxy.go                 # 프록시 관련 에러
+│   │
 │   ├── proxy/
 │   │   ├── engine.go                # 프록시 엔진 (시작/중지/설정)
 │   │   ├── listener.go              # 리스너 관리
