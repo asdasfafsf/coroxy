@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"bytes"
+
 	"coroxy/internal/constant"
 )
 
@@ -41,23 +43,10 @@ func DetectProtocol(peek []byte) constant.Protocol {
 
 	// HTTP: starts with a known method
 	for _, method := range httpMethods {
-		if len(peek) >= len(method) && bytesEqual(peek[:len(method)], method) {
+		if len(peek) >= len(method) && bytes.Equal(peek[:len(method)], method) {
 			return constant.ProtocolHTTP
 		}
 	}
 
 	return constant.ProtocolRaw
-}
-
-// bytesEqual compares two byte slices for equality.
-func bytesEqual(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
 }

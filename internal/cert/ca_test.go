@@ -23,7 +23,7 @@ func TestNewManagerGeneratesCA(t *testing.T) {
 	if m.RootCert() == nil {
 		t.Fatal("RootCert: got nil")
 	}
-	if m.RootKey() == nil {
+	if m.rootPrivateKey() == nil {
 		t.Fatal("RootKey: got nil")
 	}
 
@@ -176,7 +176,7 @@ func TestLoadExpiredCA(t *testing.T) {
 		BasicConstraintsValid: true,
 	}
 
-	expiredDER, err := x509.CreateCertificate(rand.Reader, expiredTemplate, expiredTemplate, &m.RootKey().PublicKey, m.RootKey())
+	expiredDER, err := x509.CreateCertificate(rand.Reader, expiredTemplate, expiredTemplate, &m.rootPrivateKey().PublicKey, m.rootPrivateKey())
 	if err != nil {
 		t.Fatalf("create expired cert: %v", err)
 	}

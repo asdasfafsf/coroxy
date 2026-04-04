@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,7 +13,6 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
-	"coroxy/internal/cert"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
@@ -37,8 +38,9 @@ type MITMProvider interface {
 	// ShouldIntercept returns true if MITM should be active for CONNECT requests.
 	ShouldIntercept() bool
 
-	// CertManager returns the underlying cert.Manager for TLS operations.
-	CertManager() *cert.Manager
+	// IssueCert generates a leaf certificate for the given host,
+	// copying CN/SAN from the original server certificate.
+	IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error)
 }
 
 // HTTPProxy handles HTTP forward proxy requests.
@@ -160,7 +162,7 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	// If CA is not installed, passthrough to avoid certificate errors (Fiddler behavior).
 	if h.mitm != nil && h.mitm.ShouldIntercept() {
 		_ = targetConn.Close() // MITM handler makes its own TLS connection
-		if h.handleMITM(clientConn, host, h.mitm.CertManager()) {
+		if h.handleMITM(clientConn, host, h.mitm) {
 			return // MITM handled (success or client rejected cert)
 		}
 
