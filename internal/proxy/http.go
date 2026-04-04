@@ -31,22 +31,31 @@ var hopByHopHeaders = []string{
 	"Upgrade",
 }
 
+// MITMProvider abstracts the MITM capabilities needed by the HTTP proxy.
+// This allows testing without OS-level CA installation.
+type MITMProvider interface {
+	// ShouldIntercept returns true if MITM should be active for CONNECT requests.
+	ShouldIntercept() bool
+
+	// CertManager returns the underlying cert.Manager for TLS operations.
+	CertManager() *cert.Manager
+}
+
 // HTTPProxy handles HTTP forward proxy requests.
 type HTTPProxy struct {
-	logger     *slog.Logger
-	transport  *http.Transport
-	onSession  adapter.SessionCallback
-	caManager  *cert.Manager
-	forceMITM  bool // skip IsCAInstalled check (for testing)
+	logger    *slog.Logger
+	transport *http.Transport
+	onSession adapter.SessionCallback
+	mitm      MITMProvider
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
-// If caManager is provided, CONNECT requests are intercepted for MITM.
-func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, caManager *cert.Manager) *HTTPProxy {
+// If mitm is provided, CONNECT requests are intercepted for MITM.
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm MITMProvider) *HTTPProxy {
 	return &HTTPProxy{
 		logger:    logger,
 		onSession: onSession,
-		caManager: caManager,
+		mitm:      mitm,
 		transport: &http.Transport{
 			DialContext:           (&net.Dialer{Timeout: 30 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -149,10 +158,9 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 
 	// MITM: only intercept if CA is installed in OS trust store.
 	// If CA is not installed, passthrough to avoid certificate errors (Fiddler behavior).
-	caInstalled, _ := h.isMITMEnabled()
-	if caInstalled {
+	if h.mitm != nil && h.mitm.ShouldIntercept() {
 		_ = targetConn.Close() // MITM handler makes its own TLS connection
-		if h.handleMITM(clientConn, host, h.caManager) {
+		if h.handleMITM(clientConn, host, h.mitm.CertManager()) {
 			return // MITM handled (success or client rejected cert)
 		}
 
@@ -232,19 +240,6 @@ func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string) {
 	}
 
 	h.onSession(session)
-}
-
-// isMITMEnabled checks if MITM should be active.
-// Returns true only if CA manager exists AND CA is installed in OS trust store.
-// In test mode (forceMITM), skips the installation check.
-func (h *HTTPProxy) isMITMEnabled() (bool, error) {
-	if h.caManager == nil {
-		return false, nil
-	}
-	if h.forceMITM {
-		return true, nil
-	}
-	return h.caManager.IsCAInstalled()
 }
 
 // splitHostPort parses host:port with a default port fallback.

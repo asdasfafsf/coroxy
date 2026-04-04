@@ -192,8 +192,7 @@ func TestMITMEndToEnd(t *testing.T) {
 	})
 
 	// 4. Proxy with MITM via HTTPProxy directly.
-	proxy := NewHTTPProxy(slog.Default(), onSession, caManager)
-	proxy.forceMITM = true
+	proxy := NewHTTPProxy(slog.Default(), onSession, NewTestMITM(caManager))
 	proxyAddr := startProxyServer(t, proxy)
 
 	// 5. Client trusts our CA.
@@ -293,8 +292,7 @@ func TestEngineFullStack(t *testing.T) {
 		HTTPAddr:  "127.0.0.1:0",
 		SOCKSAddr: "127.0.0.1:0",
 	}
-	engine := NewEngine(config, slog.Default(), onSession, caManager)
-	engine.forceMITM = true
+	engine := NewEngine(config, slog.Default(), onSession, NewTestMITM(caManager))
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
