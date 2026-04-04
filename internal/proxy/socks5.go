@@ -12,6 +12,7 @@ import (
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -33,13 +34,15 @@ const (
 type SOCKS5Proxy struct {
 	logger    *slog.Logger
 	onSession adapter.SessionCallback
+	pipeline  *intercept.Pipeline
 }
 
 // NewSOCKS5Proxy creates a new SOCKS5 proxy handler.
-func NewSOCKS5Proxy(logger *slog.Logger, onSession adapter.SessionCallback) *SOCKS5Proxy {
+func NewSOCKS5Proxy(logger *slog.Logger, onSession adapter.SessionCallback, pipeline *intercept.Pipeline) *SOCKS5Proxy {
 	return &SOCKS5Proxy{
 		logger:    logger,
 		onSession: onSession,
+		pipeline:  pipeline,
 	}
 }
 
