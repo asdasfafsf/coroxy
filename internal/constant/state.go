@@ -9,3 +9,12 @@ const (
 	EngineStateRunning  EngineState = "running"
 	EngineStateStopping EngineState = "stopping"
 )
+
+// SessionState represents the lifecycle state of a captured session.
+type SessionState string
+
+const (
+	SessionStateActive    SessionState = "active"
+	SessionStateCompleted SessionState = "completed"
+	SessionStateError     SessionState = "error"
+)
