@@ -171,6 +171,7 @@ func TestMITMTargetCertificatePinning(t *testing.T) {
 
 	caManager, _ := cert.NewManager(t.TempDir())
 	proxy := NewHTTPProxy(slog.Default(), nil, caManager)
+	proxy.forceMITM = true
 	proxyAddr := startProxyServer(t, proxy)
 
 	// Client does NOT trust our CA — simulates certificate pinning.
@@ -290,6 +291,7 @@ func TestEngineHTTPSMITMRealTraffic(t *testing.T) {
 		SOCKSAddr: "127.0.0.1:0",
 	}
 	engine := NewEngine(config, slog.Default(), nil, caManager)
+	engine.forceMITM = true
 
 	ctx := context.Background()
 	if err := engine.Start(ctx); err != nil {
