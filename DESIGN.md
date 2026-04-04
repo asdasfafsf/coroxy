@@ -197,15 +197,46 @@ type RuleAction struct {
 
 ```go
 type CAManager struct {
-    RootCA     *x509.Certificate
-    RootKey    *rsa.PrivateKey
-    CertCache  sync.Map  // host → *tls.Certificate (LRU 캐시)
+    rootCA    *x509.Certificate
+    rootKey   *rsa.PrivateKey
+    certCache *lru.Cache  // host → *tls.Certificate (LRU, 최대 256개)
+    dataDir   string      // ~/.coroxy/
 }
 
-// 첫 실행 시 Root CA 생성 → ~/.coroxy/ca.crt, ca.key
-// OS 신뢰 저장소에 설치하는 헬퍼 제공
-// 각 도메인 연결 시 동적으로 서버 인증서 생성 (캐싱)
+// 생성: NewCAManager(dataDir) — CA 파일 존재 시 로드, 없으면 생성
+//   로드 시 유효성 검증: PEM 파싱, 공개키-개인키 쌍 일치, 만료 여부 확인
+//   검증 실패 시 에러 반환 → GUI에서 "Regenerate CA" 안내
+// 인증서: IssueCert(host, originalCert) — 원본 인증서의 CN/SAN(와일드카드 포함) 복제하여 Leaf 생성
+//   동일 호스트 동시 요청은 singleflight로 중복 생성 방지
+//   캐시 키는 요청된 host 그대로 사용 (예: api.example.com)
+// 신뢰: InstallCA() / UninstallCA() / IsCAInstalled() — smallstep/truststore 활용
+// Firefox: InstallCA 시 Firefox 프로필 자동 탐지 + NSS certutil로 설치
+// Export: ExportCA() — ca.crt(인증서)만 export. 개인키는 절대 export하지 않는다
 ```
+
+**adapter 인터페이스** (`adapter/cert.go`에 정의):
+```go
+type CAManager interface {
+    IssueCert(host string, originalCert *x509.Certificate) (*tls.Certificate, error)
+    InstallCA() error
+    UninstallCA() error
+    IsCAInstalled() (bool, error)
+    CAInfo() model.CAInfo
+    ExportCA(path string) error
+}
+```
+
+**CA 파일 구조:**
+```
+~/.coroxy/
+├── ca.crt          # Root CA 인증서 (PEM)
+├── ca.key          # Root CA 개인키 (PEM, 파일 권한 0600)
+└── ca-meta.json    # 생성일, 만료일, 지문 등 메타데이터
+```
+
+**Certificate Pinning**: pinning을 사용하는 앱은 MITM 불가. TLS 핸드셰이크 실패 시 에러 세션으로 기록.
+
+**HTTP/2**: Phase 2는 HTTP/1.1만 지원. HTTP/2 MITM은 ALPN 협상 복잡성으로 별도 이슈 분리.
 
 ### 7. Session Store
 
@@ -436,15 +467,78 @@ App                     Coroxy (SOCKS5)             DB Server
 - 1-9. GUI: 툴바 (Start/Stop, Clear)
 - 1-10. GUI: 상태바
 
-### Phase 2: HTTPS & Inspector
-- 2-1. Root CA 생성 (`internal/cert/ca.go`)
-- 2-2. 동적 서버 인증서 생성 + 캐시 (`internal/cert/dynamic.go`)
-- 2-3. HTTPS MITM 핸들러 (`internal/proxy/https.go`)
-- 2-4. 프로토콜 디텍터 (`internal/proxy/detector.go`)
-- 2-5. GUI: Inspector - Headers 탭
-- 2-6. GUI: Inspector - Body 탭 (JSON 하이라이팅)
-- 2-7. GUI: Inspector - Raw 탭
-- 2-8. OS CA 인증서 설치 헬퍼
+### Phase 2: HTTPS MITM & CA 관리
+
+#### CA 인증서 관리
+
+**CA 생성:**
+- 첫 실행 시 Root CA 자동 생성 (RSA 3072-bit, SHA256, 유효기간 3년)
+- 저장 위치: `~/.coroxy/ca.crt` (인증서), `~/.coroxy/ca.key` (개인키)
+- 설치별 고유 CA (보안상 다른 기기와 공유 금지)
+- CA 만료 시 재생성 + 기존 CA 자동 제거 후 새 CA 설치 안내
+
+**Leaf 인증서 (동적 생성):**
+- CONNECT 요청 시 대상 서버에 먼저 연결하여 원본 인증서 정보(CN, SAN) 획득
+- 해당 정보로 Leaf 인증서 생성 (RSA 2048-bit), Root CA로 서명
+- 인메모리 LRU 캐시 (최대 256개)
+
+**OS 신뢰 저장소 등록:**
+- `smallstep/truststore` 라이브러리 활용 (mkcert 기반)
+- macOS: `security add-trusted-cert` — 관리자 비밀번호 프롬프트 불가피
+- Windows: `crypt32.dll` API 직접 호출 — UAC 프롬프트
+- Linux: `/usr/local/share/ca-certificates/` + `update-ca-certificates` (Debian/Ubuntu), `/etc/pki/ca-trust/source/anchors/` + `update-ca-trust` (RHEL/Fedora)
+
+**Firefox 별도 처리:**
+- Firefox는 OS 신뢰 저장소를 무시하고 자체 NSS cert9.db 사용
+- NSS `certutil`로 각 Firefox 프로필에 CA 설치
+- 프로필 경로 자동 탐지: `~/Library/Application Support/Firefox/Profiles/*` (macOS), `~/.mozilla/firefox/*` (Linux), `%APPDATA%\Mozilla\Firefox\Profiles` (Windows)
+
+**CA 상태 관리:**
+- 앱 시작 시 CA 존재 여부 + OS 신뢰 여부 자동 탐지
+- GUI에 CA 상태 표시: "미설치" / "설치됨" / "만료됨"
+- 원클릭 설치/제거 버튼
+- 앱 제거 시 CA 정리 로직 제공 (다른 프록시 도구들이 안 하는 차별점)
+
+**CA 관리 화면 (Settings > Certificates):**
+- Root CA 상태 (생성일, 만료일, 지문)
+- "Install CA" / "Uninstall CA" 버튼
+- "Export CA" (다른 기기/브라우저용 수동 설치)
+- "Regenerate CA" (강제 재생성)
+
+#### HTTPS MITM 흐름
+
+```
+Browser                 Coroxy                    Server
+   │── CONNECT host ──→ │                         │
+   │←── 200 Established ──│                       │
+   │                      │── TLS ClientHello ──→ │
+   │                      │←── TLS ServerHello ──│
+   │                      │   (원본 인증서 정보 획득)│
+   │                      │                       │
+   │   (Coroxy가 host용   │                       │
+   │    Leaf 인증서 생성)  │                       │
+   │── TLS ClientHello ──→│                       │
+   │←── TLS ServerHello ──│ (Leaf 인증서로 응답)   │
+   │                      │                       │
+   │── GET /api/users ──→ │── GET /api/users ──→ │
+   │   [복호화된 평문 캡처] │                      │
+   │                      │←── 200 OK ──────────│
+   │←── 200 OK ──────────│ [복호화된 평문 캡처]   │
+```
+
+#### 작업 항목
+
+- 2-1. CA Manager: Root CA 생성/로드/저장 (`internal/cert/ca.go`)
+- 2-2. CA Manager: OS 신뢰 저장소 등록/제거/상태 확인 (`internal/cert/trust.go`)
+- 2-3. CA Manager: Firefox NSS 처리 (`internal/cert/trust.go` 내 Firefox 분기)
+- 2-4. 동적 Leaf 인증서 생성 + LRU 캐시 (`internal/cert/dynamic.go`)
+- 2-5. HTTPS MITM 핸들러 — CONNECT 가로채기 → TLS 핸드셰이크 → 복호화 캡처 (`internal/proxy/https.go`)
+- 2-6. 프로토콜 디텍터 (`internal/proxy/detector.go`)
+- 2-7. Wails 바인딩: CA 관리 API (InstallCA/UninstallCA/GetCAStatus)
+- 2-8. GUI: Settings > Certificates 화면
+- 2-9. GUI: Inspector - Headers 탭 (기능 우선, UI 후순위)
+- 2-10. GUI: Inspector - Body 탭 (기능 우선, UI 후순위)
+- 2-11. GUI: Inspector - Raw 탭 (기능 우선, UI 후순위)
 
 ### Phase 3: TCP & UDP
 - 3-1. SOCKS5 핸드셰이크 구현 (`internal/proxy/socks5.go`)
