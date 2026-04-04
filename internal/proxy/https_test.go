@@ -45,6 +45,7 @@ func TestMITMCapturesHTTPSContent(t *testing.T) {
 
 	// 4. Proxy with MITM.
 	proxy := NewHTTPProxy(slog.Default(), onSession, caManager)
+	proxy.forceMITM = true
 	proxyAddr := startProxyServer(t, proxy)
 
 	// 5. Client trusts our CA.
