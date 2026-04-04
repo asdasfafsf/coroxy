@@ -1,41 +1,42 @@
 package cert
 
 import (
-	"crypto/x509"
 	"fmt"
-
-	"github.com/smallstep/truststore"
+	"path/filepath"
+	"runtime"
 )
 
-// InstallCA installs the Root CA into the OS trust store and Firefox NSS.
-// On macOS, this triggers a password prompt. On Windows, a UAC prompt.
+// InstallCA installs the Root CA into the OS trust store.
+// On macOS, this triggers a native password dialog via osascript.
 func (m *Manager) InstallCA() error {
-	if err := truststore.Install(m.rootCA, truststore.WithFirefox()); err != nil {
-		return fmt.Errorf("install CA to trust store: %w", err)
+	certPath := filepath.Join(m.dataDir, caFileName)
+
+	switch runtime.GOOS {
+	case "darwin":
+		return installCAToDarwin(certPath)
+	default:
+		return fmt.Errorf("CA installation not supported on %s", runtime.GOOS)
 	}
-	return nil
 }
 
-// UninstallCA removes the Root CA from the OS trust store and Firefox NSS.
+// UninstallCA removes the Root CA from the OS trust store.
 func (m *Manager) UninstallCA() error {
-	if err := truststore.Uninstall(m.rootCA, truststore.WithFirefox()); err != nil {
-		return fmt.Errorf("uninstall CA from trust store: %w", err)
+	certPath := filepath.Join(m.dataDir, caFileName)
+
+	switch runtime.GOOS {
+	case "darwin":
+		return uninstallCAFromDarwin(certPath)
+	default:
+		return fmt.Errorf("CA uninstallation not supported on %s", runtime.GOOS)
 	}
-	return nil
 }
 
 // IsCAInstalled checks if the Root CA is trusted by the OS.
-// It does this by attempting to verify the CA certificate against the system root pool.
 func (m *Manager) IsCAInstalled() (bool, error) {
-	pool, err := x509.SystemCertPool()
-	if err != nil {
-		return false, fmt.Errorf("load system cert pool: %w", err)
+	switch runtime.GOOS {
+	case "darwin":
+		return isCAInstalledDarwin(m.rootCA)
+	default:
+		return false, fmt.Errorf("CA status check not supported on %s", runtime.GOOS)
 	}
-
-	opts := x509.VerifyOptions{
-		Roots: pool,
-	}
-
-	_, err = m.rootCA.Verify(opts)
-	return err == nil, nil
 }
