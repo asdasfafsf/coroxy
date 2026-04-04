@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 
 interface ToolbarProps {
   onSessionsClear: () => void;
+  onSettingsClick: () => void;
 }
 
-export function Toolbar({ onSessionsClear }: ToolbarProps) {
+export function Toolbar({ onSessionsClear, onSettingsClick }: ToolbarProps) {
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
 
@@ -60,6 +61,12 @@ export function Toolbar({ onSessionsClear }: ToolbarProps) {
       <span className={`text-xs font-medium px-2 py-1 rounded ${isRunning ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}`}>
         {isRunning ? 'Listening' : 'Stopped'}
       </span>
+      <button
+        className="px-3 py-1.5 rounded text-xs font-medium bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70] transition-colors"
+        onClick={onSettingsClick}
+      >
+        Settings
+      </button>
     </div>
   );
 }

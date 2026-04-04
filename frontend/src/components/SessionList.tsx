@@ -2,6 +2,8 @@ import { model } from '../../wailsjs/go/models';
 
 interface SessionListProps {
   sessions: model.Session[];
+  selectedId: string | null;
+  onSelect: (session: model.Session) => void;
 }
 
 function formatTime(createdAt: string | number | Date): string {
@@ -45,7 +47,7 @@ function getPath(url: string | undefined): string {
   }
 }
 
-export function SessionList({ sessions }: SessionListProps) {
+export function SessionList({ sessions, selectedId, onSelect }: SessionListProps) {
   const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap sticky top-0 z-10';
   const cellClass = 'px-2.5 py-1 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
 
@@ -73,7 +75,11 @@ export function SessionList({ sessions }: SessionListProps) {
             </tr>
           ) : (
             sessions.map((session, index) => (
-              <tr key={session.id} className="hover:bg-[#313244] cursor-pointer">
+              <tr
+                key={session.id}
+                className={`hover:bg-[#313244] cursor-pointer ${selectedId === session.id ? 'bg-[#313244]' : ''}`}
+                onClick={() => onSelect(session)}
+              >
                 <td className={`${cellClass} w-10 text-[#6c7086]`}>{index + 1}</td>
                 <td className={`${cellClass} w-15`}>
                   <span className={protoBadgeClass(session.protocol)}>{session.protocol}</span>
