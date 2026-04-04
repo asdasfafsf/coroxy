@@ -157,8 +157,8 @@ Transfer-Encoding 헤더가 중복으로 들어오는 경우를 처리하지 못
 | 방향 | 머지 방식 | 커밋 메시지 |
 |------|-----------|------------|
 | 기능 브랜치 → `dev` | squash merge | PR 제목을 사용한다 |
-| `dev` → `main` | **PR Rebase and merge** | 원본 커밋 메시지 유지 |
-| `hotfix` → `main` | PR Rebase and merge | 원본 커밋 메시지 유지 |
+| `dev` → `main` | **PR merge commit** | 기본 머지 메시지 사용 |
+| `hotfix` → `main` | PR merge commit | 기본 머지 메시지 사용 |
 | `hotfix` → `dev` | merge commit | 기본 머지 메시지를 사용한다 |
 
 - 셀프 리뷰 후 머지를 허용한다.
@@ -170,8 +170,9 @@ Transfer-Encoding 헤더가 중복으로 들어오는 경우를 처리하지 못
 - **릴리스 시에만** dev를 main에 머지한다 (Phase 완료, 버전 태그 등).
 - 수시로 머지하지 않는다. dev에서 작업하다가 릴리스할 때만 올린다.
 - main에 직접 커밋하지 않는다. 모든 변경은 dev를 거친다 (hotfix 제외).
-- main과 dev가 diverge하면 안 된다. PR Rebase and merge를 사용하여 동일 히스토리를 유지한다.
+- main과 dev가 diverge하면 안 된다. merge commit을 사용하여 공유 히스토리를 유지한다. rebase merge/squash merge는 커밋 해시가 변경되어 diverge를 유발하므로 사용하지 않는다.
 - 로컬에서 main에 직접 머지하지 않는다. 반드시 GitHub PR을 통해 머지한다.
+- 릴리스 PR 본문에는 포함된 모든 이슈와 변경 사항을 요약한다 (이슈 번호, 제목, 주요 변경 내용).
 
 ### 브랜치 보호
 

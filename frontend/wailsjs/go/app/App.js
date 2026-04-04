@@ -6,6 +6,14 @@ export function ClearSessions() {
   return window['go']['app']['App']['ClearSessions']();
 }
 
+export function ExportCA(arg1) {
+  return window['go']['app']['App']['ExportCA'](arg1);
+}
+
+export function GetCAInfo() {
+  return window['go']['app']['App']['GetCAInfo']();
+}
+
 export function GetProxyState() {
   return window['go']['app']['App']['GetProxyState']();
 }
@@ -18,6 +26,10 @@ export function HandleNewSession(arg1) {
   return window['go']['app']['App']['HandleNewSession'](arg1);
 }
 
+export function InstallCA() {
+  return window['go']['app']['App']['InstallCA']();
+}
+
 export function SetEngine(arg1) {
   return window['go']['app']['App']['SetEngine'](arg1);
 }
@@ -28,4 +40,8 @@ export function StartProxy() {
 
 export function StopProxy() {
   return window['go']['app']['App']['StopProxy']();
+}
+
+export function UninstallCA() {
+  return window['go']['app']['App']['UninstallCA']();
 }

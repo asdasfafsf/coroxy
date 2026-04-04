@@ -4,8 +4,11 @@ import (
 	"embed"
 	"log"
 	"log/slog"
+	"os"
+	"path/filepath"
 
 	"coroxy/internal/app"
+	"coroxy/internal/cert"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
 	"coroxy/internal/session"
@@ -20,18 +23,32 @@ var assets embed.FS
 
 func main() {
 	logger := slog.Default()
+
+	// CA Manager: ~/.coroxy/
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	dataDir := filepath.Join(homeDir, ".coroxy")
+
+	caManager, err := cert.NewManager(dataDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	store := session.NewMemoryStore()
 
-	a := app.NewApp(nil, store) // engine set after creation for callback wiring
+	a := app.NewApp(nil, store, caManager)
 
 	engine := proxy.NewEngine(
 		model.DefaultProxyConfig(),
 		logger,
 		a.HandleNewSession,
+		caManager,
 	)
 	a.SetEngine(engine)
 
-	err := wails.Run(&options.App{
+	err = wails.Run(&options.App{
 		Title:  "Coroxy",
 		Width:  1024,
 		Height: 768,

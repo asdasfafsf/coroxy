@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/cert"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
@@ -19,6 +20,7 @@ type Engine struct {
 	config    model.ProxyConfig // immutable after construction
 	logger    *slog.Logger
 	onSession adapter.SessionCallback
+	caManager *cert.Manager
 
 	mu         sync.Mutex
 	state      constant.EngineState
@@ -28,11 +30,13 @@ type Engine struct {
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
-func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback) *Engine {
+// If caManager is provided, HTTPS MITM interception is enabled.
+func NewEngine(config model.ProxyConfig, logger *slog.Logger, onSession adapter.SessionCallback, caManager *cert.Manager) *Engine {
 	return &Engine{
 		config:    config,
 		logger:    logger,
 		onSession: onSession,
+		caManager: caManager,
 		state:     constant.EngineStateStopped,
 	}
 }
@@ -51,7 +55,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	engineCtx, cancel := context.WithCancel(ctx)
 	e.cancel = cancel
 
-	httpProxy := NewHTTPProxy(e.logger, e.onSession)
+	httpProxy := NewHTTPProxy(e.logger, e.onSession, e.caManager)
 	listener, err := net.Listen("tcp", e.config.HTTPAddr)
 	if err != nil {
 		e.state = constant.EngineStateStopped
