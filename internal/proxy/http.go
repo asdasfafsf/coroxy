@@ -14,6 +14,7 @@ import (
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 
 	"github.com/google/uuid"
@@ -38,15 +39,17 @@ type HTTPProxy struct {
 	transport *http.Transport
 	onSession adapter.SessionCallback
 	mitm      MITMProvider
+	pipeline  *intercept.Pipeline
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
 // If mitm is provided, CONNECT requests are intercepted for MITM.
-func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm MITMProvider) *HTTPProxy {
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm MITMProvider, pipeline *intercept.Pipeline) *HTTPProxy {
 	return &HTTPProxy{
 		logger:    logger,
 		onSession: onSession,
 		mitm:      mitm,
+		pipeline:  pipeline,
 		transport: &http.Transport{
 			DialContext:           (&net.Dialer{Timeout: 30 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -80,6 +83,14 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	outReq.RequestURI = ""
 	removeHopByHopHeaders(outReq.Header)
 
+	// Run interceptor pipeline on request.
+	if h.pipeline != nil && h.pipeline.Count() > 0 {
+		if h.pipeline.ProcessRequest(outReq, nil) == adapter.ActionDrop {
+			http.Error(w, "proxy: request dropped by interceptor", http.StatusForbidden)
+			return
+		}
+	}
+
 	resp, err := h.transport.RoundTrip(outReq)
 	if err != nil {
 		h.logger.Error("forward request",
@@ -92,6 +103,15 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() { _ = resp.Body.Close() }()
 
 	removeHopByHopHeaders(resp.Header)
+
+	// Run interceptor pipeline on response.
+	if h.pipeline != nil && h.pipeline.Count() > 0 {
+		if h.pipeline.ProcessResponse(resp, nil) == adapter.ActionDrop {
+			http.Error(w, "proxy: response dropped by interceptor", http.StatusForbidden)
+			return
+		}
+	}
+
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
