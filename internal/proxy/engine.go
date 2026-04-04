@@ -22,11 +22,12 @@ type Engine struct {
 	onSession adapter.SessionCallback
 	caManager *cert.Manager
 
-	mu         sync.Mutex
-	state      constant.EngineState
-	cancel     context.CancelFunc
-	httpServer *http.Server
-	wg         sync.WaitGroup
+	mu            sync.Mutex
+	state         constant.EngineState
+	cancel        context.CancelFunc
+	httpServer    *http.Server
+	socksListener net.Listener
+	wg            sync.WaitGroup
 }
 
 // NewEngine creates a new proxy engine with the given configuration.
@@ -81,9 +82,34 @@ func (e *Engine) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Start SOCKS5 listener.
+	socksListener, err := net.Listen("tcp", e.config.SOCKSAddr)
+	if err != nil {
+		_ = e.httpServer.Close()
+		e.state = constant.EngineStateStopped
+		e.cancel()
+		e.cancel = nil
+		return fmt.Errorf("listen socks on %s: %w", e.config.SOCKSAddr, err)
+	}
+	e.socksListener = socksListener
+
+	socksProxy := NewSOCKS5Proxy(e.logger, e.onSession)
+	e.wg.Add(1)
+	go func() {
+		defer e.wg.Done()
+		for {
+			conn, err := socksListener.Accept()
+			if err != nil {
+				return // listener closed
+			}
+			go socksProxy.HandleConn(conn)
+		}
+	}()
+
 	e.state = constant.EngineStateRunning
 	e.logger.Info("proxy engine started",
 		slog.String("http_addr", listener.Addr().String()),
+		slog.String("socks_addr", socksListener.Addr().String()),
 	)
 
 	return nil
@@ -105,6 +131,11 @@ func (e *Engine) Stop(ctx context.Context) error {
 			e.logger.Error("shutdown http server", slog.String("error", err.Error()))
 		}
 		e.httpServer = nil
+	}
+
+	if e.socksListener != nil {
+		_ = e.socksListener.Close()
+		e.socksListener = nil
 	}
 
 	if e.cancel != nil {
