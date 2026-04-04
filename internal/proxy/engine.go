@@ -26,7 +26,9 @@ type Engine struct {
 	state         constant.EngineState
 	cancel        context.CancelFunc
 	httpServer    *http.Server
+	httpAddr      string
 	socksListener net.Listener
+	socksAddr     string
 	wg            sync.WaitGroup
 }
 
@@ -106,10 +108,13 @@ func (e *Engine) Start(ctx context.Context) error {
 		}
 	}()
 
+	e.httpAddr = listener.Addr().String()
+	e.socksAddr = socksListener.Addr().String()
+
 	e.state = constant.EngineStateRunning
 	e.logger.Info("proxy engine started",
-		slog.String("http_addr", listener.Addr().String()),
-		slog.String("socks_addr", socksListener.Addr().String()),
+		slog.String("http_addr", e.httpAddr),
+		slog.String("socks_addr", e.socksAddr),
 	)
 
 	return nil
@@ -166,4 +171,14 @@ func (e *Engine) State() constant.EngineState {
 // Config returns the current proxy configuration.
 func (e *Engine) Config() model.ProxyConfig {
 	return e.config
+}
+
+// HTTPAddr returns the actual HTTP proxy listen address (available after Start).
+func (e *Engine) HTTPAddr() string {
+	return e.httpAddr
+}
+
+// SOCKSAddr returns the actual SOCKS5 proxy listen address (available after Start).
+func (e *Engine) SOCKSAddr() string {
+	return e.socksAddr
 }
