@@ -36,7 +36,7 @@ func DetectProtocol(peek []byte) constant.Protocol {
 
 	// SOCKS5: version byte 0x05
 	if peek[0] == 0x05 {
-		return constant.ProtocolRaw // SOCKS5 detection reserved for Phase 3
+		return constant.ProtocolTCP
 	}
 
 	// HTTP: starts with a known method
