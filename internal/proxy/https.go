@@ -19,12 +19,9 @@ import (
 )
 
 // handleMITM performs HTTPS MITM interception on a CONNECT tunnel.
-// It connects to the target server via TLS, obtains the original certificate,
-// generates a leaf certificate, and establishes a TLS connection with the client.
-// The decrypted HTTP traffic is then captured as sessions.
-func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert.Manager) {
-	defer func() { _ = clientConn.Close() }()
-
+// Returns true if MITM succeeded (caller should not do anything else).
+// Returns false if MITM setup failed (caller should fall back to passthrough).
+func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert.Manager) bool {
 	// 1. Connect to target server via TLS to obtain original certificate.
 	targetTLSConn, err := tls.DialWithDialer(
 		&net.Dialer{Timeout: 30 * time.Second},
@@ -33,13 +30,13 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert
 		&tls.Config{InsecureSkipVerify: true},
 	)
 	if err != nil {
-		h.logger.Error("tls dial target",
+		h.logger.Warn("mitm: tls dial failed, falling back to passthrough",
 			slog.String("host", host),
 			slog.String("error", err.Error()),
 		)
-		return
+		h.captureErrorSession(host, err)
+		return false
 	}
-	defer func() { _ = targetTLSConn.Close() }()
 
 	// 2. Get original server certificate for CN/SAN replication.
 	state := targetTLSConn.ConnectionState()
@@ -51,11 +48,13 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert
 	// 3. Issue leaf certificate for this host.
 	leafCert, err := caManager.IssueCert(hostOnly(host), originalCert)
 	if err != nil {
-		h.logger.Error("issue leaf cert",
+		_ = targetTLSConn.Close()
+		h.logger.Warn("mitm: issue cert failed, falling back to passthrough",
 			slog.String("host", host),
 			slog.String("error", err.Error()),
 		)
-		return
+		h.captureErrorSession(host, err)
+		return false
 	}
 
 	// 4. TLS handshake with client using the leaf certificate.
@@ -63,15 +62,41 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, caManager *cert
 		Certificates: []tls.Certificate{*leafCert},
 	})
 	if err := clientTLSConn.Handshake(); err != nil {
-		h.logger.Error("client tls handshake",
+		_ = targetTLSConn.Close()
+		h.logger.Warn("mitm: client handshake failed",
 			slog.String("host", host),
 			slog.String("error", err.Error()),
 		)
-		return
+		h.captureErrorSession(host, err)
+		// Client rejected our cert — can't fallback, connection is broken.
+		_ = clientConn.Close()
+		return true
 	}
 
 	// 5. Relay decrypted HTTP traffic, capturing requests and responses.
 	h.relayHTTP(clientTLSConn, targetTLSConn, host)
+	_ = targetTLSConn.Close()
+	_ = clientConn.Close()
+	return true
+}
+
+// captureErrorSession records a failed MITM attempt as an error session.
+func (h *HTTPProxy) captureErrorSession(host string, err error) {
+	if h.onSession == nil {
+		return
+	}
+
+	targetHost, targetPort := splitHostPort(host, 443)
+
+	session := &model.Session{
+		ID:        uuid.NewString(),
+		Protocol:  constant.ProtocolTLS,
+		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
+		State:     constant.SessionStateError,
+		CreatedAt: time.Now(),
+	}
+
+	h.onSession(session)
 }
 
 // relayHTTP reads HTTP requests from the client, forwards them to the target,
