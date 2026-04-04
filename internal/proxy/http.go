@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/cert"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
 
@@ -35,13 +36,16 @@ type HTTPProxy struct {
 	logger    *slog.Logger
 	transport *http.Transport
 	onSession adapter.SessionCallback
+	caManager *cert.Manager
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
-func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback) *HTTPProxy {
+// If caManager is provided, CONNECT requests are intercepted for MITM.
+func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, caManager *cert.Manager) *HTTPProxy {
 	return &HTTPProxy{
 		logger:    logger,
 		onSession: onSession,
+		caManager: caManager,
 		transport: &http.Transport{
 			DialContext:           (&net.Dialer{Timeout: 30 * time.Second}).DialContext,
 			TLSHandshakeTimeout:   10 * time.Second,
@@ -142,6 +146,14 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// MITM: if CA manager is available, intercept TLS to capture decrypted traffic.
+	if h.caManager != nil {
+		_ = targetConn.Close() // MITM handler makes its own TLS connection
+		h.handleMITM(clientConn, host, h.caManager)
+		return
+	}
+
+	// Passthrough: no MITM, just relay bytes.
 	h.captureTunnelSession(r, host)
 
 	go func() {

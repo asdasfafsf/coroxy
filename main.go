@@ -28,6 +28,7 @@ func main() {
 		model.DefaultProxyConfig(),
 		logger,
 		a.HandleNewSession,
+		nil, // CA manager (set after CA is initialized)
 	)
 	a.SetEngine(engine)
 
