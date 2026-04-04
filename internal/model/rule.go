@@ -7,6 +7,7 @@ const (
 	RuleActionDrop         RuleAction = "drop"
 	RuleActionDelay        RuleAction = "delay"
 	RuleActionModifyHeader RuleAction = "modify_header"
+	RuleActionAutoRespond  RuleAction = "auto_respond"
 )
 
 // MatchCondition defines criteria for matching HTTP traffic.
@@ -32,5 +33,14 @@ type Rule struct {
 	Match           MatchCondition       `json:"match"`
 	Action          RuleAction           `json:"action"`
 	Priority        int                  `json:"priority"`
-	Modifications   []HeaderModification `json:"modifications,omitempty"`
+	Modifications []HeaderModification `json:"modifications,omitempty"`
+	AutoResponse  *AutoResponse        `json:"auto_response,omitempty"`
+}
+
+// AutoResponse defines a canned response to return instead of forwarding to the server.
+type AutoResponse struct {
+	StatusCode  int               `json:"status_code"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	Body        string            `json:"body,omitempty"`
+	ContentType string            `json:"content_type,omitempty"`
 }
