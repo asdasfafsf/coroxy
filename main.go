@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"log"
+	"log/slog"
 
 	"coroxy/internal/app"
 
@@ -15,10 +16,9 @@ import (
 var assets embed.FS
 
 func main() {
-	// Create an instance of the app structure
-	a := app.NewApp()
+	logger := slog.Default()
+	a := app.NewApp(logger)
 
-	// Create application with options
 	err := wails.Run(&options.App{
 		Title:  "Coroxy",
 		Width:  1024,
