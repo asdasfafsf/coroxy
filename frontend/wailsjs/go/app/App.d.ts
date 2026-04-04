@@ -5,14 +5,22 @@ import {adapter} from '../models';
 
 export function ClearSessions():Promise<void>;
 
+export function ExportCA(arg1:string):Promise<void>;
+
+export function GetCAInfo():Promise<model.CAInfo>;
+
 export function GetProxyState():Promise<string>;
 
 export function GetSessions():Promise<Array<model.Session>>;
 
 export function HandleNewSession(arg1:model.Session):Promise<void>;
 
+export function InstallCA():Promise<void>;
+
 export function SetEngine(arg1:adapter.ProxyEngine):Promise<void>;
 
 export function StartProxy():Promise<void>;
 
 export function StopProxy():Promise<void>;
+
+export function UninstallCA():Promise<void>;
