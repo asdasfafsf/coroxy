@@ -20,6 +20,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 
 두 규칙이 충돌하면 아래 순서로 판단한다:
 
+0. **프로젝트 적합성 우선** — 일반 관행/커뮤니티 컨벤션보다 이 프로젝트의 구조와 원칙에 맞는 것을 선택한다. 관행을 따르지 않는 이유는 ADR에 기록한다
 1. **쉽고 간단하게** — 복잡한 패턴보다 읽기 쉬운 코드
 2. **확장성은 좋게** — 외부 의존(I/O 경계)은 인터페이스로 교체 가능하게. 소비자(caller) 측에서 필요한 인터페이스를 정의한다. 패키지 내부 구현은 YAGNI 우선
 3. **필요한 것만** — YAGNI. 미래를 위한 코드를 만들지 않음
@@ -657,8 +658,8 @@ client := &http.Client{Timeout: 30 * time.Second}
 
 ```
 main.go                 # Wails 엔트리포인트 (조립만, 로직 없음)
-app.go                  # Wails 바인딩 구조체
 internal/
+├── app/                # Wails 바인딩 구조체 + GUI↔Core 브릿지
 ├── adapter/            # 공유 인터페이스 (의존성 역전 계층)
 ├── model/              # 공유 데이터 구조체
 ├── constant/           # enum, 프로토콜 상수
@@ -669,8 +670,8 @@ internal/
 ```
 
 - Wails 프로젝트이므로 엔트리포인트는 루트 `main.go`에 둔다. `cmd/`는 사용하지 않는다 (MUST)
-- `main.go`와 `app.go`에 비즈니스 로직을 넣지 않는다 (MUST)
-- `app.go` 위치는 Wails v2 기본 구조를 따라 루트에 둔다 (MUST)
+- `main.go`에 비즈니스 로직을 넣지 않는다. 조립(의존성 주입)만 수행한다 (MUST)
+- Wails 바인딩 구조체는 `internal/app/`에 둔다 (MUST)
 - 공유 타입은 역할별로 분리한다: 인터페이스(`adapter/`), 구조체(`model/`), 상수/enum(`constant/`), 공유 에러(`errdefs/`) (MUST)
 - 공유 패키지 간 import 규칙: `adapter/`는 `model/`, `constant/`, `errdefs/`를 import할 수 있다. `model/`은 `constant/`를 import할 수 있다. 그 외 `internal/` 패키지는 import하지 않는다 (MUST)
 - 센티널 에러와 커스텀 에러 타입 중 여러 패키지가 공유하는 것은 `errdefs/`에 둔다. 특정 패키지에서만 쓰는 에러는 해당 패키지의 `errors.go`에 둔다 (MUST)
@@ -695,7 +696,7 @@ var assets embed.FS
 
 ### Wails 바인딩 규칙 (MUST)
 
-- 바인딩 구조체는 루트 `app.go`에 둔다 (Wails 기본 구조 유지)
+- 바인딩 구조체는 `internal/app/`에 둔다
 - 바인딩 메서드는 에러를 반환할 때 `(결과, error)` 형태를 사용한다
 - 이벤트 emit은 `runtime.EventsEmit(ctx, "이벤트명", 데이터)` 패턴을 사용한다
 - 이벤트 이름은 `coroxy:카테고리:액션` 네임스페이스를 사용한다 (예: `coroxy:session:new`)
