@@ -4,8 +4,10 @@ go 1.26
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/smallstep/truststore v0.13.0
 	github.com/wailsapp/wails/v2 v2.11.0
+	golang.org/x/sync v0.20.0
 )
 
 require (
