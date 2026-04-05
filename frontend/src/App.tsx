@@ -9,6 +9,7 @@ import { StatusBar } from './components/StatusBar';
 import { Settings } from './components/Settings';
 import { RuleEditor } from './components/RuleEditor';
 import { BreakpointPanel } from './components/BreakpointPanel';
+import { Composer } from './components/Composer';
 
 function App() {
   const [sessions, setSessions] = useState<model.Session[]>([]);
@@ -16,6 +17,7 @@ function App() {
   const [selectedSession, setSelectedSession] = useState<model.Session | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [showComposer, setShowComposer] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -61,6 +63,7 @@ function App() {
         onSessionsClear={handleSessionsClear}
         onSettingsClick={() => setShowSettings(true)}
         onRulesClick={() => setShowRules(true)}
+        onComposerClick={() => setShowComposer(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -77,6 +80,7 @@ function App() {
       <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
+      {showComposer && <Composer onClose={() => setShowComposer(false)} />}
       <BreakpointPanel />
     </div>
   );

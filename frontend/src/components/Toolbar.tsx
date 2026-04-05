@@ -5,11 +5,12 @@ interface ToolbarProps {
   onSessionsClear: () => void;
   onSettingsClick: () => void;
   onRulesClick: () => void;
+  onComposerClick: () => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
 }
 
-export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, searchQuery, onSearchChange }: ToolbarProps) {
+export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComposerClick, searchQuery, onSearchChange }: ToolbarProps) {
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -124,6 +125,12 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, search
           }}
         >
           {sysProxy ? 'Proxy ON' : 'Proxy OFF'}
+        </button>
+        <button
+          className="px-3 py-1.5 rounded text-xs font-medium bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70] transition-colors"
+          onClick={onComposerClick}
+        >
+          Composer
         </button>
         <button
           className="px-3 py-1.5 rounded text-xs font-medium bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70] transition-colors"

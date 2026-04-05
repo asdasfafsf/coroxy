@@ -3,8 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/intercept"
@@ -264,6 +268,66 @@ func (a *App) GetPendingBreakpoints() []BreakpointPending {
 		})
 	}
 	return result
+}
+
+// ComposerRequest is the input for sending a custom HTTP request.
+type ComposerRequest struct {
+	Method  string            `json:"method"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
+
+// ComposerResponse is the result of a custom HTTP request.
+type ComposerResponse struct {
+	StatusCode  int               `json:"status_code"`
+	StatusText  string            `json:"status_text"`
+	Headers     map[string]string `json:"headers"`
+	Body        string            `json:"body"`
+	BodySize    int64             `json:"body_size"`
+	DurationMs  int64             `json:"duration_ms"`
+}
+
+// SendRequest sends a custom HTTP request and returns the response.
+func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
+	var bodyReader io.Reader
+	if req.Body != "" {
+		bodyReader = strings.NewReader(req.Body)
+	}
+
+	httpReq, err := http.NewRequest(req.Method, req.URL, bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("create request: %w", err)
+	}
+
+	for k, v := range req.Headers {
+		httpReq.Header.Set(k, v)
+	}
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	start := time.Now()
+
+	resp, err := client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("send request: %w", err)
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+
+	headers := make(map[string]string)
+	for k, v := range resp.Header {
+		headers[k] = strings.Join(v, ", ")
+	}
+
+	return &ComposerResponse{
+		StatusCode: resp.StatusCode,
+		StatusText: resp.Status,
+		Headers:    headers,
+		Body:       string(body),
+		BodySize:   int64(len(body)),
+		DurationMs: time.Since(start).Milliseconds(),
+	}, nil
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.
