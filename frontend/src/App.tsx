@@ -8,6 +8,7 @@ import { Inspector } from './components/Inspector';
 import { StatusBar } from './components/StatusBar';
 import { Settings } from './components/Settings';
 import { RuleEditor } from './components/RuleEditor';
+import { BreakpointPanel } from './components/BreakpointPanel';
 
 function App() {
   const [sessions, setSessions] = useState<model.Session[]>([]);
@@ -76,6 +77,7 @@ function App() {
       <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
+      <BreakpointPanel />
     </div>
   );
 }
