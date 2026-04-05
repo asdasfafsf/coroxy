@@ -304,6 +304,9 @@ func buildRawResponse(msg *model.HTTPMessage) []byte {
 	statusText := msg.StatusText
 	if statusText == "" {
 		statusText = http.StatusText(statusCode)
+	} else if i := strings.IndexByte(statusText, ' '); i >= 0 {
+		// Strip "200 OK" → "OK" to avoid duplicate code in status line.
+		statusText = statusText[i+1:]
 	}
 
 	fmt.Fprintf(&buf, "%s %d %s\r\n", httpVersion, statusCode, statusText)
