@@ -71,6 +71,11 @@ func (a *App) GetSessions() []*model.Session {
 	return a.store.List()
 }
 
+// GetSessionsFiltered returns sessions matching the given filter.
+func (a *App) GetSessionsFiltered(filter model.SessionFilter) []*model.Session {
+	return a.store.ListWithFilter(filter)
+}
+
 // ClearSessions removes all captured sessions.
 func (a *App) ClearSessions() {
 	a.store.Clear()
