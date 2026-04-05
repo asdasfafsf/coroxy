@@ -290,7 +290,7 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 		bodyReader = strings.NewReader(req.Body)
 	}
 
-	httpReq, err := http.NewRequest(req.Method, req.URL, bodyReader)
+	httpReq, err := http.NewRequestWithContext(a.ctx, req.Method, req.URL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
 	}
