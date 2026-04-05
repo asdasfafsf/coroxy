@@ -9,6 +9,7 @@ import (
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
+	"coroxy/internal/rule"
 	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -20,15 +21,17 @@ type App struct {
 	engine         adapter.ProxyEngine
 	store          *session.MemoryStore
 	caManager      adapter.CAManager
+	ruleEngine     *rule.Engine
 	sysProxyActive bool
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager) *App {
+func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager, ruleEngine *rule.Engine) *App {
 	return &App{
-		engine:    engine,
-		store:     store,
-		caManager: caManager,
+		engine:     engine,
+		store:      store,
+		caManager:  caManager,
+		ruleEngine: ruleEngine,
 	}
 }
 
@@ -182,6 +185,31 @@ func (a *App) ExportSessionsJSON() error {
 		return fmt.Errorf("export JSON: %w", err)
 	}
 	return os.WriteFile(path, data, 0644)
+}
+
+// ListRules returns all rules.
+func (a *App) ListRules() []*model.Rule {
+	return a.ruleEngine.Rules()
+}
+
+// AddRule adds a new rule.
+func (a *App) AddRule(r *model.Rule) {
+	a.ruleEngine.AddRule(r)
+}
+
+// RemoveRule removes a rule by ID.
+func (a *App) RemoveRule(id string) {
+	a.ruleEngine.RemoveRule(id)
+}
+
+// ToggleRule enables or disables a rule.
+func (a *App) ToggleRule(id string) {
+	for _, r := range a.ruleEngine.Rules() {
+		if r.ID == id {
+			r.Enabled = !r.Enabled
+			return
+		}
+	}
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.

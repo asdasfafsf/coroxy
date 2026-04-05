@@ -7,12 +7,14 @@ import { SessionList } from './components/SessionList';
 import { Inspector } from './components/Inspector';
 import { StatusBar } from './components/StatusBar';
 import { Settings } from './components/Settings';
+import { RuleEditor } from './components/RuleEditor';
 
 function App() {
   const [sessions, setSessions] = useState<model.Session[]>([]);
   const [proxyState, setProxyState] = useState('stopped');
   const [selectedSession, setSelectedSession] = useState<model.Session | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showRules, setShowRules] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -57,6 +59,7 @@ function App() {
       <Toolbar
         onSessionsClear={handleSessionsClear}
         onSettingsClick={() => setShowSettings(true)}
+        onRulesClick={() => setShowRules(true)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
       />
@@ -72,6 +75,7 @@ function App() {
       </div>
       <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
+      {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
     </div>
   );
 }
