@@ -3,6 +3,7 @@ package session
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"coroxy/internal/model"
@@ -159,7 +160,7 @@ func convertRequest(msg *model.HTTPMessage) HARRequest {
 		BodySize:    msg.BodySize,
 	}
 
-	// PostData for request bodies.
+	// PostData for request bodies (skip binary).
 	if len(msg.Body) > 0 {
 		mimeType := msg.ContentType
 		if mimeType == "" {
@@ -194,7 +195,7 @@ func convertResponse(msg *model.HTTPMessage) HARResponse {
 		Content: HARContent{
 			Size:     msg.BodySize,
 			MimeType: mimeType,
-			Text:     string(msg.Body),
+			Text:     textBodyForHAR(msg.Body, mimeType),
 		},
 		HeadersSize: -1,
 		BodySize:    msg.BodySize,
@@ -210,7 +211,7 @@ func convertTimings(t *model.Timing) HARTimings {
 		DNS:     t.DNS,
 		Connect: t.Connect,
 		SSL:     t.TLS,
-		Send:    0, // not measurable from proxy
+		Send:    -1, // not measurable from proxy
 		Wait:    t.TTFB,
 		Receive: t.Transfer,
 	}
@@ -264,6 +265,30 @@ func convertHeaders(headers map[string][]string) []HARNameValue {
 		}
 	}
 	return result
+}
+
+// textBodyForHAR returns body as string for text content types, empty for binary.
+func textBodyForHAR(body []byte, mimeType string) string {
+	if len(body) == 0 {
+		return ""
+	}
+	if isBinaryContentType(mimeType) {
+		return ""
+	}
+	return string(body)
+}
+
+// isBinaryContentType returns true for content types that are binary (not text-representable).
+func isBinaryContentType(ct string) bool {
+	if strings.HasPrefix(ct, "image/") || strings.HasPrefix(ct, "audio/") ||
+		strings.HasPrefix(ct, "video/") || strings.HasPrefix(ct, "font/") {
+		return true
+	}
+	if strings.Contains(ct, "octet-stream") || strings.Contains(ct, "protobuf") ||
+		strings.Contains(ct, "grpc") || strings.Contains(ct, "wasm") {
+		return true
+	}
+	return false
 }
 
 // ExportJSON converts sessions to a JSON array.

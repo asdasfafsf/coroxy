@@ -92,6 +92,7 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	removeHopByHopHeaders(outReq.Header)
 
 	// Capture request body (limit to maxCaptureSize).
+	// Error is intentionally ignored — capture failure should not break proxying.
 	var reqBody []byte
 	if outReq.Body != nil {
 		reqBody, _ = readLimited(outReq.Body, maxCaptureSize)

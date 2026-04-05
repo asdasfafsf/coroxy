@@ -187,6 +187,7 @@ func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, r
 
 	targetHost, targetPort := splitHostPort(host, 443)
 
+	elapsed := time.Since(start)
 	session := &model.Session{
 		ID:        uuid.NewString(),
 		Protocol:  constant.ProtocolTLS,
@@ -194,9 +195,16 @@ func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, r
 		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
 		Request:   buildRequestMessage(req, reqBody),
 		Response:  buildResponseMessage(resp, respBody, int64(len(respBody))),
+		Timing: &model.Timing{
+			DNS:      -1,
+			Connect:  -1,
+			TLS:      -1,
+			TTFB:     float64(elapsed.Microseconds()) / 1000.0,
+			Transfer: -1,
+		},
 		State:     constant.SessionStateCompleted,
 		CreatedAt: start,
-		Duration:  time.Since(start),
+		Duration:  elapsed,
 	}
 
 	h.onSession(session)
