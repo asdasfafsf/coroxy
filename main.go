@@ -12,6 +12,7 @@ import (
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
+	"coroxy/internal/rule"
 	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2"
@@ -38,10 +39,12 @@ func main() {
 	}
 
 	store := session.NewMemoryStore()
+	ruleEngine := rule.NewEngine()
 
-	a := app.NewApp(nil, store, caManager)
+	a := app.NewApp(nil, store, caManager, ruleEngine)
 
 	pipeline := intercept.NewPipeline()
+	pipeline.Add(ruleEngine)
 
 	engine := proxy.NewEngine(
 		model.DefaultProxyConfig(),
