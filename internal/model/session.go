@@ -7,6 +7,16 @@ import (
 	"coroxy/internal/constant"
 )
 
+// Timing holds duration breakdown for each phase of an HTTP request.
+// All values are in milliseconds. -1 means not applicable.
+type Timing struct {
+	DNS      float64 `json:"dns"`      // DNS lookup
+	Connect  float64 `json:"connect"`  // TCP connection
+	TLS      float64 `json:"tls"`      // TLS handshake
+	TTFB     float64 `json:"ttfb"`     // Time to first byte (send + wait)
+	Transfer float64 `json:"transfer"` // Response body transfer
+}
+
 // Session represents a captured network session.
 type Session struct {
 	ID        string                `json:"id"`
@@ -15,6 +25,7 @@ type Session struct {
 	Target    Endpoint              `json:"target"`
 	Request   *HTTPMessage          `json:"request,omitempty"`
 	Response  *HTTPMessage          `json:"response,omitempty"`
+	Timing    *Timing               `json:"timing,omitempty"`
 	State     constant.SessionState `json:"state"`
 	CreatedAt time.Time             `json:"created_at"`
 	Duration  time.Duration         `json:"duration"`

@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"strconv"
 	"strings"
 	"sync"
@@ -106,6 +107,11 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Attach httptrace to measure timing breakdown.
+	var tt requestTiming
+	traceCtx := httptrace.WithClientTrace(outReq.Context(), tt.trace())
+	outReq = outReq.WithContext(traceCtx)
+
 	resp, err := h.transport.RoundTrip(outReq)
 	if err != nil {
 		h.logger.Error("forward request",
@@ -142,7 +148,10 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	h.captureHTTPSession(r, resp, reqBody, respBodyBuf.Bytes(), written, start)
+	transferEnd := time.Now()
+	timing := tt.build(transferEnd)
+
+	h.captureHTTPSession(r, resp, reqBody, respBodyBuf.Bytes(), written, start, timing)
 }
 
 // handleConnect establishes a TCP tunnel for CONNECT requests (HTTPS passthrough).
@@ -238,7 +247,7 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 const maxCaptureSize = 2 << 20 // 2MB
 
 // captureHTTPSession creates a session from an HTTP request/response and notifies the callback.
-func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, reqBody, respBody []byte, bodySize int64, start time.Time) {
+func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, reqBody, respBody []byte, bodySize int64, start time.Time, timing *model.Timing) {
 	if h.onSession == nil {
 		return
 	}
@@ -252,6 +261,7 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, req
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
 		Request:  buildRequestMessage(r, reqBody),
 		Response: buildResponseMessage(resp, respBody, bodySize),
+		Timing:   timing,
 		State:    constant.SessionStateCompleted,
 		CreatedAt: start,
 		Duration:  time.Since(start),
@@ -421,4 +431,65 @@ func copyHeaders(dst, src http.Header) {
 			dst.Add(key, value)
 		}
 	}
+}
+
+// requestTiming collects timestamps from httptrace hooks.
+type requestTiming struct {
+	dnsStart      time.Time
+	dnsEnd        time.Time
+	connectStart  time.Time
+	connectEnd    time.Time
+	tlsStart      time.Time
+	tlsEnd        time.Time
+	gotFirstByte  time.Time
+	wroteRequest  time.Time
+}
+
+// trace returns an httptrace.ClientTrace that populates timing fields.
+func (t *requestTiming) trace() *httptrace.ClientTrace {
+	return &httptrace.ClientTrace{
+		DNSStart:             func(_ httptrace.DNSStartInfo) { t.dnsStart = time.Now() },
+		DNSDone:              func(_ httptrace.DNSDoneInfo) { t.dnsEnd = time.Now() },
+		ConnectStart:         func(_, _ string) { t.connectStart = time.Now() },
+		ConnectDone:          func(_, _ string, _ error) { t.connectEnd = time.Now() },
+		TLSHandshakeStart:    func() { t.tlsStart = time.Now() },
+		TLSHandshakeDone:     func(_ tls.ConnectionState, _ error) { t.tlsEnd = time.Now() },
+		WroteRequest:         func(_ httptrace.WroteRequestInfo) { t.wroteRequest = time.Now() },
+		GotFirstResponseByte: func() { t.gotFirstByte = time.Now() },
+	}
+}
+
+// build converts collected timestamps into a Timing struct (milliseconds).
+func (t *requestTiming) build(transferEnd time.Time) *model.Timing {
+	ms := func(d time.Duration) float64 {
+		if d <= 0 {
+			return -1
+		}
+		return float64(d.Microseconds()) / 1000.0
+	}
+
+	timing := &model.Timing{
+		DNS:     -1,
+		Connect: -1,
+		TLS:     -1,
+		TTFB:    -1,
+	}
+
+	if !t.dnsStart.IsZero() && !t.dnsEnd.IsZero() {
+		timing.DNS = ms(t.dnsEnd.Sub(t.dnsStart))
+	}
+	if !t.connectStart.IsZero() && !t.connectEnd.IsZero() {
+		timing.Connect = ms(t.connectEnd.Sub(t.connectStart))
+	}
+	if !t.tlsStart.IsZero() && !t.tlsEnd.IsZero() {
+		timing.TLS = ms(t.tlsEnd.Sub(t.tlsStart))
+	}
+	if !t.wroteRequest.IsZero() && !t.gotFirstByte.IsZero() {
+		timing.TTFB = ms(t.gotFirstByte.Sub(t.wroteRequest))
+	}
+	if !t.gotFirstByte.IsZero() {
+		timing.Transfer = ms(transferEnd.Sub(t.gotFirstByte))
+	}
+
+	return timing
 }

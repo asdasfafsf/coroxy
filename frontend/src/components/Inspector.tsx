@@ -6,7 +6,7 @@ interface InspectorProps {
 }
 
 type RequestTab = 'headers' | 'query' | 'cookies' | 'webforms' | 'body' | 'hex' | 'raw';
-type ResponseTab = 'headers' | 'cookies' | 'body' | 'hex' | 'raw';
+type ResponseTab = 'headers' | 'cookies' | 'body' | 'hex' | 'raw' | 'timing';
 
 export function Inspector({ session }: InspectorProps) {
   const [reqTab, setReqTab] = useState<RequestTab>('headers');
@@ -59,6 +59,7 @@ export function Inspector({ session }: InspectorProps) {
             { key: 'body', label: 'Body' },
             { key: 'hex', label: 'Hex' },
             { key: 'raw', label: 'Raw' },
+            { key: 'timing', label: 'Timing' },
           ]}
           active={resTab}
           onSelect={(t) => setResTab(t as ResponseTab)}
@@ -69,6 +70,7 @@ export function Inspector({ session }: InspectorProps) {
           {resTab === 'body' && <BodyContent body={session.response?.body} contentType={session.response?.content_type} size={session.response?.body_size} />}
           {resTab === 'hex' && <HexView body={session.response?.body} />}
           {resTab === 'raw' && <RawResponse session={session} />}
+          {resTab === 'timing' && <TimingView session={session} />}
         </div>
       </div>
     </div>
@@ -416,6 +418,78 @@ function WebFormsView({ body, contentType }: { body: number[] | Uint8Array | str
         ))}
       </tbody>
     </table>
+  );
+}
+
+// --- Timing View ---
+
+function TimingView({ session }: { session: model.Session }) {
+  const t = session.timing;
+  const dur = session.duration;
+
+  if (!t) {
+    return <div className="text-[#6c7086] text-xs">No timing data available</div>;
+  }
+
+  const phases: { label: string; value: number; color: string }[] = [
+    { label: 'DNS Lookup', value: t.dns, color: '#89b4fa' },
+    { label: 'TCP Connect', value: t.connect, color: '#a6e3a1' },
+    { label: 'TLS Handshake', value: t.tls, color: '#cba6f7' },
+    { label: 'TTFB (Wait)', value: t.ttfb, color: '#f9e2af' },
+    { label: 'Transfer', value: t.transfer, color: '#fab387' },
+  ];
+
+  const total = phases.reduce((sum, p) => sum + Math.max(0, p.value), 0);
+  const totalMs = dur ? dur / 1_000_000 : total;
+
+  return (
+    <div className="space-y-3">
+      <div className="text-[#6c7086] text-xs">Total: {totalMs.toFixed(1)}ms</div>
+
+      {/* Stacked bar */}
+      <div className="flex h-6 rounded overflow-hidden bg-[#11111b]">
+        {phases.map((p) => {
+          if (p.value <= 0) return null;
+          const pct = total > 0 ? (p.value / total) * 100 : 0;
+          return (
+            <div
+              key={p.label}
+              style={{ width: `${pct}%`, backgroundColor: p.color }}
+              className="h-full opacity-80 hover:opacity-100 transition-opacity"
+              title={`${p.label}: ${p.value.toFixed(1)}ms`}
+            />
+          );
+        })}
+      </div>
+
+      {/* Detail table */}
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="text-[#a6adc8] border-b border-[#313244]">
+            <th className="text-left py-1 px-2 w-8"></th>
+            <th className="text-left py-1 px-2">Phase</th>
+            <th className="text-right py-1 px-2">Duration</th>
+            <th className="text-right py-1 px-2">%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {phases.map((p) => (
+            <tr key={p.label} className="border-b border-[#313244]/50">
+              <td className="py-1 px-2">
+                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: p.color }} />
+              </td>
+              <td className="py-1 px-2 text-[#cdd6f4]">{p.label}</td>
+              <td className="py-1 px-2 text-right text-[#cdd6f4]">
+                {p.value >= 0 ? `${p.value.toFixed(1)}ms` : 'N/A'}
+              </td>
+              <td className="py-1 px-2 text-right text-[#6c7086]">
+                {p.value > 0 && total > 0 ? `${((p.value / total) * 100).toFixed(0)}%` : '-'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
