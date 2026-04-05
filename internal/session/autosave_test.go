@@ -39,7 +39,7 @@ func TestAutoSaverFlushOnThreshold(t *testing.T) {
 	// Add sessions and mark dirty.
 	for i := 0; i < 3; i++ {
 		store.Add(&model.Session{
-			ID:       "s" + string(rune('0'+i)),
+			ID:       fmt.Sprintf("s%d", i),
 			Protocol: constant.ProtocolHTTP,
 			Target:   model.Endpoint{Host: "example.com", Port: 80},
 			State:    constant.SessionStateCompleted,

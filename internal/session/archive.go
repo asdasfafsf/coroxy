@@ -204,8 +204,8 @@ func readArchiveFrom(r io.ReaderAt, size int64) ([]*model.Session, error) {
 		}
 	}
 
-	if m.Count > 0 && len(metaFiles) == 0 {
-		return nil, fmt.Errorf("archive claims %d sessions but no meta files found", m.Count)
+	if m.Count != len(metaFiles) {
+		return nil, fmt.Errorf("archive manifest claims %d sessions but found %d meta files", m.Count, len(metaFiles))
 	}
 
 	sessions := make([]*model.Session, 0, len(metaFiles))

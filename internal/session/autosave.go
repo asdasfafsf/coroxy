@@ -24,6 +24,7 @@ type AutoSaver struct {
 	mu       sync.Mutex
 	flushMu  sync.Mutex
 	dirty    atomic.Int64
+	flushCh  chan struct{} // non-blocking gate for threshold flush
 	stopCh   chan struct{}
 	stopped  bool
 }
@@ -61,6 +62,7 @@ func NewAutoSaver(store *MemoryStore, policy StoragePolicy, logger *slog.Logger,
 		dirtyFn:        dirtyFn,
 		interval:       30 * time.Second,
 		dirtyThreshold: 50,
+		flushCh:        make(chan struct{}, 1),
 		stopCh:         make(chan struct{}),
 	}
 
@@ -82,10 +84,19 @@ func (a *AutoSaver) MarkDirty() {
 }
 
 // MarkDirtyN increments the dirty counter by n. If the threshold is reached, triggers a flush.
+// Uses a non-blocking channel send to limit to one pending threshold goroutine.
 func (a *AutoSaver) MarkDirtyN(count int) {
 	n := a.dirty.Add(int64(count))
 	if int(n) >= a.dirtyThreshold {
-		go a.flush("threshold")
+		select {
+		case a.flushCh <- struct{}{}:
+			go func() {
+				a.flush("threshold")
+				<-a.flushCh
+			}()
+		default:
+			// flush already pending
+		}
 	}
 }
 
