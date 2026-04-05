@@ -134,6 +134,10 @@ function RuleForm({ onSubmit, onCancel }: { onSubmit: (r: model.Rule) => void; o
   const [method, setMethod] = useState('');
   const [action, setAction] = useState('drop');
   const [priority, setPriority] = useState(0);
+  // AutoResponder fields
+  const [arStatus, setArStatus] = useState(200);
+  const [arBody, setArBody] = useState('');
+  const [arContentType, setArContentType] = useState('application/json');
 
   const handleSubmit = () => {
     const rule = new model.Rule();
@@ -146,6 +150,14 @@ function RuleForm({ onSubmit, onCancel }: { onSubmit: (r: model.Rule) => void; o
     rule.match.host = host;
     rule.match.path = path;
     rule.match.method = method;
+
+    if (action === 'auto_respond') {
+      rule.auto_response = new model.AutoResponse();
+      rule.auto_response.status_code = arStatus;
+      rule.auto_response.body = arBody;
+      rule.auto_response.content_type = arContentType;
+    }
+
     onSubmit(rule);
   };
 
@@ -193,6 +205,32 @@ function RuleForm({ onSubmit, onCancel }: { onSubmit: (r: model.Rule) => void; o
           <input className={inputClass} type="number" value={priority} onChange={(e) => setPriority(Number(e.target.value))} />
         </div>
       </div>
+
+      {action === 'auto_respond' && (
+        <div className="mt-3 p-3 bg-[#11111b] rounded border border-[#313244]">
+          <div className={labelClass}>Auto Response</div>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div>
+              <div className={labelClass}>Status Code</div>
+              <input className={inputClass} type="number" value={arStatus} onChange={(e) => setArStatus(Number(e.target.value))} />
+            </div>
+            <div>
+              <div className={labelClass}>Content-Type</div>
+              <input className={inputClass} value={arContentType} onChange={(e) => setArContentType(e.target.value)} />
+            </div>
+          </div>
+          <div className="mt-2">
+            <div className={labelClass}>Response Body</div>
+            <textarea
+              className={`${inputClass} h-20 resize-none`}
+              value={arBody}
+              onChange={(e) => setArBody(e.target.value)}
+              placeholder='{"message": "mocked response"}'
+            />
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2 mt-3">
         <button className="px-3 py-1.5 rounded text-xs bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70]" onClick={onCancel}>Cancel</button>
         <button className="px-3 py-1.5 rounded text-xs bg-[#89b4fa] text-[#1e1e2e] hover:bg-[#7ba3e8]" onClick={handleSubmit}>Add</button>
