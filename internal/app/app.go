@@ -220,12 +220,7 @@ func (a *App) RemoveRule(id string) {
 
 // ToggleRule enables or disables a rule.
 func (a *App) ToggleRule(id string) {
-	for _, r := range a.ruleEngine.Rules() {
-		if r.ID == id {
-			r.Enabled = !r.Enabled
-			return
-		}
-	}
+	a.ruleEngine.ToggleRule(id)
 }
 
 // BreakpointResume resumes a paused request.

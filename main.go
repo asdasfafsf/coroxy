@@ -51,7 +51,7 @@ func main() {
 		ruleEngine.Rules,
 		func(pending *intercept.PendingRequest) {
 			// Emit event to GUI when a breakpoint is hit.
-			if a != nil {
+			if a != nil && a.GetContext() != nil {
 				wailsRuntime.EventsEmit(a.GetContext(), "coroxy:breakpoint:hit", map[string]string{
 					"id":     pending.ID,
 					"method": pending.Request.Method,

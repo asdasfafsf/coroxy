@@ -19,9 +19,7 @@ export function BreakpointPanel() {
 
   useEffect(() => {
     refresh();
-    const cancel = EventsOn('coroxy:breakpoint:hit', () => {
-      refresh();
-    });
+    const cancel = EventsOn('coroxy:breakpoint:hit', refresh);
     return cancel;
   }, []);
 
