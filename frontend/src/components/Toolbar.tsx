@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 interface ToolbarProps {
   onSessionsClear: () => void;
   onSettingsClick: () => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
-export function Toolbar({ onSessionsClear, onSettingsClick }: ToolbarProps) {
+export function Toolbar({ onSessionsClear, onSettingsClick, searchQuery, onSearchChange }: ToolbarProps) {
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -60,7 +62,15 @@ export function Toolbar({ onSessionsClear, onSettingsClick }: ToolbarProps) {
         >
           Clear
         </button>
-        <div className="flex-1" />
+        <div className="flex-1 mx-2">
+          <input
+            type="text"
+            placeholder="Filter (host, url, method...)"
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full px-3 py-1.5 rounded text-sm bg-[#11111b] text-[#cdd6f4] border border-[#313244] placeholder-[#6c7086] focus:outline-none focus:border-[#89b4fa]"
+          />
+        </div>
         <span className={`text-xs font-medium px-2 py-1 rounded ${isRunning ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}`}>
           {isRunning ? 'Listening' : 'Stopped'}
         </span>
