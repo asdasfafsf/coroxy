@@ -160,7 +160,7 @@ func convertRequest(msg *model.HTTPMessage) HARRequest {
 		BodySize:    msg.BodySize,
 	}
 
-	// PostData for request bodies (skip binary).
+	// PostData for request bodies.
 	if len(msg.Body) > 0 {
 		mimeType := msg.ContentType
 		if mimeType == "" {
@@ -168,7 +168,7 @@ func convertRequest(msg *model.HTTPMessage) HARRequest {
 		}
 		req.PostData = &HARPostData{
 			MimeType: mimeType,
-			Text:     string(msg.Body),
+			Text:     textBodyForHAR(msg.Body, mimeType),
 		}
 	}
 

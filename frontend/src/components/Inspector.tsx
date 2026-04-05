@@ -269,11 +269,12 @@ function ImagePreview({ body, contentType, size }: { body: number[] | Uint8Array
 
   // All images (including SVG) rendered via data URL to prevent XSS.
   const mime = contentType.split(';')[0].trim();
-  let binary = '';
-  for (let i = 0; i < bytes.length; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const chunkSize = 8192;
+  const parts: string[] = [];
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    parts.push(String.fromCharCode(...bytes.slice(i, i + chunkSize)));
   }
-  const base64 = btoa(binary);
+  const base64 = btoa(parts.join(''));
   const dataUrl = `data:${mime};base64,${base64}`;
 
   return (
