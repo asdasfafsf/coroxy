@@ -379,7 +379,7 @@ func parseRawResponse(data []byte) (*model.HTTPMessage, []byte, error) {
 
 	msg := &model.HTTPMessage{
 		StatusCode:  resp.StatusCode,
-		StatusText:  resp.Status,
+		StatusText:  http.StatusText(resp.StatusCode),
 		HTTPVersion: fmt.Sprintf("HTTP/%d.%d", resp.ProtoMajor, resp.ProtoMinor),
 		Headers:     resp.Header,
 		ContentType: resp.Header.Get("Content-Type"),

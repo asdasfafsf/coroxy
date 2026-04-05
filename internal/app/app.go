@@ -121,6 +121,9 @@ func (a *App) GetSessionsFiltered(filter model.SessionFilter) []*model.Session {
 // ClearSessions removes all captured sessions.
 func (a *App) ClearSessions() {
 	a.store.Clear()
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
 }
 
 // InstallCA installs the Root CA into the OS trust store.

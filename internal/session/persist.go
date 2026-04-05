@@ -51,6 +51,8 @@ func (s *MemoryStore) Load() error {
 	archivePath := filepath.Join(dir, archiveFileName)
 	if _, err := os.Stat(archivePath); err == nil {
 		return s.loadFromArchive(archivePath)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("stat archive: %w", err)
 	}
 
 	// Fall back to legacy sessions.json.
