@@ -4,6 +4,13 @@ Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, U
 
 프로젝트 설계는 @DESIGN.md 를 참조한다.
 
+## 커맨드
+
+`.claude/commands/` 에 정의됨:
+- `/dev-start` — wails dev 실행 + 시스템 프록시 ON
+- `/dev-stop` — 시스템 프록시 OFF + wails 종료
+- `/work {WON-번호 또는 설명}` — 이슈 → 브랜치 → 코드 → 커밋 → PR → 머지 → Linear Done 전체 워크플로우
+
 ## 규칙
 
 `.claude/rules/` 에 자동 로드됨:
