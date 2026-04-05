@@ -150,9 +150,8 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 
 		removeHopByHopHeaders(resp.Header)
 
-		// Read response body for capture (limit to 32MB to prevent OOM).
-		const maxBodySize = 32 << 20
-		bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
+		// Read response body for capture.
+		bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxCaptureSize))
 		_ = resp.Body.Close()
 		if err != nil {
 			h.logger.Error("read response body",

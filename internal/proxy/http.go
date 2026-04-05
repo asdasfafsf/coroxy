@@ -245,7 +245,7 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 }
 
 // maxCaptureSize is the maximum body size to capture per request/response.
-const maxCaptureSize = 2 << 20 // 2MB
+const maxCaptureSize = 32 << 20 // 32MB
 
 // captureHTTPSession creates a session from an HTTP request/response and notifies the callback.
 func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, reqBody, respBody []byte, bodySize int64, start time.Time, timing *model.Timing) {
