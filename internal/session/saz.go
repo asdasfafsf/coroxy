@@ -348,7 +348,10 @@ func parseRawRequest(data []byte) (*model.HTTPMessage, []byte, error) {
 	}
 	defer func() { _ = req.Body.Close() }()
 
-	body, _ := io.ReadAll(io.LimitReader(req.Body, 32<<20))
+	body, err := io.ReadAll(io.LimitReader(req.Body, 32<<20))
+	if err != nil {
+		return nil, nil, fmt.Errorf("read request body: %w", err)
+	}
 
 	headers := req.Header
 	// Restore Host header — http.ReadRequest moves it to req.Host.
@@ -375,11 +378,21 @@ func parseRawResponse(data []byte) (*model.HTTPMessage, []byte, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if err != nil {
+		return nil, nil, fmt.Errorf("read response body: %w", err)
+	}
+
+	// Strip status code prefix from resp.Status ("200 OK" → "OK").
+	// Preserves custom status text from external SAZ files.
+	statusText := resp.Status
+	if i := strings.IndexByte(statusText, ' '); i >= 0 {
+		statusText = statusText[i+1:]
+	}
 
 	msg := &model.HTTPMessage{
 		StatusCode:  resp.StatusCode,
-		StatusText:  http.StatusText(resp.StatusCode),
+		StatusText:  statusText,
 		HTTPVersion: fmt.Sprintf("HTTP/%d.%d", resp.ProtoMajor, resp.ProtoMinor),
 		Headers:     resp.Header,
 		ContentType: resp.Header.Get("Content-Type"),
