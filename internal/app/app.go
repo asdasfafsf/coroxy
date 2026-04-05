@@ -2,9 +2,11 @@ package app
 
 import (
 	"context"
+	"log/slog"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
+	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -13,12 +15,12 @@ import (
 type App struct {
 	ctx       context.Context
 	engine    adapter.ProxyEngine
-	store     adapter.SessionStore
+	store     *session.MemoryStore
 	caManager adapter.CAManager
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(engine adapter.ProxyEngine, store adapter.SessionStore, caManager adapter.CAManager) *App {
+func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager) *App {
 	return &App{
 		engine:    engine,
 		store:     store,
@@ -34,6 +36,19 @@ func (a *App) SetEngine(engine adapter.ProxyEngine) {
 // Startup is called when the Wails app starts.
 func (a *App) Startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Load persisted sessions from disk.
+	if err := a.store.Load(); err != nil {
+		slog.Error("load sessions", slog.String("error", err.Error()))
+	}
+}
+
+// Shutdown is called when the Wails app is closing.
+func (a *App) Shutdown(_ context.Context) {
+	// Persist sessions to disk.
+	if err := a.store.Persist(); err != nil {
+		slog.Error("persist sessions", slog.String("error", err.Error()))
+	}
 }
 
 // StartProxy starts the proxy engine.
