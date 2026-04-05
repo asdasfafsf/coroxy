@@ -260,7 +260,7 @@ func (a *App) ImportSessionsSAZ() (int, error) {
 	}
 
 	if a.autoSaver != nil {
-		a.autoSaver.MarkDirty()
+		a.autoSaver.MarkDirtyN(len(sessions))
 	}
 
 	return len(sessions), nil

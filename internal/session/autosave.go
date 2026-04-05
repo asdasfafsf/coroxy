@@ -3,11 +3,11 @@ package session
 import (
 	"fmt"
 	"log/slog"
+	"os"
+	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"coroxy/internal/model"
 )
 
 // AutoSaver periodically flushes dirty sessions to a .csaz archive.
@@ -76,9 +76,14 @@ func (a *AutoSaver) Start() {
 	go a.run()
 }
 
-// MarkDirty increments the dirty counter. If the threshold is reached, triggers a flush.
+// MarkDirty increments the dirty counter by 1. If the threshold is reached, triggers a flush.
 func (a *AutoSaver) MarkDirty() {
-	n := a.dirty.Add(1)
+	a.MarkDirtyN(1)
+}
+
+// MarkDirtyN increments the dirty counter by n. If the threshold is reached, triggers a flush.
+func (a *AutoSaver) MarkDirtyN(count int) {
+	n := a.dirty.Add(int64(count))
 	if int(n) >= a.dirtyThreshold {
 		go a.flush("threshold")
 	}
@@ -124,24 +129,19 @@ func (a *AutoSaver) flush(reason string) {
 }
 
 func (a *AutoSaver) doFlush(reason string) error {
-	// Reset dirty counter.
+	// Serialize flushes to avoid temp file races.
+	a.flushMu.Lock()
+	defer a.flushMu.Unlock()
+
+	// Reset dirty counter after acquiring lock to prevent races
+	// between concurrent threshold and timer flushes.
 	n := a.dirty.Swap(0)
 	if n == 0 {
 		return nil // nothing changed
 	}
 
-	// Serialize flushes to avoid temp file races.
-	a.flushMu.Lock()
-	defer a.flushMu.Unlock()
-
 	path := a.dirtyFn()
-
-	a.store.mu.RLock()
-	sessions := make([]*model.Session, 0, len(a.store.sessions))
-	for _, s := range a.store.sessions {
-		sessions = append(sessions, s)
-	}
-	a.store.mu.RUnlock()
+	sessions := a.store.snapshot()
 
 	if err := WriteArchive(path, sessions); err != nil {
 		// Restore dirty count since flush failed.
@@ -154,6 +154,16 @@ func (a *AutoSaver) doFlush(reason string) error {
 		slog.Int64("dirty", n),
 		slog.Int("sessions", len(sessions)),
 	)
+
+	// Check rotation after successful write.
+	info, err := os.Stat(path)
+	if err == nil && a.policy.NeedsRotation(info.Size(), len(sessions)) {
+		dir := filepath.Dir(path)
+		base := filepath.Base(path)
+		if err := a.policy.EnforceRotation(dir, base); err != nil {
+			a.logger.Error("enforce rotation", slog.String("error", err.Error()))
+		}
+	}
 
 	return nil
 }

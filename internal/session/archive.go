@@ -101,7 +101,6 @@ func WriteArchive(path string, sessions []*model.Session) error {
 
 func writeArchiveTo(w io.Writer, sessions []*model.Session) error {
 	zw := zip.NewWriter(w)
-	defer func() { _ = zw.Close() }()
 
 	// _manifest.json
 	m := manifest{
@@ -320,7 +319,15 @@ func readJSON(files map[string]*zip.File, name string, v any) error {
 	return json.Unmarshal(data, v)
 }
 
+// maxZipEntrySize is the maximum size for a single ZIP entry (64 MB).
+// Prevents zip bomb attacks when reading untrusted archives.
+const maxZipEntrySize = 64 << 20
+
 func readFileBytes(f *zip.File) ([]byte, error) {
+	if f.UncompressedSize64 > maxZipEntrySize {
+		return nil, fmt.Errorf("zip entry %s too large: %d bytes", f.Name, f.UncompressedSize64)
+	}
+
 	rc, err := f.Open()
 	if err != nil {
 		return nil, err
@@ -328,8 +335,11 @@ func readFileBytes(f *zip.File) ([]byte, error) {
 	defer func() { _ = rc.Close() }()
 
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, rc); err != nil {
+	if _, err := io.Copy(&buf, io.LimitReader(rc, maxZipEntrySize+1)); err != nil {
 		return nil, err
+	}
+	if int64(buf.Len()) > maxZipEntrySize {
+		return nil, fmt.Errorf("zip entry %s exceeds size limit", f.Name)
 	}
 	return buf.Bytes(), nil
 }
