@@ -115,6 +115,19 @@ func (s *MemoryStore) Count() int {
 	return len(s.sessions)
 }
 
+// snapshot returns a copy of all sessions without sorting.
+// Used by AutoSaver where ordering is not needed.
+func (s *MemoryStore) snapshot() []*model.Session {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	result := make([]*model.Session, 0, len(s.sessions))
+	for _, session := range s.sessions {
+		result = append(result, session)
+	}
+	return result
+}
+
 // matchSession checks if a session matches the filter criteria.
 func matchSession(s *model.Session, f model.SessionFilter) bool {
 	if f.Protocol != "" && s.Protocol != f.Protocol {

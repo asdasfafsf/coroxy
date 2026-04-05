@@ -88,7 +88,6 @@ func ExportSAZ(path string, sessions []*model.Session) error {
 
 func writeSAZTo(w io.Writer, sessions []*model.Session) error {
 	zw := zip.NewWriter(w)
-	defer func() { _ = zw.Close() }()
 
 	idx := 1
 	for _, s := range sessions {
@@ -224,7 +223,7 @@ func readSAZFrom(r io.ReaderAt, size int64) ([]*model.Session, error) {
 
 		// Parse response.
 		if rf, ok := files[prefix+"_s.txt"]; ok {
-			respData, err := readZipFileFromEntry(rf)
+			respData, err := readFileBytes(rf)
 			if err != nil {
 				return nil, fmt.Errorf("read response %d: %w", n, err)
 			}
@@ -239,7 +238,7 @@ func readSAZFrom(r io.ReaderAt, size int64) ([]*model.Session, error) {
 
 		// Parse metadata for timing.
 		if mf, ok := files[prefix+"_m.xml"]; ok {
-			xmlData, err := readZipFileFromEntry(mf)
+			xmlData, err := readFileBytes(mf)
 			if err == nil {
 				parseSAZMeta(xmlData, s)
 			}
@@ -441,19 +440,5 @@ func readZipFile(files map[string]*zip.File, name string) ([]byte, error) {
 	if !ok {
 		return nil, fmt.Errorf("file %s not found", name)
 	}
-	return readZipFileFromEntry(f)
-}
-
-func readZipFileFromEntry(f *zip.File) ([]byte, error) {
-	rc, err := f.Open()
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rc.Close() }()
-
-	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, rc); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
+	return readFileBytes(f)
 }
