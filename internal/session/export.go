@@ -32,6 +32,17 @@ type HAREntry struct {
 	Time            float64     `json:"time"` // milliseconds
 	Request         HARRequest  `json:"request"`
 	Response        HARResponse `json:"response"`
+	Timings         HARTimings  `json:"timings"`
+}
+
+// HARTimings represents the timing breakdown per HAR 1.2 spec.
+type HARTimings struct {
+	DNS      float64 `json:"dns"`
+	Connect  float64 `json:"connect"`
+	SSL      float64 `json:"ssl"`
+	Send     float64 `json:"send"`
+	Wait     float64 `json:"wait"`
+	Receive  float64 `json:"receive"`
 }
 
 // HARRequest represents an HTTP request in HAR format.
@@ -113,6 +124,7 @@ func ExportHAR(sessions []*model.Session) ([]byte, error) {
 			StartedDateTime: s.CreatedAt.Format(time.RFC3339Nano),
 			Time:            float64(s.Duration.Milliseconds()),
 			Request:         convertRequest(s.Request),
+			Timings:         convertTimings(s.Timing),
 		}
 
 		if s.Response != nil {
@@ -188,6 +200,20 @@ func convertResponse(msg *model.HTTPMessage) HARResponse {
 		BodySize:    msg.BodySize,
 	}
 	return resp
+}
+
+func convertTimings(t *model.Timing) HARTimings {
+	if t == nil {
+		return HARTimings{DNS: -1, Connect: -1, SSL: -1, Send: -1, Wait: -1, Receive: -1}
+	}
+	return HARTimings{
+		DNS:     t.DNS,
+		Connect: t.Connect,
+		SSL:     t.TLS,
+		Send:    0, // not measurable from proxy
+		Wait:    t.TTFB,
+		Receive: t.Transfer,
+	}
 }
 
 func convertCookies(cookies []model.HTTPCookie) []HARCookie {
