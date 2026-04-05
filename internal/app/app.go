@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
+	"os"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
@@ -99,6 +101,54 @@ func (a *App) GetCAInfo() model.CAInfo {
 // ExportCA exports the Root CA certificate to the given path.
 func (a *App) ExportCA(path string) error {
 	return a.caManager.ExportCA(path)
+}
+
+// ExportSessionsHAR exports all sessions as HAR to a user-selected file.
+func (a *App) ExportSessionsHAR() error {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export HAR",
+		DefaultFilename: "coroxy.har",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "HAR Files", Pattern: "*.har"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return nil // user cancelled
+	}
+
+	sessions := a.store.List()
+	data, err := session.ExportHAR(sessions)
+	if err != nil {
+		return fmt.Errorf("export HAR: %w", err)
+	}
+	return os.WriteFile(path, data, 0644)
+}
+
+// ExportSessionsJSON exports all sessions as JSON to a user-selected file.
+func (a *App) ExportSessionsJSON() error {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export JSON",
+		DefaultFilename: "coroxy-sessions.json",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "JSON Files", Pattern: "*.json"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return nil
+	}
+
+	sessions := a.store.List()
+	data, err := session.ExportJSON(sessions)
+	if err != nil {
+		return fmt.Errorf("export JSON: %w", err)
+	}
+	return os.WriteFile(path, data, 0644)
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.

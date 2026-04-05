@@ -1,4 +1,4 @@
-import { StartProxy, StopProxy, ClearSessions, GetProxyState } from '../../wailsjs/go/app/App';
+import { StartProxy, StopProxy, ClearSessions, GetProxyState, ExportSessionsHAR, ExportSessionsJSON } from '../../wailsjs/go/app/App';
 import { useState, useEffect } from 'react';
 
 interface ToolbarProps {
@@ -12,6 +12,7 @@ export function Toolbar({ onSessionsClear, onSettingsClick, searchQuery, onSearc
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   useEffect(() => {
     GetProxyState().then(setProxyState);
@@ -62,6 +63,30 @@ export function Toolbar({ onSessionsClear, onSettingsClick, searchQuery, onSearc
         >
           Clear
         </button>
+        <div className="relative">
+          <button
+            className="px-3 py-1.5 rounded text-sm font-medium bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70] transition-colors"
+            onClick={() => setShowExportMenu(!showExportMenu)}
+          >
+            Export
+          </button>
+          {showExportMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-[#313244] rounded shadow-lg z-20 min-w-[120px]">
+              <button
+                className="block w-full text-left px-3 py-2 text-xs text-[#cdd6f4] hover:bg-[#45475a]"
+                onClick={() => { ExportSessionsHAR().catch(e => setError(String(e))); setShowExportMenu(false); }}
+              >
+                HAR (.har)
+              </button>
+              <button
+                className="block w-full text-left px-3 py-2 text-xs text-[#cdd6f4] hover:bg-[#45475a]"
+                onClick={() => { ExportSessionsJSON().catch(e => setError(String(e))); setShowExportMenu(false); }}
+              >
+                JSON (.json)
+              </button>
+            </div>
+          )}
+        </div>
         <div className="flex-1 mx-2">
           <input
             type="text"
