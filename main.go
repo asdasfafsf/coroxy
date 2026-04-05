@@ -18,6 +18,7 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist
@@ -45,6 +46,23 @@ func main() {
 
 	pipeline := intercept.NewPipeline()
 	pipeline.Add(ruleEngine)
+
+	bp := intercept.NewBreakpoint(
+		ruleEngine.Rules,
+		func(pending *intercept.PendingRequest) {
+			// Emit event to GUI when a breakpoint is hit.
+			if a != nil {
+				wailsRuntime.EventsEmit(a.GetContext(), "coroxy:breakpoint:hit", map[string]string{
+					"id":     pending.ID,
+					"method": pending.Request.Method,
+					"url":    pending.Request.URL.String(),
+					"host":   pending.Request.Host,
+				})
+			}
+		},
+	)
+	pipeline.Add(bp)
+	a.SetBreakpoint(bp)
 
 	engine := proxy.NewEngine(
 		model.DefaultProxyConfig(),

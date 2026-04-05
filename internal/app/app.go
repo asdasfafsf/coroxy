@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
 	"coroxy/internal/rule"
@@ -22,6 +23,7 @@ type App struct {
 	store          *session.MemoryStore
 	caManager      adapter.CAManager
 	ruleEngine     *rule.Engine
+	breakpoint     *intercept.Breakpoint
 	sysProxyActive bool
 }
 
@@ -35,9 +37,19 @@ func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager ad
 	}
 }
 
+// SetBreakpoint sets the breakpoint interceptor for GUI integration.
+func (a *App) SetBreakpoint(bp *intercept.Breakpoint) {
+	a.breakpoint = bp
+}
+
 // SetEngine sets the proxy engine. Used for wiring callbacks during assembly.
 func (a *App) SetEngine(engine adapter.ProxyEngine) {
 	a.engine = engine
+}
+
+// GetContext returns the Wails context. Used for event emission from outside App.
+func (a *App) GetContext() context.Context {
+	return a.ctx
 }
 
 // Startup is called when the Wails app starts.
@@ -210,6 +222,48 @@ func (a *App) ToggleRule(id string) {
 			return
 		}
 	}
+}
+
+// BreakpointResume resumes a paused request.
+func (a *App) BreakpointResume(pendingID string) {
+	if a.breakpoint != nil {
+		a.breakpoint.Resume(pendingID)
+	}
+}
+
+// BreakpointDrop drops a paused request.
+func (a *App) BreakpointDrop(pendingID string) {
+	if a.breakpoint != nil {
+		a.breakpoint.Drop(pendingID)
+	}
+}
+
+// BreakpointPending represents a paused request for the frontend.
+type BreakpointPending struct {
+	ID     string `json:"id"`
+	Method string `json:"method"`
+	URL    string `json:"url"`
+	Host   string `json:"host"`
+	RuleID string `json:"rule_id"`
+}
+
+// GetPendingBreakpoints returns all currently paused requests.
+func (a *App) GetPendingBreakpoints() []BreakpointPending {
+	if a.breakpoint == nil {
+		return []BreakpointPending{}
+	}
+	pending := a.breakpoint.PendingRequests()
+	result := make([]BreakpointPending, 0, len(pending))
+	for _, p := range pending {
+		result = append(result, BreakpointPending{
+			ID:     p.ID,
+			Method: p.Request.Method,
+			URL:    p.Request.URL.String(),
+			Host:   p.Request.Host,
+			RuleID: p.RuleID,
+		})
+	}
+	return result
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.
