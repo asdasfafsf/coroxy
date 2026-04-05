@@ -1,6 +1,7 @@
 package session
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 	"path/filepath"
@@ -192,7 +193,7 @@ func TestAutoSaverConcurrency(t *testing.T) {
 	for i := 0; i < 50; i++ {
 		go func(n int) {
 			store.Add(&model.Session{
-				ID:       "c" + time.Now().Format("150405.000000000") + string(rune('A'+n%26)),
+				ID:       fmt.Sprintf("c%d", n),
 				Protocol: constant.ProtocolHTTP,
 				State:    constant.SessionStateCompleted,
 			})
