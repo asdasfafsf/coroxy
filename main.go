@@ -44,6 +44,20 @@ func main() {
 
 	a := app.NewApp(nil, store, caManager, ruleEngine)
 
+	// Auto-save: .csaz archive with dual trigger (50 sessions / 30s).
+	archivePath, err := store.ArchivePath()
+	if err != nil {
+		log.Fatal(err)
+	}
+	autoSaver := session.NewAutoSaver(
+		store,
+		session.DefaultStoragePolicy(),
+		logger,
+		func() string { return archivePath },
+	)
+	a.SetAutoSaver(autoSaver)
+	autoSaver.Start()
+
 	pipeline := intercept.NewPipeline()
 	pipeline.Add(ruleEngine)
 

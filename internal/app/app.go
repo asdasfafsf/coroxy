@@ -28,6 +28,7 @@ type App struct {
 	caManager      adapter.CAManager
 	ruleEngine     *rule.Engine
 	breakpoint     *intercept.Breakpoint
+	autoSaver      *session.AutoSaver
 	sysProxyActive bool
 }
 
@@ -39,6 +40,11 @@ func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager ad
 		caManager:  caManager,
 		ruleEngine: ruleEngine,
 	}
+}
+
+// SetAutoSaver sets the auto-save handler.
+func (a *App) SetAutoSaver(as *session.AutoSaver) {
+	a.autoSaver = as
 }
 
 // SetBreakpoint sets the breakpoint interceptor for GUI integration.
@@ -75,9 +81,15 @@ func (a *App) Shutdown(_ context.Context) {
 		}
 	}
 
-	// Persist sessions to disk.
-	if err := a.store.Persist(); err != nil {
-		slog.Error("persist sessions", slog.String("error", err.Error()))
+	// Stop auto-saver (flushes remaining data) or persist directly.
+	if a.autoSaver != nil {
+		if err := a.autoSaver.Stop(); err != nil {
+			slog.Error("stop autosaver", slog.String("error", err.Error()))
+		}
+	} else {
+		if err := a.store.Persist(); err != nil {
+			slog.Error("persist sessions", slog.String("error", err.Error()))
+		}
 	}
 }
 
@@ -201,6 +213,57 @@ func (a *App) ExportSessionsJSON() error {
 		return fmt.Errorf("export JSON: %w", err)
 	}
 	return os.WriteFile(path, data, 0644)
+}
+
+// ExportSessionsSAZ exports all HTTP sessions as SAZ to a user-selected file.
+func (a *App) ExportSessionsSAZ() error {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Export SAZ",
+		DefaultFilename: "coroxy.saz",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "SAZ Files", Pattern: "*.saz"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return nil
+	}
+
+	sessions := a.store.List()
+	return session.ExportSAZ(path, sessions)
+}
+
+// ImportSessionsSAZ imports sessions from a user-selected SAZ file.
+func (a *App) ImportSessionsSAZ() (int, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Import SAZ",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "SAZ Files", Pattern: "*.saz"},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if path == "" {
+		return 0, nil
+	}
+
+	sessions, err := session.ImportSAZ(path)
+	if err != nil {
+		return 0, fmt.Errorf("import SAZ: %w", err)
+	}
+
+	for _, s := range sessions {
+		a.store.Add(s)
+	}
+
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
+
+	return len(sessions), nil
 }
 
 // ListRules returns all rules.
@@ -328,6 +391,10 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 // HandleNewSession is called by the proxy when a new session is captured.
 func (a *App) HandleNewSession(s *model.Session) {
 	a.store.Add(s)
+
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
 
 	if a.ctx != nil {
 		runtime.EventsEmit(a.ctx, "coroxy:session:new", s)

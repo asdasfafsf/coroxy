@@ -9,10 +9,15 @@ import (
 	"coroxy/internal/model"
 )
 
+const (
+	archiveFileName = "sessions.csaz"
+	legacyFileName  = "sessions.json"
+)
+
 // sessionsDir is a package-level variable for testing.
 var sessionsDir = SessionsDir
 
-// Persist saves all sessions in the store to disk as a single JSON file.
+// Persist saves all sessions in the store to disk as a .csaz archive.
 func (s *MemoryStore) Persist() error {
 	dir, err := sessionsDir()
 	if err != nil {
@@ -30,35 +35,58 @@ func (s *MemoryStore) Persist() error {
 	}
 	s.mu.RUnlock()
 
-	data, err := json.Marshal(sessions)
-	if err != nil {
-		return fmt.Errorf("marshal sessions: %w", err)
-	}
-
-	filePath := filepath.Join(dir, "sessions.json")
-
-	// Write to temp file then rename for atomic write.
-	tmpPath := filePath + ".tmp"
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
-		return fmt.Errorf("write sessions file: %w", err)
-	}
-	if err := os.Rename(tmpPath, filePath); err != nil {
-		return fmt.Errorf("rename sessions file: %w", err)
-	}
-
-	return nil
+	archivePath := filepath.Join(dir, archiveFileName)
+	return WriteArchive(archivePath, sessions)
 }
 
 // Load reads sessions from disk and populates the store.
+// It tries .csaz first, then falls back to legacy sessions.json.
 func (s *MemoryStore) Load() error {
 	dir, err := sessionsDir()
 	if err != nil {
 		return fmt.Errorf("get sessions dir: %w", err)
 	}
 
-	filePath := filepath.Join(dir, "sessions.json")
+	// Try .csaz first.
+	archivePath := filepath.Join(dir, archiveFileName)
+	if _, err := os.Stat(archivePath); err == nil {
+		return s.loadFromArchive(archivePath)
+	}
 
-	data, err := os.ReadFile(filePath)
+	// Fall back to legacy sessions.json.
+	legacyPath := filepath.Join(dir, legacyFileName)
+	return s.loadFromLegacyJSON(legacyPath)
+}
+
+// ArchivePath returns the path to the current .csaz archive file.
+func (s *MemoryStore) ArchivePath() (string, error) {
+	dir, err := sessionsDir()
+	if err != nil {
+		return "", fmt.Errorf("get sessions dir: %w", err)
+	}
+	return filepath.Join(dir, archiveFileName), nil
+}
+
+func (s *MemoryStore) loadFromArchive(path string) error {
+	sessions, err := ReadArchive(path)
+	if err != nil {
+		return fmt.Errorf("read archive: %w", err)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, sess := range sessions {
+		if sess != nil && sess.ID != "" {
+			s.sessions[sess.ID] = sess
+		}
+	}
+
+	return nil
+}
+
+func (s *MemoryStore) loadFromLegacyJSON(path string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // no saved sessions, that's fine
