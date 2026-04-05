@@ -267,18 +267,7 @@ function ImagePreview({ body, contentType, size }: { body: number[] | Uint8Array
     ? new TextEncoder().encode(body)
     : body instanceof Uint8Array ? body : new Uint8Array(body);
 
-  // SVG can be displayed as text.
-  if (contentType.includes('svg')) {
-    const svgText = new TextDecoder().decode(bytes);
-    return (
-      <div>
-        <div className="text-[#6c7086] text-xs mb-2">{formatSize(size)} · {contentType}</div>
-        <div className="bg-[#11111b] p-4 rounded flex items-center justify-center" dangerouslySetInnerHTML={{ __html: svgText }} />
-      </div>
-    );
-  }
-
-  // Binary images: convert to data URL.
+  // All images (including SVG) rendered via data URL to prevent XSS.
   const mime = contentType.split(';')[0].trim();
   let binary = '';
   for (let i = 0; i < bytes.length; i++) {
