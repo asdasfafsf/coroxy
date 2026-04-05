@@ -1,4 +1,4 @@
-import { StartProxy, StopProxy, ClearSessions, GetProxyState, ExportSessionsHAR, ExportSessionsJSON } from '../../wailsjs/go/app/App';
+import { StartProxy, StopProxy, ClearSessions, GetProxyState, ExportSessionsHAR, ExportSessionsJSON, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../../wailsjs/go/app/App';
 import { useState, useEffect } from 'react';
 
 interface ToolbarProps {
@@ -13,6 +13,11 @@ export function Toolbar({ onSessionsClear, onSettingsClick, searchQuery, onSearc
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [sysProxy, setSysProxy] = useState(false);
+
+  useEffect(() => {
+    IsSystemProxyActive().then(setSysProxy);
+  }, []);
 
   useEffect(() => {
     GetProxyState().then(setProxyState);
@@ -99,6 +104,26 @@ export function Toolbar({ onSessionsClear, onSettingsClick, searchQuery, onSearc
         <span className={`text-xs font-medium px-2 py-1 rounded ${isRunning ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}`}>
           {isRunning ? 'Listening' : 'Stopped'}
         </span>
+        <button
+          className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+            sysProxy
+              ? 'bg-[#89b4fa33] text-[#89b4fa] border border-[#89b4fa55]'
+              : 'bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70]'
+          }`}
+          onClick={async () => {
+            try {
+              if (sysProxy) {
+                await DisableSystemProxy();
+                setSysProxy(false);
+              } else {
+                await EnableSystemProxy();
+                setSysProxy(true);
+              }
+            } catch (e) { setError(String(e)); }
+          }}
+        >
+          {sysProxy ? 'Proxy ON' : 'Proxy OFF'}
+        </button>
         <button
           className="px-3 py-1.5 rounded text-xs font-medium bg-[#45475a] text-[#cdd6f4] hover:bg-[#585b70] transition-colors"
           onClick={onSettingsClick}

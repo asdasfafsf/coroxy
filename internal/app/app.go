@@ -8,6 +8,7 @@ import (
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/model"
+	"coroxy/internal/proxy"
 	"coroxy/internal/session"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -15,10 +16,11 @@ import (
 
 // App is the Wails binding struct that bridges GUI and Core.
 type App struct {
-	ctx       context.Context
-	engine    adapter.ProxyEngine
-	store     *session.MemoryStore
-	caManager adapter.CAManager
+	ctx            context.Context
+	engine         adapter.ProxyEngine
+	store          *session.MemoryStore
+	caManager      adapter.CAManager
+	sysProxyActive bool
 }
 
 // NewApp creates a new App with its dependencies.
@@ -47,6 +49,13 @@ func (a *App) Startup(ctx context.Context) {
 
 // Shutdown is called when the Wails app is closing.
 func (a *App) Shutdown(_ context.Context) {
+	// Disable system proxy if active.
+	if a.sysProxyActive {
+		if err := proxy.SetSystemProxy(false, ""); err != nil {
+			slog.Error("disable system proxy on shutdown", slog.String("error", err.Error()))
+		}
+	}
+
 	// Persist sessions to disk.
 	if err := a.store.Persist(); err != nil {
 		slog.Error("persist sessions", slog.String("error", err.Error()))
@@ -101,6 +110,30 @@ func (a *App) GetCAInfo() model.CAInfo {
 // ExportCA exports the Root CA certificate to the given path.
 func (a *App) ExportCA(path string) error {
 	return a.caManager.ExportCA(path)
+}
+
+// EnableSystemProxy sets the OS system proxy to Coroxy.
+func (a *App) EnableSystemProxy() error {
+	addr := a.engine.HTTPAddr()
+	if err := proxy.SetSystemProxy(true, addr); err != nil {
+		return err
+	}
+	a.sysProxyActive = true
+	return nil
+}
+
+// DisableSystemProxy turns off the OS system proxy.
+func (a *App) DisableSystemProxy() error {
+	if err := proxy.SetSystemProxy(false, ""); err != nil {
+		return err
+	}
+	a.sysProxyActive = false
+	return nil
+}
+
+// IsSystemProxyActive returns whether the system proxy is currently set.
+func (a *App) IsSystemProxyActive() bool {
+	return a.sysProxyActive
 }
 
 // ExportSessionsHAR exports all sessions as HAR to a user-selected file.
