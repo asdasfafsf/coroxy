@@ -21,6 +21,15 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
     IsSystemProxyActive().then(setSysProxy);
   }, []);
 
+  // Close export menu on click-outside.
+  useEffect(() => {
+    if (!showExportMenu) return;
+    const handle = () => setShowExportMenu(false);
+    // Delay to avoid closing immediately from the toggle click.
+    const timer = setTimeout(() => document.addEventListener('click', handle), 0);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handle); };
+  }, [showExportMenu]);
+
   useEffect(() => {
     GetProxyState().then(setProxyState);
   }, []);

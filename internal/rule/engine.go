@@ -81,6 +81,19 @@ func (e *Engine) RemoveRule(id string) {
 	}
 }
 
+// ToggleRule enables or disables a rule by ID.
+func (e *Engine) ToggleRule(id string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	for _, r := range e.rules {
+		if r.ID == id {
+			r.Enabled = !r.Enabled
+			return
+		}
+	}
+}
+
 // Rules returns a copy of all rules.
 func (e *Engine) Rules() []*model.Rule {
 	e.mu.RLock()

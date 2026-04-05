@@ -5,6 +5,7 @@ package proxy
 import (
 	"fmt"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
@@ -42,6 +43,9 @@ func EnableSystemProxy(httpAddr string) error {
 	port := "8673"
 	if len(parts) == 2 {
 		port = parts[1]
+		if portNum, err := strconv.Atoi(port); err != nil || portNum < 1 || portNum > 65535 {
+			return fmt.Errorf("invalid port: %s", port)
+		}
 	}
 	if host == "" || host == "[::]" || host == "0.0.0.0" {
 		host = "127.0.0.1"
