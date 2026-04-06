@@ -371,6 +371,7 @@ func readLimited(r io.Reader, maxBytes int64) ([]byte, error) {
 }
 
 // limitWriter wraps an io.Writer and stops writing after n bytes.
+// Always reports the full input length to avoid short-write errors in TeeReader.
 type limitWriter struct {
 	w io.Writer
 	n int64
@@ -378,14 +379,18 @@ type limitWriter struct {
 
 func (lw *limitWriter) Write(p []byte) (int, error) {
 	if lw.n <= 0 {
-		return len(p), nil // discard silently
+		return len(p), nil // discard excess
 	}
+	toWrite := p
 	if int64(len(p)) > lw.n {
-		p = p[:lw.n]
+		toWrite = p[:lw.n]
 	}
-	n, err := lw.w.Write(p)
+	n, err := lw.w.Write(toWrite)
 	lw.n -= int64(n)
-	return n, err
+	if err != nil {
+		return n, err
+	}
+	return len(p), nil // report full len so TeeReader continues
 }
 
 // captureTunnelSession creates a session for a completed CONNECT tunnel.
