@@ -374,7 +374,10 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
 
 	headers := make(map[string]string)
 	for k, v := range resp.Header {
@@ -383,7 +386,7 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 
 	return &ComposerResponse{
 		StatusCode: resp.StatusCode,
-		StatusText: resp.Status,
+		StatusText: http.StatusText(resp.StatusCode),
 		Headers:    headers,
 		Body:       string(body),
 		BodySize:   int64(len(body)),

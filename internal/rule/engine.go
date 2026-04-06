@@ -3,10 +3,10 @@ package rule
 import (
 	"net/http"
 	"sort"
-	"strings"
 	"sync"
 
 	"coroxy/internal/adapter"
+	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 )
 
@@ -34,7 +34,7 @@ func (e *Engine) OnRequest(req *http.Request, _ *model.Session) adapter.Action {
 		if !r.Enabled {
 			continue
 		}
-		if matchRequest(r.Match, req) {
+		if intercept.MatchRequest(r.Match, req) {
 			if r.Action == model.RuleActionDrop {
 				return adapter.ActionDrop
 			}
@@ -104,35 +104,3 @@ func (e *Engine) Rules() []*model.Rule {
 	return result
 }
 
-// matchRequest checks if a request matches the given condition.
-func matchRequest(cond model.MatchCondition, req *http.Request) bool {
-	if cond.Method != "" && !strings.EqualFold(cond.Method, req.Method) {
-		return false
-	}
-
-	if cond.Host != "" && !matchHost(cond.Host, req.Host) {
-		return false
-	}
-
-	if cond.Path != "" && !strings.HasPrefix(req.URL.Path, cond.Path) {
-		return false
-	}
-
-	return true
-}
-
-// matchHost matches a hostname against a pattern.
-// Supports wildcard prefix: *.example.com matches sub.example.com.
-func matchHost(pattern, host string) bool {
-	// Remove port from host if present.
-	if idx := strings.LastIndex(host, ":"); idx != -1 {
-		host = host[:idx]
-	}
-
-	if strings.HasPrefix(pattern, "*.") {
-		suffix := pattern[1:] // ".example.com"
-		return strings.HasSuffix(host, suffix) || host == pattern[2:]
-	}
-
-	return strings.EqualFold(pattern, host)
-}

@@ -328,7 +328,7 @@ func buildRequestMessage(r *http.Request, body []byte) *model.HTTPMessage {
 func buildResponseMessage(resp *http.Response, body []byte, bodySize int64) *model.HTTPMessage {
 	msg := &model.HTTPMessage{
 		StatusCode:      resp.StatusCode,
-		StatusText:      resp.Status,
+		StatusText:      http.StatusText(resp.StatusCode),
 		HTTPVersion:     resp.Proto,
 		Headers:         resp.Header.Clone(),
 		Body:            body,
