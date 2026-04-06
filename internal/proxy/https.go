@@ -152,7 +152,7 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 
 		// Stream response to client while capturing up to maxCaptureSize for inspection.
 		var captureBuf bytes.Buffer
-		resp.Body = io.NopCloser(io.TeeReader(resp.Body, &limitedWriter{w: &captureBuf, remaining: maxCaptureSize}))
+		resp.Body = io.NopCloser(io.TeeReader(resp.Body, &limitWriter{w: &captureBuf, n: maxCaptureSize}))
 
 		if err := resp.Write(clientConn); err != nil {
 			_ = resp.Body.Close()
@@ -200,28 +200,6 @@ func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, r
 	}
 
 	h.onSession(session)
-}
-
-// limitedWriter writes up to a maximum number of bytes, silently discarding excess.
-type limitedWriter struct {
-	w         io.Writer
-	remaining int64
-}
-
-func (lw *limitedWriter) Write(p []byte) (int, error) {
-	if lw.remaining <= 0 {
-		return len(p), nil // discard excess, report full len to avoid TeeReader error
-	}
-	toWrite := p
-	if int64(len(p)) > lw.remaining {
-		toWrite = p[:lw.remaining]
-	}
-	n, err := lw.w.Write(toWrite)
-	lw.remaining -= int64(n)
-	if err != nil {
-		return n, err
-	}
-	return len(p), nil // report full len so TeeReader continues streaming
 }
 
 // hostOnly extracts the hostname without port.
