@@ -87,12 +87,23 @@ func (s *MemoryStore) loadFromArchive(path string) error {
 	return nil
 }
 
+// maxLegacyJSONSize is the maximum size for the legacy sessions.json file (512 MB).
+const maxLegacyJSONSize = 512 << 20
+
 func (s *MemoryStore) loadFromLegacyJSON(path string) error {
-	data, err := os.ReadFile(path)
+	info, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil // no saved sessions, that's fine
 		}
+		return fmt.Errorf("stat sessions file: %w", err)
+	}
+	if info.Size() > maxLegacyJSONSize {
+		return fmt.Errorf("sessions file too large: %d bytes (max %d)", info.Size(), maxLegacyJSONSize)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
 		return fmt.Errorf("read sessions file: %w", err)
 	}
 

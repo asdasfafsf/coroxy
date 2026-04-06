@@ -38,11 +38,12 @@ type MITMProvider interface {
 
 // HTTPProxy handles HTTP forward proxy requests.
 type HTTPProxy struct {
-	logger    *slog.Logger
-	transport *http.Transport
-	onSession adapter.SessionCallback
-	mitm      MITMProvider
-	pipeline  *intercept.Pipeline
+	logger        *slog.Logger
+	transport     *http.Transport
+	onSession     adapter.SessionCallback
+	mitm          MITMProvider
+	pipeline      *intercept.Pipeline
+	autoResponder *intercept.AutoResponder
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
@@ -61,6 +62,11 @@ func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm M
 			MaxIdleConns:          100,
 		},
 	}
+}
+
+// SetAutoResponder sets the auto responder for serving canned responses.
+func (h *HTTPProxy) SetAutoResponder(ar *intercept.AutoResponder) {
+	h.autoResponder = ar
 }
 
 // ServeHTTP handles incoming proxy requests.
@@ -103,6 +109,23 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	// Run interceptor pipeline on request.
 	if h.pipeline != nil && h.pipeline.Count() > 0 {
 		if h.pipeline.ProcessRequest(outReq, nil) == adapter.ActionDrop {
+			// Check if an auto-respond rule matched.
+			if ruleID := outReq.Header.Get(constant.HeaderAutoResponseRule); ruleID != "" && h.autoResponder != nil {
+				if ar := h.autoResponder.FindResponse(ruleID); ar != nil {
+					autoResp := intercept.BuildHTTPResponse(ar, outReq)
+					for k, vs := range autoResp.Header {
+						for _, v := range vs {
+							w.Header().Add(k, v)
+						}
+					}
+					w.WriteHeader(autoResp.StatusCode)
+					if autoResp.Body != nil {
+						_, _ = io.Copy(w, autoResp.Body)
+						_ = autoResp.Body.Close()
+					}
+					return
+				}
+			}
 			http.Error(w, "proxy: request dropped by interceptor", http.StatusForbidden)
 			return
 		}

@@ -88,6 +88,12 @@ func (a *AutoSaver) MarkDirty() {
 func (a *AutoSaver) MarkDirtyN(count int) {
 	n := a.dirty.Add(int64(count))
 	if int(n) >= a.dirtyThreshold {
+		a.mu.Lock()
+		stopped := a.stopped
+		a.mu.Unlock()
+		if stopped {
+			return
+		}
 		select {
 		case a.flushCh <- struct{}{}:
 			go func() {
