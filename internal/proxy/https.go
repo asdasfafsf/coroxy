@@ -121,6 +121,14 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 		req.RequestURI = ""
 		removeHopByHopHeaders(req.Header)
 
+		// Capture request body before forwarding.
+		var reqBody []byte
+		if req.Body != nil {
+			reqBody, _ = readLimited(req.Body, maxCaptureSize)
+			req.Body = io.NopCloser(bytes.NewReader(reqBody))
+			req.ContentLength = int64(len(reqBody))
+		}
+
 		// Forward to target.
 		if err := req.Write(targetConn); err != nil {
 			h.logger.Error("write to target",
@@ -142,62 +150,53 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 
 		removeHopByHopHeaders(resp.Header)
 
-		// Read response body for capture (limit to 32MB to prevent OOM).
-		const maxBodySize = 32 << 20
-		bodyBytes, err := io.ReadAll(io.LimitReader(resp.Body, maxBodySize))
-		_ = resp.Body.Close()
-		if err != nil {
-			h.logger.Error("read response body",
-				slog.String("host", host),
-				slog.String("error", err.Error()),
-			)
-			return
-		}
-
-		// Replace body so resp.Write sends the full content.
-		resp.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-		resp.ContentLength = int64(len(bodyBytes))
+		// Stream response to client while capturing up to maxCaptureSize for inspection.
+		var captureBuf bytes.Buffer
+		resp.Body = io.NopCloser(io.TeeReader(resp.Body, &limitWriter{w: &captureBuf, n: maxCaptureSize}))
 
 		if err := resp.Write(clientConn); err != nil {
+			_ = resp.Body.Close()
 			h.logger.Error("write response to client",
 				slog.String("host", host),
 				slog.String("error", err.Error()),
 			)
 			return
 		}
+		_ = resp.Body.Close()
+
+		bodyBytes := captureBuf.Bytes()
 
 		// Capture session.
-		h.captureMITMSession(req, resp, int64(len(bodyBytes)), host, start)
+		h.captureMITMSession(req, resp, reqBody, bodyBytes, host, start)
 	}
 }
 
 // captureMITMSession creates a session from decrypted HTTPS traffic.
-func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, bodySize int64, host string, start time.Time) {
+func (h *HTTPProxy) captureMITMSession(req *http.Request, resp *http.Response, reqBody, respBody []byte, host string, start time.Time) {
 	if h.onSession == nil {
 		return
 	}
 
 	targetHost, targetPort := splitHostPort(host, 443)
 
+	elapsed := time.Since(start)
 	session := &model.Session{
-		ID:       uuid.NewString(),
-		Protocol: constant.ProtocolTLS,
-		Source:   endpointFromAddr(req.RemoteAddr),
-		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		Request: &model.HTTPMessage{
-			Method:  req.Method,
-			URL:     req.URL.String(),
-			Headers: req.Header.Clone(),
-		},
-		Response: &model.HTTPMessage{
-			StatusCode: resp.StatusCode,
-			StatusText: resp.Status,
-			Headers:    resp.Header.Clone(),
-			BodySize:   bodySize,
+		ID:        uuid.NewString(),
+		Protocol:  constant.ProtocolTLS,
+		Source:    endpointFromAddr(req.RemoteAddr),
+		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
+		Request:   buildRequestMessage(req, reqBody),
+		Response:  buildResponseMessage(resp, respBody, int64(len(respBody))),
+		Timing: &model.Timing{
+			DNS:      -1,
+			Connect:  -1,
+			TLS:      -1,
+			TTFB:     float64(elapsed.Microseconds()) / 1000.0,
+			Transfer: -1,
 		},
 		State:     constant.SessionStateCompleted,
 		CreatedAt: start,
-		Duration:  time.Since(start),
+		Duration:  elapsed,
 	}
 
 	h.onSession(session)

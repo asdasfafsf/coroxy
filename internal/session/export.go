@@ -3,6 +3,7 @@ package session
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"coroxy/internal/model"
@@ -32,6 +33,17 @@ type HAREntry struct {
 	Time            float64     `json:"time"` // milliseconds
 	Request         HARRequest  `json:"request"`
 	Response        HARResponse `json:"response"`
+	Timings         HARTimings  `json:"timings"`
+}
+
+// HARTimings represents the timing breakdown per HAR 1.2 spec.
+type HARTimings struct {
+	DNS      float64 `json:"dns"`
+	Connect  float64 `json:"connect"`
+	SSL      float64 `json:"ssl"`
+	Send     float64 `json:"send"`
+	Wait     float64 `json:"wait"`
+	Receive  float64 `json:"receive"`
 }
 
 // HARRequest represents an HTTP request in HAR format.
@@ -39,8 +51,10 @@ type HARRequest struct {
 	Method      string          `json:"method"`
 	URL         string          `json:"url"`
 	HTTPVersion string          `json:"httpVersion"`
+	Cookies     []HARCookie     `json:"cookies"`
 	Headers     []HARNameValue  `json:"headers"`
 	QueryString []HARNameValue  `json:"queryString"`
+	PostData    *HARPostData    `json:"postData,omitempty"`
 	HeadersSize int             `json:"headersSize"`
 	BodySize    int64           `json:"bodySize"`
 }
@@ -50,6 +64,7 @@ type HARResponse struct {
 	Status      int            `json:"status"`
 	StatusText  string         `json:"statusText"`
 	HTTPVersion string         `json:"httpVersion"`
+	Cookies     []HARCookie    `json:"cookies"`
 	Headers     []HARNameValue `json:"headers"`
 	Content     HARContent     `json:"content"`
 	HeadersSize int            `json:"headersSize"`
@@ -60,6 +75,26 @@ type HARResponse struct {
 type HARContent struct {
 	Size     int64  `json:"size"`
 	MimeType string `json:"mimeType"`
+	Text     string `json:"text,omitempty"`
+}
+
+// HARCookie represents a cookie in HAR format.
+type HARCookie struct {
+	Name     string `json:"name"`
+	Value    string `json:"value"`
+	Domain   string `json:"domain,omitempty"`
+	Path     string `json:"path,omitempty"`
+	Expires  string `json:"expires,omitempty"`
+	HTTPOnly bool   `json:"httpOnly,omitempty"`
+	Secure   bool   `json:"secure,omitempty"`
+	SameSite string `json:"sameSite,omitempty"`
+}
+
+// HARPostData represents POST body in HAR format.
+type HARPostData struct {
+	MimeType string         `json:"mimeType"`
+	Text     string         `json:"text"`
+	Params   []HARNameValue `json:"params,omitempty"`
 }
 
 // HARNameValue represents a name-value pair (header, query param, etc).
@@ -90,6 +125,7 @@ func ExportHAR(sessions []*model.Session) ([]byte, error) {
 			StartedDateTime: s.CreatedAt.Format(time.RFC3339Nano),
 			Time:            float64(s.Duration.Milliseconds()),
 			Request:         convertRequest(s.Request),
+			Timings:         convertTimings(s.Timing),
 		}
 
 		if s.Response != nil {
@@ -108,31 +144,108 @@ func ExportHAR(sessions []*model.Session) ([]byte, error) {
 }
 
 func convertRequest(msg *model.HTTPMessage) HARRequest {
+	httpVersion := msg.HTTPVersion
+	if httpVersion == "" {
+		httpVersion = "HTTP/1.1"
+	}
+
 	req := HARRequest{
 		Method:      msg.Method,
 		URL:         msg.URL,
-		HTTPVersion: "HTTP/1.1",
+		HTTPVersion: httpVersion,
+		Cookies:     convertCookies(msg.Cookies),
 		Headers:     convertHeaders(msg.Headers),
+		QueryString: convertQueryParams(msg.QueryParams),
 		HeadersSize: -1,
-		BodySize:    0,
+		BodySize:    msg.BodySize,
 	}
+
+	// PostData for request bodies.
+	if len(msg.Body) > 0 {
+		mimeType := msg.ContentType
+		if mimeType == "" {
+			mimeType = "application/octet-stream"
+		}
+		req.PostData = &HARPostData{
+			MimeType: mimeType,
+			Text:     textBodyForHAR(msg.Body, mimeType),
+		}
+	}
+
 	return req
 }
 
 func convertResponse(msg *model.HTTPMessage) HARResponse {
+	httpVersion := msg.HTTPVersion
+	if httpVersion == "" {
+		httpVersion = "HTTP/1.1"
+	}
+
+	mimeType := msg.ContentType
+	if mimeType == "" {
+		mimeType = getContentType(msg)
+	}
+
 	resp := HARResponse{
 		Status:      msg.StatusCode,
 		StatusText:  msg.StatusText,
-		HTTPVersion: "HTTP/1.1",
+		HTTPVersion: httpVersion,
+		Cookies:     convertCookies(msg.Cookies),
 		Headers:     convertHeaders(msg.Headers),
 		Content: HARContent{
 			Size:     msg.BodySize,
-			MimeType: getContentType(msg),
+			MimeType: mimeType,
+			Text:     textBodyForHAR(msg.Body, mimeType),
 		},
 		HeadersSize: -1,
 		BodySize:    msg.BodySize,
 	}
 	return resp
+}
+
+func convertTimings(t *model.Timing) HARTimings {
+	if t == nil {
+		return HARTimings{DNS: -1, Connect: -1, SSL: -1, Send: -1, Wait: -1, Receive: -1}
+	}
+	return HARTimings{
+		DNS:     t.DNS,
+		Connect: t.Connect,
+		SSL:     t.TLS,
+		Send:    -1, // not measurable from proxy
+		Wait:    t.TTFB,
+		Receive: t.Transfer,
+	}
+}
+
+func convertCookies(cookies []model.HTTPCookie) []HARCookie {
+	if len(cookies) == 0 {
+		return []HARCookie{}
+	}
+	result := make([]HARCookie, 0, len(cookies))
+	for _, c := range cookies {
+		result = append(result, HARCookie{
+			Name:     c.Name,
+			Value:    c.Value,
+			Domain:   c.Domain,
+			Path:     c.Path,
+			Expires:  c.Expires,
+			HTTPOnly: c.HTTPOnly,
+			Secure:   c.Secure,
+			SameSite: c.SameSite,
+		})
+	}
+	return result
+}
+
+func convertQueryParams(params []model.QueryParam) []HARNameValue {
+	if len(params) == 0 {
+		return []HARNameValue{}
+	}
+	result := make([]HARNameValue, 0, len(params))
+	for _, p := range params {
+		result = append(result, HARNameValue{Name: p.Name, Value: p.Value})
+	}
+	return result
 }
 
 func convertHeaders(headers map[string][]string) []HARNameValue {
@@ -152,6 +265,30 @@ func convertHeaders(headers map[string][]string) []HARNameValue {
 		}
 	}
 	return result
+}
+
+// textBodyForHAR returns body as string for text content types, empty for binary.
+func textBodyForHAR(body []byte, mimeType string) string {
+	if len(body) == 0 {
+		return ""
+	}
+	if isBinaryContentType(mimeType) {
+		return ""
+	}
+	return string(body)
+}
+
+// isBinaryContentType returns true for content types that are binary (not text-representable).
+func isBinaryContentType(ct string) bool {
+	if strings.HasPrefix(ct, "image/") || strings.HasPrefix(ct, "audio/") ||
+		strings.HasPrefix(ct, "video/") || strings.HasPrefix(ct, "font/") {
+		return true
+	}
+	if strings.Contains(ct, "octet-stream") || strings.Contains(ct, "protobuf") ||
+		strings.Contains(ct, "grpc") || strings.Contains(ct, "wasm") {
+		return true
+	}
+	return false
 }
 
 // ExportJSON converts sessions to a JSON array.

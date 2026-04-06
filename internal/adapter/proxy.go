@@ -23,4 +23,7 @@ type ProxyEngine interface {
 
 	// Config returns the current proxy configuration.
 	Config() model.ProxyConfig
+
+	// HTTPAddr returns the actual HTTP proxy listen address (available after Start).
+	HTTPAddr() string
 }

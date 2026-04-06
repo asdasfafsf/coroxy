@@ -20,7 +20,7 @@ Effective Go, Google Go Style Guide, Uber Go Style Guide, Go Code Review Comment
 
 두 규칙이 충돌하면 아래 순서로 판단한다:
 
-0. **프로젝트 적합성 우선** — 일반 관행/커뮤니티 컨벤션보다 이 프로젝트의 구조와 원칙에 맞는 것을 선택한다. 관행을 따르지 않는 이유는 ADR에 기록한다
+0. **프로젝트 적합성 우선** — 일반 관행/커뮤니티 컨벤션보다 이 프로젝트의 구조와 원칙에 맞는 것을 선택한다. 코드만으로 드러나지 않는 "왜"가 있으면 ADR에 기록한다 (관행과 다른 선택, 대안 비교, 트레이드오프)
 1. **쉽고 간단하게** — 복잡한 패턴보다 읽기 쉬운 코드
 2. **확장성은 좋게** — 외부 의존(I/O 경계)은 인터페이스로 교체 가능하게. 소비자(caller) 측에서 필요한 인터페이스를 정의한다. 패키지 내부 구현은 YAGNI 우선
 3. **필요한 것만** — YAGNI. 미래를 위한 코드를 만들지 않음
@@ -214,6 +214,7 @@ func WithLogger(l *slog.Logger) Option { ... }
 - 5개 이하로 유지. 많아지면 옵션 구조체를 사용한다.
 - `context.Context`는 항상 첫 번째 매개변수. `ctx`로 이름 짓는다.
 - Context는 구조체 필드에 저장하지 않는다. 단, Wails 바인딩 구조체의 lifecycle context와 구조체 생성자에서 받은 cancel 전파용 context만 허용한다. 요청별 context는 저장하지 않는다.
+- Wails 바인딩 메서드에서 context가 필요한 경우(HTTP 요청, 파일 다이얼로그 등) `a.ctx`를 사용한다. `a.ctx`는 Wails의 `OnStartup` 콜백에서 설정되며, `OnShutdown` 때까지 유효하다. Startup 이전에 호출되는 코드에서는 `a.ctx == nil` 체크 필수 — nil이면 에러를 반환한다(panic 아님).
 
 ### 반환값 (MUST)
 
@@ -568,8 +569,8 @@ func readFile(path string) (data []byte, err error) {
 
 ## 16. panic과 recover
 
-- `panic`은 프로그램 초기화 실패에만 허용 (MUST)
-- `internal/` 패키지에서도 `panic` 대신 에러를 반환한다 (MUST)
+- `panic`은 프로그램 초기화 실패에만 허용 (MUST). 단, 생성자(`New...`)에서 인터페이스/함수/콜백 타입의 필수 파라미터가 nil인 경우 panic 허용 — 호출자의 프로그래밍 실수를 즉시 드러내기 위함. 문자열/숫자 등 값 타입의 유효성 검증은 에러를 반환한다
+- `internal/` 패키지에서도 `panic` 대신 에러를 반환한다 (MUST). 위 생성자 nil 검증만 예외
 - `recover`는 최상위 goroutine 경계에서만 (MUST)
 
 ---
@@ -609,6 +610,7 @@ const (
 
 - 전역 로거 사용하지 않는다. 구조체 필드로 주입 (MUST)
 - `log/slog` 사용 (MUST). Wails 자체 로거는 사용하지 않고, slog 핸들러로 통합한다
+- `intercept/` 패키지의 인터셉터 구조체에서는 optional logger(`*slog.Logger`)를 허용한다 (MAY). nil이면 로깅을 건너뛴다. 전역 로거를 쓰지 않으면서도 디버깅이 가능하도록 하기 위함
 - 구조화된 키-값 쌍 사용 (MUST)
 - 민감 정보 로깅 금지 (MUST)
 

@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"strconv"
 	"strings"
 	"sync"
@@ -36,11 +38,12 @@ type MITMProvider interface {
 
 // HTTPProxy handles HTTP forward proxy requests.
 type HTTPProxy struct {
-	logger    *slog.Logger
-	transport *http.Transport
-	onSession adapter.SessionCallback
-	mitm      MITMProvider
-	pipeline  *intercept.Pipeline
+	logger        *slog.Logger
+	transport     *http.Transport
+	onSession     adapter.SessionCallback
+	mitm          MITMProvider
+	pipeline      *intercept.Pipeline
+	autoResponder *intercept.AutoResponder
 }
 
 // NewHTTPProxy creates a new HTTP forward proxy handler.
@@ -59,6 +62,11 @@ func NewHTTPProxy(logger *slog.Logger, onSession adapter.SessionCallback, mitm M
 			MaxIdleConns:          100,
 		},
 	}
+}
+
+// SetAutoResponder sets the auto responder for serving canned responses.
+func (h *HTTPProxy) SetAutoResponder(ar *intercept.AutoResponder) {
+	h.autoResponder = ar
 }
 
 // ServeHTTP handles incoming proxy requests.
@@ -89,13 +97,44 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	outReq.RequestURI = ""
 	removeHopByHopHeaders(outReq.Header)
 
+	// Capture request body (limit to maxCaptureSize).
+	// Error is intentionally ignored — capture failure should not break proxying.
+	var reqBody []byte
+	if outReq.Body != nil {
+		reqBody, _ = readLimited(outReq.Body, maxCaptureSize)
+		outReq.Body = io.NopCloser(bytes.NewReader(reqBody))
+		outReq.ContentLength = int64(len(reqBody))
+	}
+
 	// Run interceptor pipeline on request.
 	if h.pipeline != nil && h.pipeline.Count() > 0 {
 		if h.pipeline.ProcessRequest(outReq, nil) == adapter.ActionDrop {
+			// Check if an auto-respond rule matched.
+			if ruleID := outReq.Header.Get(constant.HeaderAutoResponseRule); ruleID != "" && h.autoResponder != nil {
+				if ar := h.autoResponder.FindResponse(ruleID); ar != nil {
+					autoResp := intercept.BuildHTTPResponse(ar, outReq)
+					for k, vs := range autoResp.Header {
+						for _, v := range vs {
+							w.Header().Add(k, v)
+						}
+					}
+					w.WriteHeader(autoResp.StatusCode)
+					if autoResp.Body != nil {
+						_, _ = io.Copy(w, autoResp.Body)
+						_ = autoResp.Body.Close()
+					}
+					return
+				}
+			}
 			http.Error(w, "proxy: request dropped by interceptor", http.StatusForbidden)
 			return
 		}
 	}
+
+	// Attach httptrace to measure timing breakdown.
+	var tt requestTiming
+	traceCtx := httptrace.WithClientTrace(outReq.Context(), tt.trace())
+	outReq = outReq.WithContext(traceCtx)
 
 	resp, err := h.transport.RoundTrip(outReq)
 	if err != nil {
@@ -121,7 +160,11 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	copyHeaders(w.Header(), resp.Header)
 	w.WriteHeader(resp.StatusCode)
 
-	written, copyErr := io.Copy(w, resp.Body)
+	// Capture response body while forwarding to client.
+	var respBodyBuf bytes.Buffer
+	respReader := io.TeeReader(resp.Body, &limitWriter{w: &respBodyBuf, n: maxCaptureSize})
+
+	written, copyErr := io.Copy(w, respReader)
 	if copyErr != nil {
 		h.logger.Error("copy response body",
 			slog.String("host", r.Host),
@@ -129,7 +172,10 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 	}
 
-	h.captureHTTPSession(r, resp, written, start)
+	transferEnd := time.Now()
+	timing := tt.build(transferEnd)
+
+	h.captureHTTPSession(r, resp, reqBody, respBodyBuf.Bytes(), written, start, timing)
 }
 
 // handleConnect establishes a TCP tunnel for CONNECT requests (HTTPS passthrough).
@@ -221,8 +267,11 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
+// maxCaptureSize is the maximum body size to capture per request/response.
+const maxCaptureSize = 32 << 20 // 32MB
+
 // captureHTTPSession creates a session from an HTTP request/response and notifies the callback.
-func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bodySize int64, start time.Time) {
+func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, reqBody, respBody []byte, bodySize int64, start time.Time, timing *model.Timing) {
 	if h.onSession == nil {
 		return
 	}
@@ -234,23 +283,114 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, bod
 		Protocol: constant.ProtocolHTTP,
 		Source:   endpointFromAddr(r.RemoteAddr),
 		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		Request: &model.HTTPMessage{
-			Method:  r.Method,
-			URL:     r.URL.String(),
-			Headers: r.Header.Clone(),
-		},
-		Response: &model.HTTPMessage{
-			StatusCode: resp.StatusCode,
-			StatusText: resp.Status,
-			Headers:    resp.Header.Clone(),
-			BodySize:   bodySize,
-		},
-		State:     constant.SessionStateCompleted,
+		Request:  buildRequestMessage(r, reqBody),
+		Response: buildResponseMessage(resp, respBody, bodySize),
+		Timing:   timing,
+		State:    constant.SessionStateCompleted,
 		CreatedAt: start,
 		Duration:  time.Since(start),
 	}
 
 	h.onSession(session)
+}
+
+// buildRequestMessage extracts all HTTP request data into an HTTPMessage.
+func buildRequestMessage(r *http.Request, body []byte) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		Method:      r.Method,
+		URL:         r.URL.String(),
+		HTTPVersion: r.Proto,
+		Headers:     r.Header.Clone(),
+		Body:        body,
+		BodySize:    int64(len(body)),
+		ContentType: r.Header.Get("Content-Type"),
+	}
+
+	// Parse query parameters.
+	for name, values := range r.URL.Query() {
+		for _, v := range values {
+			msg.QueryParams = append(msg.QueryParams, model.QueryParam{Name: name, Value: v})
+		}
+	}
+
+	// Parse request cookies.
+	for _, c := range r.Cookies() {
+		msg.Cookies = append(msg.Cookies, model.HTTPCookie{
+			Name:  c.Name,
+			Value: c.Value,
+		})
+	}
+
+	return msg
+}
+
+// buildResponseMessage extracts all HTTP response data into an HTTPMessage.
+func buildResponseMessage(resp *http.Response, body []byte, bodySize int64) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		StatusCode:      resp.StatusCode,
+		StatusText:      resp.Status,
+		HTTPVersion:     resp.Proto,
+		Headers:         resp.Header.Clone(),
+		Body:            body,
+		BodySize:        bodySize,
+		ContentType:     resp.Header.Get("Content-Type"),
+		ContentEncoding: resp.Header.Get("Content-Encoding"),
+	}
+
+	// Parse Set-Cookie response headers.
+	for _, c := range resp.Cookies() {
+		cookie := model.HTTPCookie{
+			Name:     c.Name,
+			Value:    c.Value,
+			Domain:   c.Domain,
+			Path:     c.Path,
+			Secure:   c.Secure,
+			HTTPOnly: c.HttpOnly,
+			MaxAge:   c.MaxAge,
+		}
+		if !c.Expires.IsZero() {
+			cookie.Expires = c.Expires.Format("2006-01-02T15:04:05Z")
+		}
+		switch c.SameSite {
+		case http.SameSiteLaxMode:
+			cookie.SameSite = "Lax"
+		case http.SameSiteStrictMode:
+			cookie.SameSite = "Strict"
+		case http.SameSiteNoneMode:
+			cookie.SameSite = "None"
+		}
+		msg.Cookies = append(msg.Cookies, cookie)
+	}
+
+	return msg
+}
+
+// readLimited reads up to maxBytes from r.
+func readLimited(r io.Reader, maxBytes int64) ([]byte, error) {
+	return io.ReadAll(io.LimitReader(r, maxBytes))
+}
+
+// limitWriter wraps an io.Writer and stops writing after n bytes.
+// Always reports the full input length to avoid short-write errors in TeeReader.
+type limitWriter struct {
+	w io.Writer
+	n int64
+}
+
+func (lw *limitWriter) Write(p []byte) (int, error) {
+	if lw.n <= 0 {
+		return len(p), nil // discard excess
+	}
+	toWrite := p
+	if int64(len(p)) > lw.n {
+		toWrite = p[:lw.n]
+	}
+	n, err := lw.w.Write(toWrite)
+	lw.n -= int64(n)
+	if err != nil {
+		return n, err
+	}
+	return len(p), nil // report full len so TeeReader continues
 }
 
 // captureTunnelSession creates a session for a completed CONNECT tunnel.
@@ -320,4 +460,65 @@ func copyHeaders(dst, src http.Header) {
 			dst.Add(key, value)
 		}
 	}
+}
+
+// requestTiming collects timestamps from httptrace hooks.
+type requestTiming struct {
+	dnsStart      time.Time
+	dnsEnd        time.Time
+	connectStart  time.Time
+	connectEnd    time.Time
+	tlsStart      time.Time
+	tlsEnd        time.Time
+	gotFirstByte  time.Time
+	wroteRequest  time.Time
+}
+
+// trace returns an httptrace.ClientTrace that populates timing fields.
+func (t *requestTiming) trace() *httptrace.ClientTrace {
+	return &httptrace.ClientTrace{
+		DNSStart:             func(_ httptrace.DNSStartInfo) { t.dnsStart = time.Now() },
+		DNSDone:              func(_ httptrace.DNSDoneInfo) { t.dnsEnd = time.Now() },
+		ConnectStart:         func(_, _ string) { t.connectStart = time.Now() },
+		ConnectDone:          func(_, _ string, _ error) { t.connectEnd = time.Now() },
+		TLSHandshakeStart:    func() { t.tlsStart = time.Now() },
+		TLSHandshakeDone:     func(_ tls.ConnectionState, _ error) { t.tlsEnd = time.Now() },
+		WroteRequest:         func(_ httptrace.WroteRequestInfo) { t.wroteRequest = time.Now() },
+		GotFirstResponseByte: func() { t.gotFirstByte = time.Now() },
+	}
+}
+
+// build converts collected timestamps into a Timing struct (milliseconds).
+func (t *requestTiming) build(transferEnd time.Time) *model.Timing {
+	ms := func(d time.Duration) float64 {
+		if d <= 0 {
+			return -1
+		}
+		return float64(d.Microseconds()) / 1000.0
+	}
+
+	timing := &model.Timing{
+		DNS:     -1,
+		Connect: -1,
+		TLS:     -1,
+		TTFB:    -1,
+	}
+
+	if !t.dnsStart.IsZero() && !t.dnsEnd.IsZero() {
+		timing.DNS = ms(t.dnsEnd.Sub(t.dnsStart))
+	}
+	if !t.connectStart.IsZero() && !t.connectEnd.IsZero() {
+		timing.Connect = ms(t.connectEnd.Sub(t.connectStart))
+	}
+	if !t.tlsStart.IsZero() && !t.tlsEnd.IsZero() {
+		timing.TLS = ms(t.tlsEnd.Sub(t.tlsStart))
+	}
+	if !t.wroteRequest.IsZero() && !t.gotFirstByte.IsZero() {
+		timing.TTFB = ms(t.gotFirstByte.Sub(t.wroteRequest))
+	}
+	if !t.gotFirstByte.IsZero() {
+		timing.Transfer = ms(transferEnd.Sub(t.gotFirstByte))
+	}
+
+	return timing
 }
