@@ -11,15 +11,21 @@ import (
 )
 
 // loginKeychainPath returns the path to the user's login keychain.
-func loginKeychainPath() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, "Library", "Keychains", "login.keychain-db")
+func loginKeychainPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("get home dir: %w", err)
+	}
+	return filepath.Join(home, "Library", "Keychains", "login.keychain-db"), nil
 }
 
 // installCAToDarwin installs the Root CA into the user's login keychain.
 // Uses user trust domain — no admin password required.
 func installCAToDarwin(certPath string) error {
-	keychain := loginKeychainPath()
+	keychain, err := loginKeychainPath()
+	if err != nil {
+		return err
+	}
 
 	// Add certificate to login keychain.
 	cmd := exec.Command("security", "add-trusted-cert", "-r", "trustRoot", "-k", keychain, certPath)
@@ -32,7 +38,10 @@ func installCAToDarwin(certPath string) error {
 
 // uninstallCAFromDarwin removes the Root CA from the user's login keychain.
 func uninstallCAFromDarwin(certPath string) error {
-	keychain := loginKeychainPath()
+	keychain, err := loginKeychainPath()
+	if err != nil {
+		return err
+	}
 
 	// Remove certificate from login keychain.
 	cmd := exec.Command("security", "remove-trusted-cert", "-k", keychain, certPath)

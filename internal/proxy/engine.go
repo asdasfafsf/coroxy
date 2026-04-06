@@ -17,11 +17,12 @@ import (
 
 // Engine is the core proxy engine that manages listeners and handles traffic.
 type Engine struct {
-	config    model.ProxyConfig // immutable after construction
-	logger    *slog.Logger
-	onSession adapter.SessionCallback
-	mitm      MITMProvider
-	pipeline  *intercept.Pipeline
+	config        model.ProxyConfig // immutable after construction
+	logger        *slog.Logger
+	onSession     adapter.SessionCallback
+	mitm          MITMProvider
+	pipeline      *intercept.Pipeline
+	autoResponder *intercept.AutoResponder
 
 	mu            sync.Mutex
 	state         constant.EngineState
@@ -61,6 +62,9 @@ func (e *Engine) Start(ctx context.Context) error {
 	e.cancel = cancel
 
 	httpProxy := NewHTTPProxy(e.logger, e.onSession, e.mitm, e.pipeline)
+	if e.autoResponder != nil {
+		httpProxy.SetAutoResponder(e.autoResponder)
+	}
 	listener, err := net.Listen("tcp", e.config.HTTPAddr)
 	if err != nil {
 		e.state = constant.EngineStateStopped
@@ -190,4 +194,9 @@ func (e *Engine) HTTPAddr() string {
 // SOCKSAddr returns the actual SOCKS5 proxy listen address (available after Start).
 func (e *Engine) SOCKSAddr() string {
 	return e.socksAddr
+}
+
+// SetAutoResponder sets the auto responder for serving canned responses.
+func (e *Engine) SetAutoResponder(ar *intercept.AutoResponder) {
+	e.autoResponder = ar
 }

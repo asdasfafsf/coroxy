@@ -74,10 +74,13 @@ func (b *Breakpoint) OnRequest(req *http.Request, _ *model.Session) adapter.Acti
 
 		b.onPause(pending)
 
-		// Block until Resume is called.
-		<-pending.resume
-
-		return adapter.ActionForward
+		// Block until Resume is called or request context is cancelled.
+		select {
+		case <-pending.resume:
+			return adapter.ActionForward
+		case <-req.Context().Done():
+			return adapter.ActionDrop
+		}
 	}
 
 	return adapter.ActionForward

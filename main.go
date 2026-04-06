@@ -61,6 +61,9 @@ func main() {
 	pipeline := intercept.NewPipeline()
 	pipeline.Add(ruleEngine)
 
+	ar := intercept.NewAutoResponder(ruleEngine.Rules)
+	pipeline.Add(ar)
+
 	bp := intercept.NewBreakpoint(
 		ruleEngine.Rules,
 		func(pending *intercept.PendingRequest) {
@@ -85,6 +88,7 @@ func main() {
 		proxy.NewProductionMITM(caManager),
 		pipeline,
 	)
+	engine.SetAutoResponder(ar)
 	a.SetEngine(engine)
 
 	err = wails.Run(&options.App{
