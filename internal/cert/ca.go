@@ -195,15 +195,15 @@ func (m *Manager) load() error {
 	// Validate key pair matches certificate.
 	rsaPub, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return fmt.Errorf("CA cert has non-RSA public key")
+		return fmt.Errorf("non-RSA public key in CA cert")
 	}
 	if key.PublicKey.N.Cmp(rsaPub.N) != 0 {
-		return fmt.Errorf("CA cert and key do not match")
+		return fmt.Errorf("ca cert and key do not match")
 	}
 
 	// Check expiration.
 	if time.Now().After(cert.NotAfter) {
-		return fmt.Errorf("CA cert expired at %s", cert.NotAfter.Format(time.RFC3339))
+		return fmt.Errorf("ca cert expired at %s", cert.NotAfter.Format(time.RFC3339))
 	}
 
 	m.rootCA = cert
