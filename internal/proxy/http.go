@@ -23,8 +23,6 @@ import (
 	"coroxy/internal/model"
 )
 
-// hopByHopHeaders lists headers that must not be forwarded by a proxy.
-// https://www.rfc-editor.org/rfc/rfc2616#section-13.5.1
 // MITMProvider abstracts the MITM capabilities needed by the HTTP proxy.
 // This allows testing without OS-level CA installation.
 type MITMProvider interface {
