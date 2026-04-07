@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { FixedSizeList as List } from 'react-window';
 import { model } from '../../wailsjs/go/models';
 import { TagSession, CommentSession } from '../../wailsjs/go/app/App';
 
@@ -31,17 +32,15 @@ function statusClass(code: number | undefined): string {
   return '';
 }
 
-// Row tint based on Content-Type and status (Fiddler-style).
 function rowTintClass(session: model.Session): string {
   const status = session.response?.status_code;
-  if (status && status >= 400) return 'bg-[#f38ba810]'; // red tint for errors
-  if (status && status >= 300) return 'bg-[#f9e2af08]'; // yellow tint for redirects
-
+  if (status && status >= 400) return 'bg-[#f38ba810]';
+  if (status && status >= 300) return 'bg-[#f9e2af08]';
   const ct = session.response?.content_type?.toLowerCase() || '';
-  if (ct.includes('javascript')) return 'bg-[#a6e3a108]'; // green tint
-  if (ct.includes('css')) return 'bg-[#89b4fa08]'; // blue tint
-  if (ct.includes('image')) return 'bg-[#cba6f708]'; // purple tint
-  if (ct.includes('html')) return 'bg-[#fab38708]'; // orange tint
+  if (ct.includes('javascript')) return 'bg-[#a6e3a108]';
+  if (ct.includes('css')) return 'bg-[#89b4fa08]';
+  if (ct.includes('image')) return 'bg-[#cba6f708]';
+  if (ct.includes('html')) return 'bg-[#fab38708]';
   return '';
 }
 
@@ -58,11 +57,7 @@ function protoBadgeClass(protocol: string): string {
 
 function getPath(url: string | undefined): string {
   if (!url) return '-';
-  try {
-    return new URL(url).pathname;
-  } catch {
-    return url;
-  }
+  try { return new URL(url).pathname; } catch { return url; }
 }
 
 function formatBytes(bytes: number | undefined): string {
@@ -74,21 +69,31 @@ function formatBytes(bytes: number | undefined): string {
 
 function shortContentType(ct: string | undefined): string {
   if (!ct) return '-';
-  // "application/json; charset=utf-8" → "json"
   const mime = ct.split(';')[0].trim();
   const sub = mime.split('/')[1];
   if (!sub) return mime;
-  // "x-www-form-urlencoded" → "form"
   if (sub.includes('form')) return 'form';
-  // "javascript" → "js"
   if (sub === 'javascript') return 'js';
-  // "octet-stream" → "binary"
   if (sub === 'octet-stream') return 'binary';
   return sub;
 }
 
+const ROW_HEIGHT = 28;
+
 export function SessionList({ sessions, selectedId, onSelect, onReplay, onComposerPrefill }: SessionListProps) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; session: model.Session } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  // Measure container height.
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setContainerHeight(entry.contentRect.height - 28); // subtract header height
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent, session: model.Session) => {
     e.preventDefault();
@@ -96,7 +101,6 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
     setContextMenu({ x: e.clientX, y: e.clientY, session });
   }, [onSelect]);
 
-  // Close context menu on outside click.
   useEffect(() => {
     if (!contextMenu) return;
     const close = () => setContextMenu(null);
@@ -104,62 +108,69 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
     return () => document.removeEventListener('click', close);
   }, [contextMenu]);
 
-  const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap sticky top-0 z-10';
-  const cellClass = 'px-2.5 py-1 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
+  const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap';
+  const cellClass = 'px-2.5 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
+
+  const Row = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const session = sessions[index];
+    return (
+      <div
+        style={style}
+        className={`flex items-center hover:bg-[#313244] cursor-pointer border-b border-[#313244]/30 ${selectedId === session.id ? 'bg-[#313244]' : rowTintClass(session)}`}
+        onClick={() => onSelect(session)}
+        onContextMenu={(e) => handleContextMenu(e, session)}
+      >
+        <div className={`${cellClass} w-10 text-[#6c7086] shrink-0`}>{index + 1}</div>
+        <div className={`${cellClass} w-15 shrink-0`}>
+          <span className={protoBadgeClass(session.protocol)}>{session.protocol}</span>
+        </div>
+        <div className={`${cellClass} w-[180px] shrink-0 truncate`}>{session.target?.host || '-'}</div>
+        <div className={`${cellClass} w-15 shrink-0`}>{session.request?.method || '-'}</div>
+        <div className={`${cellClass} flex-1 min-w-0 truncate`} title={session.request?.url}>
+          {getPath(session.request?.url)}
+        </div>
+        <div className={`${cellClass} w-14 text-center shrink-0 ${statusClass(session.response?.status_code)}`}>
+          {session.response?.status_code || '-'}
+        </div>
+        <div className={`${cellClass} w-14 text-[#6c7086] shrink-0`}>{shortContentType(session.response?.content_type)}</div>
+        <div className={`${cellClass} w-16 text-right text-[#6c7086] shrink-0`}>{formatBytes(session.response?.body_size)}</div>
+        <div className={`${cellClass} w-16 text-right shrink-0`}>{formatDuration(session.duration)}</div>
+        <div className={`${cellClass} w-16 text-[#6c7086] shrink-0`}>{formatTime(session.created_at)}</div>
+      </div>
+    );
+  }, [sessions, selectedId, onSelect, handleContextMenu]);
 
   return (
-    <div className="flex-1 overflow-auto bg-[#1e1e2e]">
-      <table className="w-full border-collapse">
-        <thead>
-          <tr>
-            <th className={`${headerClass} w-10`}>#</th>
-            <th className={`${headerClass} w-15`}>Proto</th>
-            <th className={headerClass}>Host</th>
-            <th className={`${headerClass} w-15`}>Method</th>
-            <th className={headerClass}>Path</th>
-            <th className={`${headerClass} w-15 text-center`}>Status</th>
-            <th className={`${headerClass} w-16`}>Type</th>
-            <th className={`${headerClass} w-18 text-right`}>Size</th>
-            <th className={`${headerClass} w-20 text-right`}>Duration</th>
-            <th className={`${headerClass} w-20`}>Time</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sessions.length === 0 ? (
-            <tr>
-              <td colSpan={10} className="text-center text-[#6c7086] py-10 text-sm">
-                No sessions captured
-              </td>
-            </tr>
-          ) : (
-            sessions.map((session, index) => (
-              <tr
-                key={session.id}
-                className={`hover:bg-[#313244] cursor-pointer ${selectedId === session.id ? 'bg-[#313244]' : rowTintClass(session)}`}
-                onClick={() => onSelect(session)}
-                onContextMenu={(e) => handleContextMenu(e, session)}
-              >
-                <td className={`${cellClass} w-10 text-[#6c7086]`}>{index + 1}</td>
-                <td className={`${cellClass} w-15`}>
-                  <span className={protoBadgeClass(session.protocol)}>{session.protocol}</span>
-                </td>
-                <td className={`${cellClass} max-w-[200px]`}>{session.target?.host || '-'}</td>
-                <td className={`${cellClass} w-15`}>{session.request?.method || '-'}</td>
-                <td className={`${cellClass} max-w-[300px]`} title={session.request?.url}>
-                  {getPath(session.request?.url)}
-                </td>
-                <td className={`${cellClass} w-15 text-center ${statusClass(session.response?.status_code)}`}>
-                  {session.response?.status_code || '-'}
-                </td>
-                <td className={`${cellClass} w-16 text-[#6c7086]`}>{shortContentType(session.response?.content_type)}</td>
-                <td className={`${cellClass} w-18 text-right text-[#6c7086]`}>{formatBytes(session.response?.body_size)}</td>
-                <td className={`${cellClass} w-20 text-right`}>{formatDuration(session.duration)}</td>
-                <td className={`${cellClass} w-20 text-[#6c7086]`}>{formatTime(session.created_at)}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+    <div ref={containerRef} className="flex-1 overflow-hidden bg-[#1e1e2e] flex flex-col">
+      {/* Header */}
+      <div className="flex shrink-0">
+        <div className={`${headerClass} w-10 shrink-0`}>#</div>
+        <div className={`${headerClass} w-15 shrink-0`}>Proto</div>
+        <div className={`${headerClass} w-[180px] shrink-0`}>Host</div>
+        <div className={`${headerClass} w-15 shrink-0`}>Method</div>
+        <div className={`${headerClass} flex-1`}>Path</div>
+        <div className={`${headerClass} w-14 text-center shrink-0`}>Status</div>
+        <div className={`${headerClass} w-14 shrink-0`}>Type</div>
+        <div className={`${headerClass} w-16 text-right shrink-0`}>Size</div>
+        <div className={`${headerClass} w-16 text-right shrink-0`}>Duration</div>
+        <div className={`${headerClass} w-16 shrink-0`}>Time</div>
+      </div>
+
+      {/* Virtualized rows */}
+      {sessions.length === 0 ? (
+        <div className="text-center text-[#6c7086] py-10 text-sm">No sessions captured</div>
+      ) : (
+        <List
+          height={containerHeight}
+          itemCount={sessions.length}
+          itemSize={ROW_HEIGHT}
+          width="100%"
+        >
+          {Row}
+        </List>
+      )}
+
+      {/* Context menu */}
       {contextMenu && (
         <div
           className="fixed bg-[#181825] border border-[#313244] rounded shadow-xl py-1 z-50 min-w-[160px]"
@@ -191,7 +202,7 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
                 className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244] flex items-center gap-2"
                 onClick={() => { TagSession(contextMenu.session.id, tag, !!hasTag); setContextMenu(null); }}
               >
-                <span className={hasTag ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}>{hasTag ? '✓' : '○'}</span>
+                <span className={hasTag ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}>{hasTag ? '\u2713' : '\u25CB'}</span>
                 {tag}
               </button>
             );
