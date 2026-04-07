@@ -11,6 +11,8 @@ export function AddRule(arg1:model.Rule):Promise<void>;
 
 export function BreakpointDrop(arg1:string):Promise<void>;
 
+export function BreakpointResumeWithEdit(arg1:string, arg2:intercept.EditedRequest):Promise<void>;
+
 export function BreakpointResume(arg1:string):Promise<void>;
 
 export function CommentSession(arg1:string, arg2:string):Promise<void>;

@@ -361,6 +361,13 @@ func (a *App) ToggleRule(id string) {
 	a.ruleEngine.ToggleRule(id)
 }
 
+// BreakpointResumeWithEdit resumes a paused request with edits applied.
+func (a *App) BreakpointResumeWithEdit(pendingID string, edit intercept.EditedRequest) {
+	if a.breakpoint != nil {
+		a.breakpoint.ResumeWithEdit(pendingID, edit)
+	}
+}
+
 // BreakpointResume resumes a paused request.
 func (a *App) BreakpointResume(pendingID string) {
 	if a.breakpoint != nil {
