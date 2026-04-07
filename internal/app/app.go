@@ -302,6 +302,45 @@ func (a *App) ImportSessionsHAR() (int, error) {
 	return len(sessions), nil
 }
 
+// TagSession adds or removes a tag on a session.
+func (a *App) TagSession(sessionID string, tag string, remove bool) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return
+	}
+	if remove {
+		filtered := make([]string, 0, len(s.Tags))
+		for _, t := range s.Tags {
+			if t != tag {
+				filtered = append(filtered, t)
+			}
+		}
+		s.Tags = filtered
+	} else {
+		for _, t := range s.Tags {
+			if t == tag {
+				return // already tagged
+			}
+		}
+		s.Tags = append(s.Tags, tag)
+	}
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
+}
+
+// CommentSession sets a comment on a session.
+func (a *App) CommentSession(sessionID string, comment string) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return
+	}
+	s.Comment = comment
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
+}
+
 // ListRules returns all rules.
 func (a *App) ListRules() []*model.Rule {
 	return a.ruleEngine.Rules()

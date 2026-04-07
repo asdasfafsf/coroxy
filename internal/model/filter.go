@@ -11,4 +11,5 @@ type SessionFilter struct {
 	StatusCode int                  `json:"status_code,omitempty"` // exact match
 	Query      string               `json:"query,omitempty"`       // text search (host, URL, method)
 	State      constant.SessionState `json:"state,omitempty"`
+	Tag        string               `json:"tag,omitempty"`         // exact match on session tags
 }

@@ -13,6 +13,8 @@ export function BreakpointDrop(arg1:string):Promise<void>;
 
 export function BreakpointResume(arg1:string):Promise<void>;
 
+export function CommentSession(arg1:string, arg2:string):Promise<void>;
+
 export function ClearSessions():Promise<void>;
 
 export function DisableSystemProxy():Promise<void>;
@@ -64,6 +66,8 @@ export function SetBreakpoint(arg1:intercept.Breakpoint):Promise<void>;
 export function SetEngine(arg1:adapter.ProxyEngine):Promise<void>;
 
 export function StartProxy():Promise<void>;
+
+export function TagSession(arg1:string, arg2:string, arg3:boolean):Promise<void>;
 
 export function StopProxy():Promise<void>;
 
