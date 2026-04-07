@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // PendingRequest represents a request paused at a breakpoint.

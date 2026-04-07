@@ -15,7 +15,7 @@ func (m *Manager) InstallCA() error {
 	case "darwin":
 		return installCAToDarwin(certPath)
 	default:
-		return fmt.Errorf("CA installation not supported on %s", runtime.GOOS)
+		return fmt.Errorf("ca installation not supported on %s", runtime.GOOS)
 	}
 }
 
@@ -27,7 +27,7 @@ func (m *Manager) UninstallCA() error {
 	case "darwin":
 		return uninstallCAFromDarwin(certPath)
 	default:
-		return fmt.Errorf("CA uninstallation not supported on %s", runtime.GOOS)
+		return fmt.Errorf("ca uninstallation not supported on %s", runtime.GOOS)
 	}
 }
 
@@ -37,6 +37,6 @@ func (m *Manager) IsCAInstalled() (bool, error) {
 	case "darwin":
 		return isCAInstalledDarwin(m.rootCA)
 	default:
-		return false, fmt.Errorf("CA status check not supported on %s", runtime.GOOS)
+		return false, fmt.Errorf("ca status check not supported on %s", runtime.GOOS)
 	}
 }
