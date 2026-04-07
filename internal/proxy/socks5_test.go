@@ -46,18 +46,27 @@ func socks5Connect(t *testing.T, proxyAddr, targetAddr string) net.Conn {
 	}
 
 	// Handshake: version 5, 1 method (no auth).
-	conn.Write([]byte{0x05, 0x01, 0x00})
+	if _, err := conn.Write([]byte{0x05, 0x01, 0x00}); err != nil {
+		t.Fatal(err)
+	}
 
 	resp := make([]byte, 2)
-	io.ReadFull(conn, resp)
+	if _, err := io.ReadFull(conn, resp); err != nil {
+		t.Fatal(err)
+	}
 	if resp[0] != 0x05 || resp[1] != 0x00 {
 		t.Fatalf("handshake failed: %v", resp)
 	}
 
 	// CONNECT request.
-	host, portStr, _ := net.SplitHostPort(targetAddr)
+	host, portStr, err := net.SplitHostPort(targetAddr)
+	if err != nil {
+		t.Fatal(err)
+	}
 	port := 0
-	fmt.Sscanf(portStr, "%d", &port)
+	if _, err := fmt.Sscanf(portStr, "%d", &port); err != nil {
+		t.Fatal(err)
+	}
 
 	ip := net.ParseIP(host)
 	if ip != nil && ip.To4() != nil {
@@ -67,7 +76,9 @@ func socks5Connect(t *testing.T, proxyAddr, targetAddr string) net.Conn {
 		portBytes := make([]byte, 2)
 		binary.BigEndian.PutUint16(portBytes, uint16(port))
 		req = append(req, portBytes...)
-		conn.Write(req)
+		if _, err := conn.Write(req); err != nil {
+			t.Fatal(err)
+		}
 	} else {
 		// Domain
 		req := []byte{0x05, 0x01, 0x00, 0x03, byte(len(host))}
@@ -75,11 +86,15 @@ func socks5Connect(t *testing.T, proxyAddr, targetAddr string) net.Conn {
 		portBytes := make([]byte, 2)
 		binary.BigEndian.PutUint16(portBytes, uint16(port))
 		req = append(req, portBytes...)
-		conn.Write(req)
+		if _, err := conn.Write(req); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	reply := make([]byte, 10)
-	io.ReadFull(conn, reply)
+	if _, err := io.ReadFull(conn, reply); err != nil {
+		t.Fatal(err)
+	}
 	if reply[1] != 0x00 {
 		t.Fatalf("connect failed: status %d", reply[1])
 	}
@@ -120,7 +135,9 @@ func TestSOCKS5Connect(t *testing.T) {
 	defer conn.Close()
 
 	// Send data and verify echo.
-	conn.Write([]byte("hello socks5"))
+	if _, err := conn.Write([]byte("hello socks5")); err != nil {
+		t.Fatal(err)
+	}
 	buf := make([]byte, 12)
 	n, err := conn.Read(buf)
 	if err != nil {
@@ -166,7 +183,10 @@ func TestSOCKS5ConnectDomain(t *testing.T) {
 	proxyAddr := startSOCKS5Server(t, proxy)
 
 	// Connect using domain name (localhost resolves to 127.0.0.1).
-	_, portStr, _ := net.SplitHostPort(target.Addr().String())
+	_, portStr, err := net.SplitHostPort(target.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
 	conn := socks5Connect(t, proxyAddr, "localhost:"+portStr)
 	defer conn.Close()
 
@@ -188,16 +208,24 @@ func TestSOCKS5TargetUnreachable(t *testing.T) {
 	defer conn.Close()
 
 	// Handshake.
-	conn.Write([]byte{0x05, 0x01, 0x00})
+	if _, err := conn.Write([]byte{0x05, 0x01, 0x00}); err != nil {
+		t.Fatal(err)
+	}
 	resp := make([]byte, 2)
-	io.ReadFull(conn, resp)
+	if _, err := io.ReadFull(conn, resp); err != nil {
+		t.Fatal(err)
+	}
 
 	// CONNECT to unreachable address.
 	req := []byte{0x05, 0x01, 0x00, 0x01, 127, 0, 0, 1, 0, 1} // port 1
-	conn.Write(req)
+	if _, err := conn.Write(req); err != nil {
+		t.Fatal(err)
+	}
 
 	reply := make([]byte, 10)
-	io.ReadFull(conn, reply)
+	if _, err := io.ReadFull(conn, reply); err != nil {
+		t.Fatal(err)
+	}
 	if reply[1] == 0x00 {
 		t.Fatal("expected failure connecting to unreachable target")
 	}

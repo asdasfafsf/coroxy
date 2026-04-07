@@ -121,7 +121,7 @@ func (h *HTTPProxy) captureWebSocketSession(r *http.Request) {
 	h.onSession(session)
 }
 
-// addWebSocketDetection adds WebSocket upgrade detection to handleHTTP.
+// isWebSocket reports whether the request is a WebSocket upgrade.
 func (h *HTTPProxy) isWebSocket(r *http.Request) bool {
 	return isWebSocketUpgrade(r)
 }

@@ -119,8 +119,12 @@ func TestLoadCorruptedCert(t *testing.T) {
 	dir := t.TempDir()
 
 	// Write garbage cert.
-	os.WriteFile(filepath.Join(dir, caFileName), []byte("not a cert"), 0644)
-	os.WriteFile(filepath.Join(dir, caKeyName), []byte("not a key"), 0600)
+	if err := os.WriteFile(filepath.Join(dir, caFileName), []byte("not a cert"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, caKeyName), []byte("not a key"), 0600); err != nil {
+		t.Fatal(err)
+	}
 
 	_, err := NewManager(dir)
 	if err == nil {
@@ -146,8 +150,13 @@ func TestLoadMismatchedKeyPair(t *testing.T) {
 	}
 
 	// Copy m2's key to m1's directory (mismatched pair).
-	keyData, _ := os.ReadFile(filepath.Join(dir2, caKeyName))
-	os.WriteFile(filepath.Join(dir, caKeyName), keyData, 0600)
+	keyData, err := os.ReadFile(filepath.Join(dir2, caKeyName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, caKeyName), keyData, 0600); err != nil {
+		t.Fatal(err)
+	}
 	_ = m2
 
 	_, err = NewManager(dir)
@@ -183,7 +192,9 @@ func TestLoadExpiredCA(t *testing.T) {
 
 	// Overwrite ca.crt with expired cert.
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: expiredDER})
-	os.WriteFile(filepath.Join(dir, caFileName), certPEM, 0644)
+	if err := os.WriteFile(filepath.Join(dir, caFileName), certPEM, 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Loading should fail.
 	_, err = NewManager(dir)
