@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
 	"coroxy/internal/rule"
 	"coroxy/internal/session"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App is the Wails binding struct that bridges GUI and Core.
@@ -29,16 +29,18 @@ type App struct {
 	ruleEngine     *rule.Engine
 	breakpoint     *intercept.Breakpoint
 	autoSaver      *session.AutoSaver
+	logger         *slog.Logger
 	sysProxyActive bool
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager, ruleEngine *rule.Engine) *App {
+func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager, ruleEngine *rule.Engine, logger *slog.Logger) *App {
 	return &App{
 		engine:     engine,
 		store:      store,
 		caManager:  caManager,
 		ruleEngine: ruleEngine,
+		logger:     logger,
 	}
 }
 
@@ -57,8 +59,8 @@ func (a *App) SetEngine(engine adapter.ProxyEngine) {
 	a.engine = engine
 }
 
-// GetContext returns the Wails context. Used for event emission from outside App.
-func (a *App) GetContext() context.Context {
+// Context returns the Wails context. Used for event emission from outside App.
+func (a *App) Context() context.Context {
 	return a.ctx
 }
 
@@ -68,7 +70,7 @@ func (a *App) Startup(ctx context.Context) {
 
 	// Load persisted sessions from disk.
 	if err := a.store.Load(); err != nil {
-		slog.Error("load sessions", slog.String("error", err.Error()))
+		a.logger.Error("load sessions", slog.String("error", err.Error()))
 	}
 }
 
@@ -77,18 +79,18 @@ func (a *App) Shutdown(_ context.Context) {
 	// Disable system proxy if active.
 	if a.sysProxyActive {
 		if err := proxy.SetSystemProxy(false, ""); err != nil {
-			slog.Error("disable system proxy on shutdown", slog.String("error", err.Error()))
+			a.logger.Error("disable system proxy on shutdown", slog.String("error", err.Error()))
 		}
 	}
 
 	// Stop auto-saver (flushes remaining data) or persist directly.
 	if a.autoSaver != nil {
 		if err := a.autoSaver.Stop(); err != nil {
-			slog.Error("stop autosaver", slog.String("error", err.Error()))
+			a.logger.Error("stop autosaver", slog.String("error", err.Error()))
 		}
 	} else {
 		if err := a.store.Persist(); err != nil {
-			slog.Error("persist sessions", slog.String("error", err.Error()))
+			a.logger.Error("persist sessions", slog.String("error", err.Error()))
 		}
 	}
 }
@@ -103,18 +105,18 @@ func (a *App) StopProxy() error {
 	return a.engine.Stop(a.ctx)
 }
 
-// GetProxyState returns the current proxy engine state.
-func (a *App) GetProxyState() string {
+// ProxyState returns the current proxy engine state.
+func (a *App) ProxyState() string {
 	return string(a.engine.State())
 }
 
-// GetSessions returns all captured sessions.
-func (a *App) GetSessions() []*model.Session {
+// Sessions returns all captured sessions.
+func (a *App) Sessions() []*model.Session {
 	return a.store.List()
 }
 
-// GetSessionsFiltered returns sessions matching the given filter.
-func (a *App) GetSessionsFiltered(filter model.SessionFilter) []*model.Session {
+// SessionsFiltered returns sessions matching the given filter.
+func (a *App) SessionsFiltered(filter model.SessionFilter) []*model.Session {
 	return a.store.ListWithFilter(filter)
 }
 
@@ -136,8 +138,8 @@ func (a *App) UninstallCA() error {
 	return a.caManager.UninstallCA()
 }
 
-// GetCAInfo returns metadata about the Root CA.
-func (a *App) GetCAInfo() model.CAInfo {
+// CAInfo returns metadata about the Root CA.
+func (a *App) CAInfo() model.CAInfo {
 	return a.caManager.CAInfo()
 }
 
@@ -312,8 +314,8 @@ type BreakpointPending struct {
 	RuleID string `json:"rule_id"`
 }
 
-// GetPendingBreakpoints returns all currently paused requests.
-func (a *App) GetPendingBreakpoints() []BreakpointPending {
+// PendingBreakpoints returns all currently paused requests.
+func (a *App) PendingBreakpoints() []BreakpointPending {
 	if a.breakpoint == nil {
 		return []BreakpointPending{}
 	}

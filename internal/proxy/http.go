@@ -15,12 +15,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // hopByHopHeaders lists headers that must not be forwarded by a proxy.
@@ -98,10 +98,11 @@ func (h *HTTPProxy) handleHTTP(w http.ResponseWriter, r *http.Request) {
 	removeHopByHopHeaders(outReq.Header)
 
 	// Capture request body (limit to maxCaptureSize).
-	// Error is intentionally ignored — capture failure should not break proxying.
 	var reqBody []byte
 	if outReq.Body != nil {
-		reqBody, _ = readLimited(outReq.Body, maxCaptureSize)
+		var readErr error
+		reqBody, readErr = readLimited(outReq.Body, maxCaptureSize)
+		_ = readErr // capture failure should not break proxying
 		outReq.Body = io.NopCloser(bytes.NewReader(reqBody))
 		outReq.ContentLength = int64(len(reqBody))
 	}
@@ -259,12 +260,12 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// 양방향 모두 종료 후 정리.
-	go func() {
-		wg.Wait()
-		_ = clientConn.Close()
-		_ = targetConn.Close()
-		h.captureTunnelSession(r, host, time.Since(start))
-	}()
+	// handleConnect already hijacked the connection, so the HTTP handler
+	// goroutine is free — safe to wait synchronously.
+	wg.Wait()
+	_ = clientConn.Close()
+	_ = targetConn.Close()
+	h.captureTunnelSession(r, host, time.Since(start))
 }
 
 // maxCaptureSize is the maximum body size to capture per request/response.

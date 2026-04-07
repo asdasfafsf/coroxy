@@ -14,12 +14,9 @@ const (
 	legacyFileName  = "sessions.json"
 )
 
-// sessionsDir is a package-level variable for testing.
-var sessionsDir = SessionsDir
-
 // Persist saves all sessions in the store to disk as a .csaz archive.
 func (s *MemoryStore) Persist() error {
-	dir, err := sessionsDir()
+	dir, err := s.sessionsDirFn()
 	if err != nil {
 		return fmt.Errorf("get sessions dir: %w", err)
 	}
@@ -42,7 +39,7 @@ func (s *MemoryStore) Persist() error {
 // Load reads sessions from disk and populates the store.
 // It tries .csaz first, then falls back to legacy sessions.json.
 func (s *MemoryStore) Load() error {
-	dir, err := sessionsDir()
+	dir, err := s.sessionsDirFn()
 	if err != nil {
 		return fmt.Errorf("get sessions dir: %w", err)
 	}
@@ -62,7 +59,7 @@ func (s *MemoryStore) Load() error {
 
 // ArchivePath returns the path to the current .csaz archive file.
 func (s *MemoryStore) ArchivePath() (string, error) {
-	dir, err := sessionsDir()
+	dir, err := s.sessionsDirFn()
 	if err != nil {
 		return "", fmt.Errorf("get sessions dir: %w", err)
 	}

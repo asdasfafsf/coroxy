@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // handleMITM performs HTTPS MITM interception on a CONNECT tunnel.
@@ -124,7 +124,9 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 		// Capture request body before forwarding.
 		var reqBody []byte
 		if req.Body != nil {
-			reqBody, _ = readLimited(req.Body, maxCaptureSize)
+			var readErr error
+			reqBody, readErr = readLimited(req.Body, maxCaptureSize)
+			_ = readErr // capture failure should not break proxying
 			req.Body = io.NopCloser(bytes.NewReader(reqBody))
 			req.ContentLength = int64(len(reqBody))
 		}

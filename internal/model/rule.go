@@ -4,10 +4,16 @@ package model
 type RuleAction string
 
 const (
-	RuleActionDrop         RuleAction = "drop"
+	// RuleActionUnknown is the zero value for rule action.
+	RuleActionUnknown RuleAction = "unknown"
+	// RuleActionDrop silently drops the matched request.
+	RuleActionDrop RuleAction = "drop"
+	// RuleActionModifyHeader modifies request or response headers according to the rule.
 	RuleActionModifyHeader RuleAction = "modify_header"
-	RuleActionAutoRespond  RuleAction = "auto_respond"
-	RuleActionBreakpoint   RuleAction = "breakpoint"
+	// RuleActionAutoRespond returns a canned response without forwarding to the server.
+	RuleActionAutoRespond RuleAction = "auto_respond"
+	// RuleActionBreakpoint pauses the request for manual inspection in the GUI.
+	RuleActionBreakpoint RuleAction = "breakpoint"
 )
 
 // MatchCondition defines criteria for matching HTTP traffic.

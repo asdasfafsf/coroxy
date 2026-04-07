@@ -1,4 +1,4 @@
-import { StartProxy, StopProxy, ClearSessions, GetProxyState, ExportSessionsHAR, ExportSessionsJSON, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../../wailsjs/go/app/App';
+import { StartProxy, StopProxy, ClearSessions, ProxyState, ExportSessionsHAR, ExportSessionsJSON, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../../wailsjs/go/app/App';
 import { useState, useEffect } from 'react';
 
 interface ToolbarProps {
@@ -31,7 +31,7 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
   }, [showExportMenu]);
 
   useEffect(() => {
-    GetProxyState().then(setProxyState);
+    ProxyState().then(setProxyState);
   }, []);
 
   const handleToggle = async () => {
@@ -43,7 +43,7 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
       } else {
         await StartProxy();
       }
-      const state = await GetProxyState();
+      const state = await ProxyState();
       setProxyState(state);
     } catch (err) {
       setError(String(err));
