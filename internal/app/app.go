@@ -396,6 +396,33 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 	}, nil
 }
 
+// ReplaySession re-sends the request from an existing session and returns the response.
+func (a *App) ReplaySession(sessionID string) (*ComposerResponse, error) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return nil, fmt.Errorf("session not found: %s", sessionID)
+	}
+	if s.Request == nil {
+		return nil, fmt.Errorf("session has no request: %s", sessionID)
+	}
+
+	headers := make(map[string]string)
+	for k, vs := range s.Request.Headers {
+		if len(vs) > 0 {
+			headers[k] = vs[0]
+		}
+	}
+
+	req := ComposerRequest{
+		Method:  s.Request.Method,
+		URL:     s.Request.URL,
+		Headers: headers,
+		Body:    string(s.Request.Body),
+	}
+
+	return a.SendRequest(req)
+}
+
 // HandleNewSession is called by the proxy when a new session is captured.
 func (a *App) HandleNewSession(s *model.Session) {
 	a.store.Add(s)

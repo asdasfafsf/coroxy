@@ -1,9 +1,12 @@
+import { useState, useEffect, useCallback } from 'react';
 import { model } from '../../wailsjs/go/models';
 
 interface SessionListProps {
   sessions: model.Session[];
   selectedId: string | null;
   onSelect: (session: model.Session) => void;
+  onReplay?: (session: model.Session) => void;
+  onComposerPrefill?: (session: model.Session) => void;
 }
 
 function formatTime(createdAt: string | number | Date): string {
@@ -83,7 +86,23 @@ function shortContentType(ct: string | undefined): string {
   return sub;
 }
 
-export function SessionList({ sessions, selectedId, onSelect }: SessionListProps) {
+export function SessionList({ sessions, selectedId, onSelect, onReplay, onComposerPrefill }: SessionListProps) {
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; session: model.Session } | null>(null);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, session: model.Session) => {
+    e.preventDefault();
+    onSelect(session);
+    setContextMenu({ x: e.clientX, y: e.clientY, session });
+  }, [onSelect]);
+
+  // Close context menu on outside click.
+  useEffect(() => {
+    if (!contextMenu) return;
+    const close = () => setContextMenu(null);
+    document.addEventListener('click', close);
+    return () => document.removeEventListener('click', close);
+  }, [contextMenu]);
+
   const headerClass = 'px-2.5 py-1.5 text-left bg-[#181825] text-[#a6adc8] font-medium text-xs border-b border-[#313244] whitespace-nowrap sticky top-0 z-10';
   const cellClass = 'px-2.5 py-1 text-[#cdd6f4] text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
 
@@ -117,6 +136,7 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
                 key={session.id}
                 className={`hover:bg-[#313244] cursor-pointer ${selectedId === session.id ? 'bg-[#313244]' : rowTintClass(session)}`}
                 onClick={() => onSelect(session)}
+                onContextMenu={(e) => handleContextMenu(e, session)}
               >
                 <td className={`${cellClass} w-10 text-[#6c7086]`}>{index + 1}</td>
                 <td className={`${cellClass} w-15`}>
@@ -139,6 +159,29 @@ export function SessionList({ sessions, selectedId, onSelect }: SessionListProps
           )}
         </tbody>
       </table>
+      {contextMenu && (
+        <div
+          className="fixed bg-[#181825] border border-[#313244] rounded shadow-xl py-1 z-50 min-w-[160px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+        >
+          {contextMenu.session.request && (
+            <>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244]"
+                onClick={() => { onReplay?.(contextMenu.session); setContextMenu(null); }}
+              >
+                Replay Request
+              </button>
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244]"
+                onClick={() => { onComposerPrefill?.(contextMenu.session); setContextMenu(null); }}
+              >
+                Edit in Composer
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

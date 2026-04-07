@@ -90,6 +90,10 @@ export function RemoveRule(arg1) {
   return window['go']['app']['App']['RemoveRule'](arg1);
 }
 
+export function ReplaySession(arg1) {
+  return window['go']['app']['App']['ReplaySession'](arg1);
+}
+
 export function SendRequest(arg1) {
   return window['go']['app']['App']['SendRequest'](arg1);
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Sessions, ProxyState } from '../wailsjs/go/app/App';
+import { Sessions, ProxyState, ReplaySession } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { Toolbar } from './components/Toolbar';
@@ -18,6 +18,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
+  const [composerPrefill, setComposerPrefill] = useState<{ method: string; url: string; headers: string; body: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -42,6 +43,25 @@ function App() {
   const handleSessionsClear = useCallback(() => {
     setSessions([]);
     setSelectedSession(null);
+  }, []);
+
+  const handleReplay = useCallback((session: model.Session) => {
+    ReplaySession(session.id).catch((e) => console.error('replay failed:', e));
+  }, []);
+
+  const handleComposerPrefill = useCallback((session: model.Session) => {
+    const req = session.request;
+    if (!req) return;
+    const headerLines = req.headers
+      ? Object.entries(req.headers).map(([k, vs]) => `${k}: ${Array.isArray(vs) ? vs.join(', ') : vs}`).join('\n')
+      : '';
+    setComposerPrefill({
+      method: req.method || 'GET',
+      url: req.url || '',
+      headers: headerLines,
+      body: req.body ? atob(req.body) : '',
+    });
+    setShowComposer(true);
   }, []);
 
   const filteredSessions = useMemo(() => {
@@ -72,6 +92,8 @@ function App() {
           sessions={filteredSessions}
           selectedId={selectedSession?.id || null}
           onSelect={setSelectedSession}
+          onReplay={handleReplay}
+          onComposerPrefill={handleComposerPrefill}
         />
         <div className="w-[400px] border-l border-[#313244] bg-[#181825]">
           <Inspector session={selectedSession} />
@@ -80,7 +102,7 @@ function App() {
       <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
-      {showComposer && <Composer onClose={() => setShowComposer(false)} />}
+      {showComposer && <Composer onClose={() => { setShowComposer(false); setComposerPrefill(null); }} prefill={composerPrefill} />}
       <BreakpointPanel />
     </div>
   );

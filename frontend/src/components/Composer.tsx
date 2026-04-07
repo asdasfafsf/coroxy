@@ -1,15 +1,23 @@
 import { useState } from 'react';
 import { SendRequest } from '../../wailsjs/go/app/App';
 
-interface ComposerProps {
-  onClose: () => void;
+interface ComposerPrefill {
+  method: string;
+  url: string;
+  headers: string;
+  body: string;
 }
 
-export function Composer({ onClose }: ComposerProps) {
-  const [method, setMethod] = useState('GET');
-  const [url, setUrl] = useState('https://');
-  const [headers, setHeaders] = useState('');
-  const [body, setBody] = useState('');
+interface ComposerProps {
+  onClose: () => void;
+  prefill?: ComposerPrefill | null;
+}
+
+export function Composer({ onClose, prefill }: ComposerProps) {
+  const [method, setMethod] = useState(prefill?.method || 'GET');
+  const [url, setUrl] = useState(prefill?.url || 'https://');
+  const [headers, setHeaders] = useState(prefill?.headers || '');
+  const [body, setBody] = useState(prefill?.body || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [response, setResponse] = useState<{
