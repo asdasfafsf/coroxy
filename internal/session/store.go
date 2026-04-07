@@ -148,6 +148,18 @@ func matchSession(s *model.Session, f model.SessionFilter) bool {
 	if f.State != "" && s.State != f.State {
 		return false
 	}
+	if f.Tag != "" {
+		found := false
+		for _, t := range s.Tags {
+			if t == f.Tag {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
 	if f.Query != "" {
 		q := strings.ToLower(f.Query)
 		matched := strings.Contains(strings.ToLower(s.Target.Host), q)

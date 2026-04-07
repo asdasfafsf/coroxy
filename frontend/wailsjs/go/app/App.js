@@ -14,6 +14,10 @@ export function BreakpointResume(arg1) {
   return window['go']['app']['App']['BreakpointResume'](arg1);
 }
 
+export function CommentSession(arg1, arg2) {
+  return window['go']['app']['App']['CommentSession'](arg1, arg2);
+}
+
 export function ClearSessions() {
   return window['go']['app']['App']['ClearSessions']();
 }
@@ -116,6 +120,10 @@ export function SetEngine(arg1) {
 
 export function StartProxy() {
   return window['go']['app']['App']['StartProxy']();
+}
+
+export function TagSession(arg1, arg2, arg3) {
+  return window['go']['app']['App']['TagSession'](arg1, arg2, arg3);
 }
 
 export function StopProxy() {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { model } from '../../wailsjs/go/models';
+import { TagSession, CommentSession } from '../../wailsjs/go/app/App';
 
 interface SessionListProps {
   sessions: model.Session[];
@@ -180,6 +181,32 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
               </button>
             </>
           )}
+          <div className="border-t border-[#313244] my-1" />
+          <div className="px-3 py-1 text-[10px] text-[#6c7086] font-medium">Tags</div>
+          {['important', 'bug', 'review', 'done'].map((tag) => {
+            const hasTag = contextMenu.session.tags?.includes(tag);
+            return (
+              <button
+                key={tag}
+                className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244] flex items-center gap-2"
+                onClick={() => { TagSession(contextMenu.session.id, tag, !!hasTag); setContextMenu(null); }}
+              >
+                <span className={hasTag ? 'text-[#a6e3a1]' : 'text-[#6c7086]'}>{hasTag ? '✓' : '○'}</span>
+                {tag}
+              </button>
+            );
+          })}
+          <div className="border-t border-[#313244] my-1" />
+          <button
+            className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244]"
+            onClick={() => {
+              const comment = prompt('Comment:', contextMenu.session.comment || '');
+              if (comment !== null) CommentSession(contextMenu.session.id, comment);
+              setContextMenu(null);
+            }}
+          >
+            {contextMenu.session.comment ? 'Edit Comment' : 'Add Comment'}
+          </button>
         </div>
       )}
     </div>

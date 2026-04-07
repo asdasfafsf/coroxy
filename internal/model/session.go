@@ -29,6 +29,8 @@ type Session struct {
 	State     constant.SessionState `json:"state"`
 	CreatedAt time.Time             `json:"created_at"`
 	Duration  time.Duration         `json:"duration"`
+	Tags      []string              `json:"tags,omitempty"`
+	Comment   string                `json:"comment,omitempty"`
 }
 
 // Endpoint represents a network endpoint.
