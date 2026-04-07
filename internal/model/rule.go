@@ -14,6 +14,8 @@ const (
 	RuleActionAutoRespond RuleAction = "auto_respond"
 	// RuleActionBreakpoint pauses the request for manual inspection in the GUI.
 	RuleActionBreakpoint RuleAction = "breakpoint"
+	// RuleActionModifyBody modifies request or response body using find/replace.
+	RuleActionModifyBody RuleAction = "modify_body"
 )
 
 // MatchCondition defines criteria for matching HTTP traffic.
@@ -39,8 +41,17 @@ type Rule struct {
 	Match           MatchCondition       `json:"match"`
 	Action          RuleAction           `json:"action"`
 	Priority        int                  `json:"priority"`
-	Modifications []HeaderModification `json:"modifications,omitempty"`
-	AutoResponse  *AutoResponse        `json:"auto_response,omitempty"`
+	Modifications     []HeaderModification `json:"modifications,omitempty"`
+	BodyModifications []BodyModification   `json:"body_modifications,omitempty"`
+	AutoResponse      *AutoResponse        `json:"auto_response,omitempty"`
+}
+
+// BodyModification defines a find/replace operation on request or response body.
+type BodyModification struct {
+	Find    string `json:"find"`
+	Replace string `json:"replace"`
+	IsRegex bool   `json:"is_regex,omitempty"` // treat Find as regex pattern
+	Target  string `json:"target"`             // "request" or "response"
 }
 
 // AutoResponse defines a canned response to return instead of forwarding to the server.

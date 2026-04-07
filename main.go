@@ -64,6 +64,9 @@ func main() {
 	pipeline := intercept.NewPipeline()
 	pipeline.Add(ruleEngine)
 
+	modifier := intercept.NewModifier(ruleEngine.Rules)
+	pipeline.Add(modifier)
+
 	ar := intercept.NewAutoResponder(ruleEngine.Rules)
 	pipeline.Add(ar)
 
