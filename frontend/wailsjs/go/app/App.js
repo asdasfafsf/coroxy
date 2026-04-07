@@ -10,6 +10,10 @@ export function BreakpointDrop(arg1) {
   return window['go']['app']['App']['BreakpointDrop'](arg1);
 }
 
+export function BreakpointResumeWithEdit(arg1, arg2) {
+  return window['go']['app']['App']['BreakpointResumeWithEdit'](arg1, arg2);
+}
+
 export function BreakpointResume(arg1) {
   return window['go']['app']['App']['BreakpointResume'](arg1);
 }
