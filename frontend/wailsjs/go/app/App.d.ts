@@ -41,6 +41,8 @@ export function SessionsFiltered(arg1:model.SessionFilter):Promise<Array<model.S
 
 export function HandleNewSession(arg1:model.Session):Promise<void>;
 
+export function ImportSessionsHAR():Promise<number>;
+
 export function ImportSessionsSAZ():Promise<number>;
 
 export function InstallCA():Promise<void>;
