@@ -51,6 +51,8 @@ export function ListRules():Promise<Array<model.Rule>>;
 
 export function RemoveRule(arg1:string):Promise<void>;
 
+export function ReplaySession(arg1:string):Promise<app.ComposerResponse>;
+
 export function SendRequest(arg1:app.ComposerRequest):Promise<app.ComposerResponse>;
 
 export function SetAutoSaver(arg1:session.AutoSaver):Promise<void>;
