@@ -70,6 +70,10 @@ export function HandleNewSession(arg1) {
   return window['go']['app']['App']['HandleNewSession'](arg1);
 }
 
+export function ImportSessionsHAR() {
+  return window['go']['app']['App']['ImportSessionsHAR']();
+}
+
 export function ImportSessionsSAZ() {
   return window['go']['app']['App']['ImportSessionsSAZ']();
 }

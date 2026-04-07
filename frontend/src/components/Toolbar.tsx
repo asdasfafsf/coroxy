@@ -1,4 +1,4 @@
-import { StartProxy, StopProxy, ClearSessions, ProxyState, ExportSessionsHAR, ExportSessionsJSON, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../../wailsjs/go/app/App';
+import { StartProxy, StopProxy, ClearSessions, ProxyState, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../../wailsjs/go/app/App';
 import { useState, useEffect } from 'react';
 
 interface ToolbarProps {
@@ -15,6 +15,7 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showImportMenu, setShowImportMenu] = useState(false);
   const [sysProxy, setSysProxy] = useState(false);
 
   useEffect(() => {
@@ -29,6 +30,14 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
     const timer = setTimeout(() => document.addEventListener('click', handle), 0);
     return () => { clearTimeout(timer); document.removeEventListener('click', handle); };
   }, [showExportMenu]);
+
+  // Close import menu on click-outside.
+  useEffect(() => {
+    if (!showImportMenu) return;
+    const handle = () => setShowImportMenu(false);
+    const timer = setTimeout(() => document.addEventListener('click', handle), 0);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handle); };
+  }, [showImportMenu]);
 
   useEffect(() => {
     ProxyState().then(setProxyState);
@@ -99,6 +108,30 @@ export function Toolbar({ onSessionsClear, onSettingsClick, onRulesClick, onComp
                 onClick={() => { ExportSessionsJSON().catch(e => setError(String(e))); setShowExportMenu(false); }}
               >
                 JSON (.json)
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="relative">
+          <button
+            className="px-3 py-1.5 rounded text-xs font-medium bg-[#313244] text-[#cdd6f4] hover:bg-[#45475a]"
+            onClick={() => setShowImportMenu(!showImportMenu)}
+          >
+            Import
+          </button>
+          {showImportMenu && (
+            <div className="absolute top-full left-0 mt-1 bg-[#313244] rounded shadow-lg z-20 min-w-[120px]">
+              <button
+                className="block w-full text-left px-3 py-2 text-xs text-[#cdd6f4] hover:bg-[#45475a]"
+                onClick={() => { ImportSessionsHAR().catch(e => setError(String(e))); setShowImportMenu(false); }}
+              >
+                HAR (.har)
+              </button>
+              <button
+                className="block w-full text-left px-3 py-2 text-xs text-[#cdd6f4] hover:bg-[#45475a]"
+                onClick={() => { ImportSessionsSAZ().catch(e => setError(String(e))); setShowImportMenu(false); }}
+              >
+                SAZ (.saz)
               </button>
             </div>
           )}

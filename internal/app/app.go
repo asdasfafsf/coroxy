@@ -271,6 +271,37 @@ func (a *App) ImportSessionsSAZ() (int, error) {
 	return len(sessions), nil
 }
 
+// ImportSessionsHAR imports sessions from a user-selected HAR file.
+func (a *App) ImportSessionsHAR() (int, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Import HAR",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "HAR Files", Pattern: "*.har"},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if path == "" {
+		return 0, nil
+	}
+
+	sessions, err := session.ImportHAR(path)
+	if err != nil {
+		return 0, fmt.Errorf("import HAR: %w", err)
+	}
+
+	for _, s := range sessions {
+		a.store.Add(s)
+	}
+
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirtyN(len(sessions))
+	}
+
+	return len(sessions), nil
+}
+
 // ListRules returns all rules.
 func (a *App) ListRules() []*model.Rule {
 	return a.ruleEngine.Rules()
