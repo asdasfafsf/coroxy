@@ -4,10 +4,15 @@ package constant
 type EngineState string
 
 const (
-	EngineStateUnknown  EngineState = "unknown"
-	EngineStateStopped  EngineState = "stopped"
+	// EngineStateUnknown is the zero value for engine state.
+	EngineStateUnknown EngineState = "unknown"
+	// EngineStateStopped indicates the engine is not running.
+	EngineStateStopped EngineState = "stopped"
+	// EngineStateStarting indicates the engine is in the process of starting up.
 	EngineStateStarting EngineState = "starting"
-	EngineStateRunning  EngineState = "running"
+	// EngineStateRunning indicates the engine is actively listening and proxying traffic.
+	EngineStateRunning EngineState = "running"
+	// EngineStateStopping indicates the engine is in the process of shutting down.
 	EngineStateStopping EngineState = "stopping"
 )
 
@@ -15,8 +20,12 @@ const (
 type SessionState string
 
 const (
-	SessionStateUnknown   SessionState = "unknown"
-	SessionStateActive    SessionState = "active"
+	// SessionStateUnknown is the zero value for session state.
+	SessionStateUnknown SessionState = "unknown"
+	// SessionStateActive indicates the session is currently in progress.
+	SessionStateActive SessionState = "active"
+	// SessionStateCompleted indicates the session finished successfully.
 	SessionStateCompleted SessionState = "completed"
-	SessionStateError     SessionState = "error"
+	// SessionStateError indicates the session ended with an error.
+	SessionStateError SessionState = "error"
 )

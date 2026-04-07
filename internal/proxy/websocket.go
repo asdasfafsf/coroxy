@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // isWebSocketUpgrade checks if the request is a WebSocket upgrade.

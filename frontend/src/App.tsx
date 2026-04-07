@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { GetSessions, GetProxyState } from '../wailsjs/go/app/App';
+import { Sessions, ProxyState } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { Toolbar } from './components/Toolbar';
@@ -21,8 +21,8 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    GetSessions().then((s) => setSessions(s || []));
-    GetProxyState().then(setProxyState);
+    Sessions().then((s) => setSessions(s || []));
+    ProxyState().then(setProxyState);
   }, []);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      GetProxyState().then(setProxyState);
+      ProxyState().then(setProxyState);
     }, 2000);
     return () => clearInterval(interval);
   }, []);

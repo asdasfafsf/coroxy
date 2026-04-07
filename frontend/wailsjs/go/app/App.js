@@ -42,28 +42,28 @@ export function ExportSessionsSAZ() {
   return window['go']['app']['App']['ExportSessionsSAZ']();
 }
 
-export function GetCAInfo() {
-  return window['go']['app']['App']['GetCAInfo']();
+export function CAInfo() {
+  return window['go']['app']['App']['CAInfo']();
 }
 
-export function GetContext() {
-  return window['go']['app']['App']['GetContext']();
+export function Context() {
+  return window['go']['app']['App']['Context']();
 }
 
-export function GetPendingBreakpoints() {
-  return window['go']['app']['App']['GetPendingBreakpoints']();
+export function PendingBreakpoints() {
+  return window['go']['app']['App']['PendingBreakpoints']();
 }
 
-export function GetProxyState() {
-  return window['go']['app']['App']['GetProxyState']();
+export function ProxyState() {
+  return window['go']['app']['App']['ProxyState']();
 }
 
-export function GetSessions() {
-  return window['go']['app']['App']['GetSessions']();
+export function Sessions() {
+  return window['go']['app']['App']['Sessions']();
 }
 
-export function GetSessionsFiltered(arg1) {
-  return window['go']['app']['App']['GetSessionsFiltered'](arg1);
+export function SessionsFiltered(arg1) {
+  return window['go']['app']['App']['SessionsFiltered'](arg1);
 }
 
 export function HandleNewSession(arg1) {

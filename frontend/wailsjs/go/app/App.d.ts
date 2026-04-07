@@ -27,17 +27,17 @@ export function ExportSessionsJSON():Promise<void>;
 
 export function ExportSessionsSAZ():Promise<void>;
 
-export function GetCAInfo():Promise<model.CAInfo>;
+export function CAInfo():Promise<model.CAInfo>;
 
-export function GetContext():Promise<context.Context>;
+export function Context():Promise<context.Context>;
 
-export function GetPendingBreakpoints():Promise<Array<app.BreakpointPending>>;
+export function PendingBreakpoints():Promise<Array<app.BreakpointPending>>;
 
-export function GetProxyState():Promise<string>;
+export function ProxyState():Promise<string>;
 
-export function GetSessions():Promise<Array<model.Session>>;
+export function Sessions():Promise<Array<model.Session>>;
 
-export function GetSessionsFiltered(arg1:model.SessionFilter):Promise<Array<model.Session>>;
+export function SessionsFiltered(arg1:model.SessionFilter):Promise<Array<model.Session>>;
 
 export function HandleNewSession(arg1:model.Session):Promise<void>;
 

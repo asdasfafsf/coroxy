@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GetCAInfo, InstallCA, UninstallCA } from '../../wailsjs/go/app/App';
+import { CAInfo, InstallCA, UninstallCA } from '../../wailsjs/go/app/App';
 import { model } from '../../wailsjs/go/models';
 
 interface SettingsProps {
@@ -12,7 +12,7 @@ export function Settings({ onClose }: SettingsProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    GetCAInfo().then(setCAInfo);
+    CAInfo().then(setCAInfo);
   }, []);
 
   const handleInstall = async () => {
@@ -20,7 +20,7 @@ export function Settings({ onClose }: SettingsProps) {
     setError('');
     try {
       await InstallCA();
-      const info = await GetCAInfo();
+      const info = await CAInfo();
       setCAInfo(info);
     } catch (err) {
       setError(String(err));
@@ -34,7 +34,7 @@ export function Settings({ onClose }: SettingsProps) {
     setError('');
     try {
       await UninstallCA();
-      const info = await GetCAInfo();
+      const info = await CAInfo();
       setCAInfo(info);
     } catch (err) {
       setError(String(err));

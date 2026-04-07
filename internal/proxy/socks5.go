@@ -10,12 +10,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // SOCKS5 protocol constants.
@@ -116,7 +116,7 @@ func (s *SOCKS5Proxy) handshake(conn net.Conn) error {
 	}
 
 	// Check if no-auth is supported.
-	hasNoAuth := false
+	var hasNoAuth bool
 	for _, m := range methods {
 		if m == socks5NoAuth {
 			hasNoAuth = true

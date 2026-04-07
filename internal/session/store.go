@@ -10,6 +10,8 @@ import (
 
 // MemoryStore is a thread-safe in-memory session store.
 type MemoryStore struct {
+	sessionsDirFn func() (string, error)
+
 	mu       sync.RWMutex
 	sessions map[string]*model.Session
 }
@@ -17,7 +19,8 @@ type MemoryStore struct {
 // NewMemoryStore creates a new in-memory session store.
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		sessions: make(map[string]*model.Session),
+		sessionsDirFn: SessionsDir,
+		sessions:      make(map[string]*model.Session),
 	}
 }
 

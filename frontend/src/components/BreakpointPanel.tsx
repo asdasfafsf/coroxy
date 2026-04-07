@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GetPendingBreakpoints, BreakpointResume, BreakpointDrop } from '../../wailsjs/go/app/App';
+import { PendingBreakpoints, BreakpointResume, BreakpointDrop } from '../../wailsjs/go/app/App';
 import { EventsOn } from '../../wailsjs/runtime/runtime';
 
 interface PendingRequest {
@@ -14,7 +14,7 @@ export function BreakpointPanel() {
   const [pending, setPending] = useState<PendingRequest[]>([]);
 
   const refresh = () => {
-    GetPendingBreakpoints().then((p) => setPending(p || []));
+    PendingBreakpoints().then((p) => setPending(p || []));
   };
 
   useEffect(() => {

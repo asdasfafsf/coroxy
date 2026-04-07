@@ -140,8 +140,9 @@ func TestHTTPProxyNonAbsoluteURL(t *testing.T) {
 	proxy := newTestHTTPProxy(t)
 	proxyAddr := startProxyServer(t, proxy)
 
-	// Send a request with a relative URL directly to the proxy.
-	resp, err := http.Get("http://" + proxyAddr + "/relative-path")
+	// Send a request with a relative URL directly to the proxy (no proxy configured).
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get("http://" + proxyAddr + "/relative-path")
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}

@@ -110,7 +110,9 @@ func (e *Engine) Start(ctx context.Context) error {
 			if err != nil {
 				return // listener closed
 			}
+			e.wg.Add(1)
 			go func() {
+				defer e.wg.Done()
 				defer func() {
 					if r := recover(); r != nil {
 						e.logger.Error("socks5 handler panic", slog.Any("panic", r))
