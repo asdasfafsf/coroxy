@@ -29,8 +29,16 @@ type Session struct {
 	State     constant.SessionState `json:"state"`
 	CreatedAt time.Time             `json:"created_at"`
 	Duration  time.Duration         `json:"duration"`
+	TCPFrames []TCPFrame             `json:"tcp_frames,omitempty"`
 	Tags      []string              `json:"tags,omitempty"`
 	Comment   string                `json:"comment,omitempty"`
+}
+
+// TCPFrame represents a captured chunk of TCP stream data.
+type TCPFrame struct {
+	Direction string    `json:"direction"` // "client_to_server" or "server_to_client"
+	Data      []byte    `json:"data"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // Endpoint represents a network endpoint.
