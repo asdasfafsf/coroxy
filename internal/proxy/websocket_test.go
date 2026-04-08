@@ -164,8 +164,8 @@ func TestWebSocketSessionCapture(t *testing.T) {
 	if s.Protocol != constant.ProtocolHTTP {
 		t.Fatalf("protocol: got %s, want HTTP", s.Protocol)
 	}
-	if s.State != constant.SessionStateActive {
-		t.Fatalf("state: got %s, want active", s.State)
+	if s.State != constant.SessionStateCompleted {
+		t.Fatalf("state: got %s, want completed", s.State)
 	}
 	if s.Request == nil {
 		t.Fatal("request should not be nil")
