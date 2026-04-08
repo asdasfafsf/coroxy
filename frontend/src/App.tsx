@@ -10,6 +10,7 @@ import { Settings } from './components/Settings';
 import { RuleEditor } from './components/RuleEditor';
 import { BreakpointPanel } from './components/BreakpointPanel';
 import { Composer } from './components/Composer';
+import { SessionDiff } from './components/SessionDiff';
 
 function App() {
   const [sessions, setSessions] = useState<model.Session[]>([]);
@@ -20,6 +21,8 @@ function App() {
   const [showComposer, setShowComposer] = useState(false);
   const [composerPrefill, setComposerPrefill] = useState<{ method: string; url: string; headers: string; body: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
+  const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -48,6 +51,14 @@ function App() {
   const handleReplay = useCallback((session: model.Session) => {
     ReplaySession(session.id).catch((e) => console.error('replay failed:', e));
   }, []);
+
+  const handleDiff = useCallback((session: model.Session) => {
+    if (!diffSessionA) {
+      setDiffSessionA(session);
+    } else {
+      setDiffSessionB(session);
+    }
+  }, [diffSessionA]);
 
   const handleComposerPrefill = useCallback((session: model.Session) => {
     const req = session.request;
@@ -94,6 +105,8 @@ function App() {
           onSelect={setSelectedSession}
           onReplay={handleReplay}
           onComposerPrefill={handleComposerPrefill}
+          onDiff={handleDiff}
+          diffPending={!!diffSessionA && !diffSessionB}
         />
         <div className="w-[400px] border-l border-[#313244] bg-[#181825]">
           <Inspector session={selectedSession} />
@@ -103,6 +116,9 @@ function App() {
       {showSettings && <Settings onClose={() => setShowSettings(false)} />}
       {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
       {showComposer && <Composer onClose={() => { setShowComposer(false); setComposerPrefill(null); }} prefill={composerPrefill} />}
+      {diffSessionA && diffSessionB && (
+        <SessionDiff sessionA={diffSessionA} sessionB={diffSessionB} onClose={() => { setDiffSessionA(null); setDiffSessionB(null); }} />
+      )}
       <BreakpointPanel />
     </div>
   );
