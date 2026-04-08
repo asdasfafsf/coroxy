@@ -19,50 +19,43 @@ func loginKeychainPath() (string, error) {
 	return filepath.Join(home, "Library", "Keychains", "login.keychain-db"), nil
 }
 
-// installCAToDarwin installs the Root CA into the user's login keychain.
-// Uses user trust domain — no admin password required.
-func installCAToDarwin(certPath string) error {
+// installCAPlatform installs the Root CA into the macOS login keychain.
+func installCAPlatform(certPath string) error {
 	keychain, err := loginKeychainPath()
 	if err != nil {
 		return err
 	}
 
-	// Add certificate to login keychain.
 	cmd := exec.Command("security", "add-trusted-cert", "-r", "trustRoot", "-k", keychain, certPath)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("install CA: %s: %w", string(out), err)
+		return fmt.Errorf("install ca: %s: %w", string(out), err)
 	}
 	return nil
 }
 
-// uninstallCAFromDarwin removes the Root CA from the user's login keychain.
-func uninstallCAFromDarwin(certPath string) error {
+// uninstallCAPlatform removes the Root CA from the macOS login keychain.
+func uninstallCAPlatform(certPath string) error {
 	keychain, err := loginKeychainPath()
 	if err != nil {
 		return err
 	}
 
-	// Remove certificate from login keychain.
 	cmd := exec.Command("security", "remove-trusted-cert", "-k", keychain, certPath)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("uninstall CA: %s: %w", string(out), err)
+		return fmt.Errorf("uninstall ca: %s: %w", string(out), err)
 	}
 	return nil
 }
 
-// isCAInstalledDarwin checks if the Root CA is trusted by the OS.
-func isCAInstalledDarwin(rootCA *x509.Certificate) (bool, error) {
+// isCAInstalledPlatform checks if the Root CA is trusted on macOS.
+func isCAInstalledPlatform(rootCA *x509.Certificate) (bool, error) {
 	pool, err := x509.SystemCertPool()
 	if err != nil {
 		return false, fmt.Errorf("load system cert pool: %w", err)
 	}
-
-	opts := x509.VerifyOptions{
-		Roots: pool,
-	}
-
+	opts := x509.VerifyOptions{Roots: pool}
 	_, err = rootCA.Verify(opts)
 	return err == nil, nil
 }
