@@ -9,6 +9,8 @@ interface SessionListProps {
   onSelect: (session: model.Session) => void;
   onReplay?: (session: model.Session) => void;
   onComposerPrefill?: (session: model.Session) => void;
+  onDiff?: (session: model.Session) => void;
+  diffPending?: boolean;
 }
 
 function formatTime(createdAt: string | number | Date): string {
@@ -80,7 +82,7 @@ function shortContentType(ct: string | undefined): string {
 
 const ROW_HEIGHT = 28;
 
-export function SessionList({ sessions, selectedId, onSelect, onReplay, onComposerPrefill }: SessionListProps) {
+export function SessionList({ sessions, selectedId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending }: SessionListProps) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; session: model.Session } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
@@ -192,6 +194,12 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
               </button>
             </>
           )}
+          <button
+            className="w-full text-left px-3 py-1.5 text-xs text-[#cdd6f4] hover:bg-[#313244]"
+            onClick={() => { onDiff?.(contextMenu.session); setContextMenu(null); }}
+          >
+            {diffPending ? 'Compare with this' : 'Compare...'}
+          </button>
           <div className="border-t border-[#313244] my-1" />
           <div className="px-3 py-1 text-[10px] text-[#6c7086] font-medium">Tags</div>
           {['important', 'bug', 'review', 'done'].map((tag) => {
