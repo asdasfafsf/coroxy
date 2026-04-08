@@ -1,32 +1,10 @@
 package proxy
 
-import (
-	"fmt"
-	"runtime"
-)
-
 // SetSystemProxy enables or disables the OS system proxy.
+// Platform-specific implementations are in sysproxy_darwin.go, sysproxy_windows.go, sysproxy_linux.go.
 func SetSystemProxy(enable bool, httpAddr string) error {
 	if enable {
-		return enableSystemProxy(httpAddr)
-	}
-	return disableSystemProxy()
-}
-
-func enableSystemProxy(httpAddr string) error {
-	switch runtime.GOOS {
-	case "darwin":
 		return EnableSystemProxy(httpAddr)
-	default:
-		return fmt.Errorf("system proxy not supported on %s", runtime.GOOS)
 	}
-}
-
-func disableSystemProxy() error {
-	switch runtime.GOOS {
-	case "darwin":
-		return DisableSystemProxy()
-	default:
-		return fmt.Errorf("system proxy not supported on %s", runtime.GOOS)
-	}
+	return DisableSystemProxy()
 }
