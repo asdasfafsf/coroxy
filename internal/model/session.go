@@ -29,9 +29,18 @@ type Session struct {
 	State     constant.SessionState `json:"state"`
 	CreatedAt time.Time             `json:"created_at"`
 	Duration  time.Duration         `json:"duration"`
+	WSFrames  []WSFrame              `json:"ws_frames,omitempty"`
 	TCPFrames []TCPFrame             `json:"tcp_frames,omitempty"`
 	Tags      []string              `json:"tags,omitempty"`
 	Comment   string                `json:"comment,omitempty"`
+}
+
+// WSFrame represents a captured WebSocket frame.
+type WSFrame struct {
+	Direction string    `json:"direction"` // "client" or "server"
+	Opcode    int       `json:"opcode"`    // 1=text, 2=binary, 8=close, 9=ping, 10=pong
+	Payload   []byte    `json:"payload"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 // TCPFrame represents a captured chunk of TCP stream data.
