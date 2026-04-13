@@ -15,6 +15,7 @@ import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
 import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
 import { useTheme } from '@/hooks/useTheme';
+import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -124,6 +125,7 @@ function App() {
         <AppMenubar
           isRunning={isRunning}
           sysProxy={sysProxy}
+          hasSelection={!!selectedSession}
           onToggleProxy={handleToggleProxy}
           onToggleSysProxy={handleToggleSysProxy}
           onClear={handleClear}
@@ -134,6 +136,11 @@ function App() {
           onSettingsClick={() => setShowSettings(true)}
           onRulesClick={() => setShowRules(true)}
           onComposerClick={() => setShowComposer(true)}
+          onCopyUrl={() => selectedSession && copyToClipboard(copyUrl(selectedSession))}
+          onCopyRequestHeaders={() => selectedSession && copyToClipboard(copyRequestHeaders(selectedSession))}
+          onCopyResponseHeaders={() => selectedSession && copyToClipboard(copyResponseHeaders(selectedSession))}
+          onCopyCurl={() => selectedSession && copyToClipboard(copyCurl(selectedSession))}
+          onCopyResponseBody={() => selectedSession && copyToClipboard(copyResponseBody(selectedSession))}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
