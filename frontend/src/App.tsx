@@ -39,7 +39,8 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTextWizard, setShowTextWizard] = useState(false);
-  const [marks, setMarks] = useState<Map<string, string>>(new Map()); // sessionId → color
+  const [marks, setMarks] = useState<Map<string, string>>(new Map());
+  const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -63,7 +64,19 @@ function App() {
 
   const isRunning = proxyState === 'running';
 
-  const filteredSessions = useMemo(() => filterSessions(sessions, filter), [sessions, filter]);
+  const filteredSessions = useMemo(() => {
+    let result = filterSessions(sessions, filter);
+    if (hiddenTypes.size > 0) {
+      result = result.filter(s => {
+        const ct = s.response?.content_type?.toLowerCase() || '';
+        for (const hidden of hiddenTypes) {
+          if (ct.includes(hidden)) return false;
+        }
+        return true;
+      });
+    }
+    return result;
+  }, [sessions, filter, hiddenTypes]);
 
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
@@ -269,6 +282,12 @@ function App() {
           selectedCount={selectedIds.size}
           onMark={handleMark}
           onUnmarkAll={handleUnmarkAll}
+          hiddenTypes={hiddenTypes}
+          onToggleHide={(type) => setHiddenTypes(prev => {
+            const next = new Set(prev);
+            if (next.has(type)) next.delete(type); else next.add(type);
+            return next;
+          })}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
