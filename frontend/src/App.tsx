@@ -16,6 +16,7 @@ import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
+import { useHotkeys } from '@/hooks/useHotkeys';
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -164,6 +165,46 @@ function App() {
   }, []);
 
   const showDiff = !!diffSessionA && !!diffSessionB;
+
+  // Navigate session list with arrow keys
+  const navigateSession = useCallback((direction: 'up' | 'down') => {
+    if (filteredSessions.length === 0) return;
+    const currentIdx = activeSessionId ? filteredSessions.findIndex(s => s.id === activeSessionId) : -1;
+    const nextIdx = direction === 'down'
+      ? Math.min(currentIdx + 1, filteredSessions.length - 1)
+      : Math.max(currentIdx - 1, 0);
+    const nextSession = filteredSessions[nextIdx];
+    if (nextSession) {
+      setActiveSessionId(nextSession.id);
+      setSelectedIds(new Set([nextSession.id]));
+    }
+  }, [filteredSessions, activeSessionId]);
+
+  // Global keyboard shortcuts (Cmd/Ctrl cross-platform)
+  useHotkeys(useMemo(() => [
+    // File
+    { key: 'e', mod: true, handler: handleToggleProxy },
+    { key: ',', mod: true, handler: () => setShowSettings(true) },
+    // Edit
+    { key: 'x', mod: true, shift: true, handler: handleClear },
+    { key: 'c', mod: true, handler: () => activeSession && copyToClipboard(copyUrl(activeSession)) },
+    { key: 'f', mod: true, handler: () => document.querySelector<HTMLInputElement>('[placeholder*="Filter"]')?.focus() },
+    { key: 'a', mod: true, handler: () => setSelectedIds(new Set(filteredSessions.map(s => s.id))) },
+    // Rules
+    { key: 'r', mod: true, shift: true, handler: () => setShowRules(true) },
+    // Tools
+    { key: 'n', mod: true, shift: true, handler: () => setShowComposer(true) },
+    // Navigation
+    { key: 'ArrowDown', handler: () => navigateSession('down') },
+    { key: 'ArrowUp', handler: () => navigateSession('up') },
+    // General
+    { key: 'Escape', handler: () => {
+      setShowSettings(false);
+      setShowRules(false);
+      setShowComposer(false);
+      if (showDiff) { setDiffSessionA(null); setDiffSessionB(null); }
+    }},
+  ], [handleToggleProxy, handleClear, activeSession, filteredSessions, navigateSession, showDiff]));
 
   return (
     <TooltipProvider>
