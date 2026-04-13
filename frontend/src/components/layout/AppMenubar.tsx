@@ -32,6 +32,7 @@ interface AppMenubarProps {
   onCopyResponseHeaders: () => void;
   onCopyCurl: () => void;
   onCopyResponseBody: () => void;
+  onAboutClick: () => void;
 }
 
 export function AppMenubar({
@@ -53,6 +54,7 @@ export function AppMenubar({
   onCopyResponseHeaders,
   onCopyCurl,
   onCopyResponseBody,
+  onAboutClick,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -165,7 +167,7 @@ export function AppMenubar({
             <MenubarShortcut>?</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem disabled>About Coroxy</MenubarItem>
+          <MenubarItem onClick={onAboutClick}>About Coroxy</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>
