@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Sessions, ProxyState, ReplaySession } from '../wailsjs/go/app/App';
+import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
 import { Inspector } from '@/components/session/Inspector';
@@ -24,10 +25,12 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
+  const [sysProxy, setSysProxy] = useState(false);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
     ProxyState().then(setProxyState);
+    IsSystemProxyActive().then(setSysProxy);
   }, []);
 
   useEffect(() => {
@@ -44,10 +47,31 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const isRunning = proxyState === 'running';
+
   const handleSessionsClear = useCallback(() => {
     setSessions([]);
     setSelectedSession(null);
   }, []);
+
+  const handleToggleProxy = useCallback(async () => {
+    try {
+      if (isRunning) { await StopProxy(); } else { await StartProxy(); }
+      setProxyState(await ProxyState());
+    } catch (e) { console.error('proxy toggle failed:', e); }
+  }, [isRunning]);
+
+  const handleToggleSysProxy = useCallback(async () => {
+    try {
+      if (sysProxy) { await DisableSystemProxy(); } else { await EnableSystemProxy(); }
+      setSysProxy(!sysProxy);
+    } catch (e) { console.error('sys proxy toggle failed:', e); }
+  }, [sysProxy]);
+
+  const handleClear = useCallback(async () => {
+    await ClearSessions();
+    handleSessionsClear();
+  }, [handleSessionsClear]);
 
   const handleReplay = useCallback((session: model.Session) => {
     ReplaySession(session.id).catch((e) => console.error('replay failed:', e));
@@ -94,11 +118,22 @@ function App() {
   return (
     <TooltipProvider>
       <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-        <Toolbar
-          onSessionsClear={handleSessionsClear}
+        <AppMenubar
+          isRunning={isRunning}
+          sysProxy={sysProxy}
+          onToggleProxy={handleToggleProxy}
+          onToggleSysProxy={handleToggleSysProxy}
+          onClear={handleClear}
+          onExportHAR={() => ExportSessionsHAR().catch(console.error)}
+          onExportJSON={() => ExportSessionsJSON().catch(console.error)}
+          onImportHAR={() => ImportSessionsHAR().catch(console.error)}
+          onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
           onSettingsClick={() => setShowSettings(true)}
           onRulesClick={() => setShowRules(true)}
           onComposerClick={() => setShowComposer(true)}
+        />
+        <Toolbar
+          onSessionsClear={handleSessionsClear}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
@@ -116,7 +151,7 @@ function App() {
             <Inspector session={selectedSession} />
           </div>
         </div>
-        <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
+        <StatusBar sessionCount={sessions.length} isRunning={isRunning} />
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
         <RuleEditor open={showRules} onOpenChange={setShowRules} />
