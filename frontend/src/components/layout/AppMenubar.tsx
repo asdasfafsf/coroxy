@@ -16,6 +16,7 @@ import { shortcut } from '@/lib/platform';
 interface AppMenubarProps {
   isRunning: boolean;
   sysProxy: boolean;
+  hasSelection: boolean;
   onToggleProxy: () => void;
   onToggleSysProxy: () => void;
   onClear: () => void;
@@ -26,11 +27,17 @@ interface AppMenubarProps {
   onSettingsClick: () => void;
   onRulesClick: () => void;
   onComposerClick: () => void;
+  onCopyUrl: () => void;
+  onCopyRequestHeaders: () => void;
+  onCopyResponseHeaders: () => void;
+  onCopyCurl: () => void;
+  onCopyResponseBody: () => void;
 }
 
 export function AppMenubar({
   isRunning,
   sysProxy,
+  hasSelection,
   onToggleProxy,
   onToggleSysProxy,
   onClear,
@@ -41,6 +48,11 @@ export function AppMenubar({
   onSettingsClick,
   onRulesClick,
   onComposerClick,
+  onCopyUrl,
+  onCopyRequestHeaders,
+  onCopyResponseHeaders,
+  onCopyCurl,
+  onCopyResponseBody,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -87,10 +99,11 @@ export function AppMenubar({
           <MenubarSub>
             <MenubarSubTrigger>Copy</MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarItem disabled>URL <MenubarShortcut>{shortcut('C')}</MenubarShortcut></MenubarItem>
-              <MenubarItem disabled>Headers</MenubarItem>
-              <MenubarItem disabled>cURL Command</MenubarItem>
-              <MenubarItem disabled>Response Body</MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyUrl}>URL <MenubarShortcut>{shortcut('C')}</MenubarShortcut></MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyRequestHeaders}>Request Headers</MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseHeaders}>Response Headers</MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyCurl}>cURL Command</MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseBody}>Response Body</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem disabled>
