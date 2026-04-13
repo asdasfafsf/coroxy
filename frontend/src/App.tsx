@@ -15,6 +15,7 @@ import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
 import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
 import { AboutDialog } from '@/components/tools/AboutDialog';
+import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 import { useHotkeys } from '@/hooks/useHotkeys';
@@ -34,6 +35,7 @@ function App() {
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
   const [sysProxy, setSysProxy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -199,6 +201,8 @@ function App() {
     // Navigation
     { key: 'ArrowDown', handler: () => navigateSession('down') },
     { key: 'ArrowUp', handler: () => navigateSession('up') },
+    // Help
+    { key: '?', handler: () => setShowShortcuts(true) },
     // General
     { key: 'Escape', handler: () => {
       setShowSettings(false);
@@ -231,6 +235,7 @@ function App() {
           onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
           onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
           onAboutClick={() => setShowAbout(true)}
+          onShortcutsClick={() => setShowShortcuts(true)}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
@@ -282,6 +287,7 @@ function App() {
         )}
         <BreakpointPanel />
         <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
+        <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
       </div>
     </TooltipProvider>
   );
