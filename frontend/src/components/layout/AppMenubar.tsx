@@ -37,6 +37,8 @@ interface AppMenubarProps {
   onSelectAll: () => void;
   onDeleteSelected: () => void;
   onTextWizardClick: () => void;
+  onCompareClick: () => void;
+  selectedCount: number;
 }
 
 export function AppMenubar({
@@ -63,6 +65,8 @@ export function AppMenubar({
   onSelectAll,
   onDeleteSelected,
   onTextWizardClick,
+  onCompareClick,
+  selectedCount,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -162,7 +166,7 @@ export function AppMenubar({
             <MenubarShortcut>{shortcut('N', true)}</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onClick={onTextWizardClick}>TextWizard...</MenubarItem>
-          <MenubarItem disabled>Compare Sessions...</MenubarItem>
+          <MenubarItem disabled={selectedCount !== 2} onClick={onCompareClick}>Compare Sessions...</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
