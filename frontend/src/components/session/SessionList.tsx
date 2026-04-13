@@ -5,6 +5,7 @@ import { TagSession, CommentSession } from '../../../wailsjs/go/app/App';
 import { cn } from '@/lib/utils';
 import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
+import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 
 // Session may have runtime-added tags/comment fields from Go backend
 type SessionExt = model.Session & { tags?: string[]; comment?: string };
@@ -164,6 +165,17 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
         <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
           {diffPending ? 'Compare with this' : 'Compare...'}
         </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>Copy</ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}>URL</ContextMenuItem>
+            <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyRequestHeaders(contextSession))}>Request Headers</ContextMenuItem>
+            <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyResponseHeaders(contextSession))}>Response Headers</ContextMenuItem>
+            <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyCurl(contextSession))}>cURL Command</ContextMenuItem>
+            <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyResponseBody(contextSession))}>Response Body</ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuSub>
           <ContextMenuSubTrigger>Tags</ContextMenuSubTrigger>
