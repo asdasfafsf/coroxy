@@ -33,6 +33,7 @@ interface AppMenubarProps {
   onCopyCurl: () => void;
   onCopyResponseBody: () => void;
   onAboutClick: () => void;
+  onShortcutsClick: () => void;
 }
 
 export function AppMenubar({
@@ -55,6 +56,7 @@ export function AppMenubar({
   onCopyCurl,
   onCopyResponseBody,
   onAboutClick,
+  onShortcutsClick,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -162,7 +164,7 @@ export function AppMenubar({
       <MenubarMenu>
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Help</MenubarTrigger>
         <MenubarContent>
-          <MenubarItem disabled>
+          <MenubarItem onClick={onShortcutsClick}>
             Keyboard Shortcuts
             <MenubarShortcut>?</MenubarShortcut>
           </MenubarItem>
