@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
 import { ChevronRight, Copy, Check } from 'lucide-react';
+import { JsonTreeView } from '@/components/shared/JsonTreeView';
 
 interface InspectorProps {
   session: model.Session | null;
@@ -293,19 +294,52 @@ function WebFormsView({ body, contentType }: { body: number[] | Uint8Array | str
 }
 
 function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array | string | undefined | null; contentType?: string; size?: number }) {
+  const [viewMode, setViewMode] = useState<'tree' | 'raw'>('tree');
+
   if (contentType?.startsWith('image/') && body) {
     return <ImagePreview body={body} contentType={contentType} size={size} />;
   }
   const decoded = decodeBody(body);
   if (!decoded) return <div className="text-muted-foreground text-xs">No body content</div>;
+
+  const isJson = contentType?.includes('json');
+  let parsedJson: unknown = null;
+  if (isJson) {
+    try { parsedJson = JSON.parse(decoded); } catch { /* not valid json */ }
+  }
+
   return (
     <div>
-      <div className="text-muted-foreground text-xs mb-2">
-        {formatBytes(size)} {contentType && `· ${contentType}`}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-muted-foreground text-xs">
+          {formatBytes(size)} {contentType && `· ${contentType}`}
+        </span>
+        {parsedJson !== null && (
+          <div className="flex gap-1">
+            <button
+              className={cn('text-[10px] px-1.5 py-0.5 rounded', viewMode === 'tree' ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground')}
+              onClick={() => setViewMode('tree')}
+            >
+              Tree
+            </button>
+            <button
+              className={cn('text-[10px] px-1.5 py-0.5 rounded', viewMode === 'raw' ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground')}
+              onClick={() => setViewMode('raw')}
+            >
+              Raw
+            </button>
+          </div>
+        )}
       </div>
-      <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
-        {formatBody(decoded, contentType)}
-      </pre>
+      {parsedJson !== null && viewMode === 'tree' ? (
+        <div className="bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+          <JsonTreeView data={parsedJson} />
+        </div>
+      ) : (
+        <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+          {formatBody(decoded, contentType)}
+        </pre>
+      )}
     </div>
   );
 }
