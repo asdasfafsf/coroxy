@@ -41,6 +41,8 @@ interface AppMenubarProps {
   selectedCount: number;
   onMark: (color: string) => void;
   onUnmarkAll: () => void;
+  hiddenTypes: Set<string>;
+  onToggleHide: (type: string) => void;
 }
 
 export function AppMenubar({
@@ -71,6 +73,8 @@ export function AppMenubar({
   selectedCount,
   onMark,
   onUnmarkAll,
+  hiddenTypes,
+  onToggleHide,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -171,10 +175,18 @@ export function AppMenubar({
           <MenubarSub>
             <MenubarSubTrigger>Hide</MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarCheckboxItem disabled>Images</MenubarCheckboxItem>
-              <MenubarCheckboxItem disabled>CSS</MenubarCheckboxItem>
-              <MenubarCheckboxItem disabled>JavaScript</MenubarCheckboxItem>
-              <MenubarCheckboxItem disabled>Fonts</MenubarCheckboxItem>
+              {[
+                { key: 'image', label: 'Images' },
+                { key: 'css', label: 'CSS' },
+                { key: 'javascript', label: 'JavaScript' },
+                { key: 'font', label: 'Fonts' },
+                { key: 'json', label: 'JSON' },
+                { key: 'xml', label: 'XML' },
+              ].map(({ key, label }) => (
+                <MenubarCheckboxItem key={key} checked={hiddenTypes.has(key)} onClick={() => onToggleHide(key)}>
+                  {label}
+                </MenubarCheckboxItem>
+              ))}
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem disabled>Network Throttling...</MenubarItem>
