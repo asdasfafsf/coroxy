@@ -39,6 +39,8 @@ interface AppMenubarProps {
   onTextWizardClick: () => void;
   onCompareClick: () => void;
   selectedCount: number;
+  onMark: (color: string) => void;
+  onUnmarkAll: () => void;
 }
 
 export function AppMenubar({
@@ -67,6 +69,8 @@ export function AppMenubar({
   onTextWizardClick,
   onCompareClick,
   selectedCount,
+  onMark,
+  onUnmarkAll,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -124,6 +128,26 @@ export function AppMenubar({
             Find...
             <MenubarShortcut>{shortcut('F')}</MenubarShortcut>
           </MenubarItem>
+          <MenubarSeparator />
+          <MenubarSub>
+            <MenubarSubTrigger>Mark</MenubarSubTrigger>
+            <MenubarSubContent>
+              {[
+                { color: '#ef4444', label: 'Red' },
+                { color: '#3b82f6', label: 'Blue' },
+                { color: '#eab308', label: 'Yellow' },
+                { color: '#22c55e', label: 'Green' },
+                { color: '#a855f7', label: 'Purple' },
+              ].map(({ color, label }) => (
+                <MenubarItem key={label} disabled={!hasSelection} onClick={() => onMark(color)}>
+                  <span className="w-3 h-3 rounded-full mr-2 shrink-0" style={{ backgroundColor: color }} />
+                  {label}
+                </MenubarItem>
+              ))}
+              <MenubarSeparator />
+              <MenubarItem onClick={onUnmarkAll}>Unmark All</MenubarItem>
+            </MenubarSubContent>
+          </MenubarSub>
           <MenubarSeparator />
           <MenubarItem onClick={onSelectAll}>Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
           <MenubarItem onClick={onDeleteSelected}>Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>

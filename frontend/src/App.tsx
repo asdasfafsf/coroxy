@@ -38,6 +38,7 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTextWizard, setShowTextWizard] = useState(false);
+  const [marks, setMarks] = useState<Map<string, string>>(new Map()); // sessionId → color
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -122,6 +123,18 @@ function App() {
     setSessions([]);
     setSelectedIds(new Set());
     setActiveSessionId(null);
+  }, []);
+
+  const handleMark = useCallback((color: string) => {
+    setMarks(prev => {
+      const next = new Map(prev);
+      for (const id of selectedIds) next.set(id, color);
+      return next;
+    });
+  }, [selectedIds]);
+
+  const handleUnmarkAll = useCallback(() => {
+    setMarks(new Map());
   }, []);
 
   const handleDeleteSelected = useCallback(() => {
@@ -264,6 +277,8 @@ function App() {
           onTextWizardClick={() => setShowTextWizard(true)}
           onCompareClick={handleCompareFromMenu}
           selectedCount={selectedIds.size}
+          onMark={handleMark}
+          onUnmarkAll={handleUnmarkAll}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
@@ -281,6 +296,7 @@ function App() {
               onComposerPrefill={handleComposerPrefill}
               onDiff={handleDiff}
               diffPending={!!diffSessionA && !diffSessionB}
+              marks={marks}
             />
           </ResizablePanel>
           <ResizableHandle withHandle />
