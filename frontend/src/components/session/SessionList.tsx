@@ -19,6 +19,7 @@ interface SessionListProps {
   onComposerPrefill?: (session: model.Session) => void;
   onDiff?: (session: model.Session) => void;
   diffPending?: boolean;
+  marks?: Map<string, string>;
 }
 
 function statusClass(code: number | undefined): string {
@@ -60,12 +61,14 @@ interface RowProps {
   activeId: string | null;
   onSelect: (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
   onContextSession: (session: model.Session) => void;
+  marks: Map<string, string>;
 }
 
 function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' } } & RowProps) {
-  const { index, style, sessions, selectedIds, activeId, onSelect, onContextSession } = props;
+  const { index, style, sessions, selectedIds, activeId, onSelect, onContextSession, marks } = props;
   const session = sessions[index];
   const badge = protoBadge(session.protocol);
+  const markColor = marks.get(session.id);
   const cellClass = 'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
 
   return (
@@ -79,7 +82,10 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
       onClick={(e) => onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })}
       onContextMenu={() => onContextSession(session)}
     >
-      <div className={cn(cellClass, 'w-10 text-muted-foreground shrink-0')}>{index + 1}</div>
+      <div className={cn(cellClass, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
+        {markColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: markColor }} />}
+        {index + 1}
+      </div>
       <div className={cn(cellClass, 'w-15 shrink-0')}>
         <span className={cn('text-[11px] font-semibold px-1.5 py-0.5 rounded-sm', badge.bg, badge.text)}>
           {session.protocol}
@@ -101,7 +107,7 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
   );
 }
 
-export function SessionList({ sessions, selectedIds, activeId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending }: SessionListProps) {
+export function SessionList({ sessions, selectedIds, activeId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending, marks = new Map() }: SessionListProps) {
   const [contextSession, setContextSession] = useState<SessionExt | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
@@ -147,7 +153,7 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
               rowHeight={ROW_HEIGHT}
               rowCount={sessions.length}
               rowComponent={SessionRow}
-              rowProps={{ sessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession }}
+              rowProps={{ sessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession, marks }}
               style={{ height: containerHeight, width: '100%' }}
             />
           )}
