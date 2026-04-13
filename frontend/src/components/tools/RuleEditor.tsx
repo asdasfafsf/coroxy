@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ListRules, AddRule, RemoveRule, ToggleRule } from '../../../wailsjs/go/app/App';
 import { model } from '../../../wailsjs/go/models';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -41,12 +41,12 @@ export function RuleEditor({ open, onOpenChange }: RuleEditorProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[80vh] flex flex-col">
-        <DialogHeader className="flex flex-row items-center justify-between">
-          <DialogTitle>Rules</DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-[500px] sm:max-w-[500px] flex flex-col p-0">
+        <SheetHeader className="flex flex-row items-center justify-between px-4 py-3 border-b border-border">
+          <SheetTitle>Rules</SheetTitle>
           <Button size="sm" onClick={() => setShowForm(true)}>Add Rule</Button>
-        </DialogHeader>
+        </SheetHeader>
 
         {error && (
           <div className="px-4 py-2 bg-destructive/10 text-destructive text-xs rounded-md">
@@ -102,8 +102,8 @@ export function RuleEditor({ open, onOpenChange }: RuleEditorProps) {
         </div>
 
         {showForm && <RuleForm onSubmit={handleAdd} onCancel={() => setShowForm(false)} />}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
 
