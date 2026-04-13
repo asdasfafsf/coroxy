@@ -32,14 +32,25 @@ function statusClass(code: number | undefined): string {
 }
 
 function rowTintClass(session: model.Session): string {
+  // State-based (highest priority)
+  if (session.state === 'error') return 'bg-status-error/[0.06]';
+
+  // Status code
   const status = session.response?.status_code;
-  if (status && status >= 400) return 'bg-status-error/[0.04]';
-  if (status && status >= 300) return 'bg-status-warning/[0.03]';
+  if (status && status >= 500) return 'bg-status-error/[0.05]';
+  if (status && status >= 400) return 'bg-status-warning/[0.04]';
+  if (status && status >= 300) return 'bg-status-info/[0.03]';
+
+  // Content-Type (Fiddler-style coloring)
   const ct = session.response?.content_type?.toLowerCase() || '';
+  if (ct.includes('json')) return 'bg-primary/[0.03]';
   if (ct.includes('javascript')) return 'bg-status-success/[0.03]';
   if (ct.includes('css')) return 'bg-status-info/[0.03]';
   if (ct.includes('image')) return 'bg-status-purple/[0.03]';
   if (ct.includes('html')) return 'bg-chart-5/[0.03]';
+  if (ct.includes('xml')) return 'bg-chart-4/[0.03]';
+  if (ct.includes('font')) return 'bg-muted/30';
+
   return '';
 }
 
