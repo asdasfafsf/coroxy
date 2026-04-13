@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { List } from 'react-window';
 import { model } from '../../../wailsjs/go/models';
 import { TagSession, CommentSession } from '../../../wailsjs/go/app/App';
@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 
 // Session may have runtime-added tags/comment fields from Go backend
 type SessionExt = model.Session & { tags?: string[]; comment?: string };
@@ -118,10 +119,54 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
   );
 }
 
+type SortKey = 'protocol' | 'host' | 'method' | 'path' | 'status' | 'type' | 'size' | 'duration' | 'time';
+type SortDir = 'asc' | 'desc';
+
+function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): model.Session[] {
+  const sorted = [...sessions];
+  const m = dir === 'asc' ? 1 : -1;
+  sorted.sort((a, b) => {
+    switch (key) {
+      case 'protocol': return m * (a.protocol || '').localeCompare(b.protocol || '');
+      case 'host': return m * (a.target?.host || '').localeCompare(b.target?.host || '');
+      case 'method': return m * (a.request?.method || '').localeCompare(b.request?.method || '');
+      case 'path': return m * (a.request?.url || '').localeCompare(b.request?.url || '');
+      case 'status': return m * ((a.response?.status_code || 0) - (b.response?.status_code || 0));
+      case 'type': return m * (a.response?.content_type || '').localeCompare(b.response?.content_type || '');
+      case 'size': return m * ((a.response?.body_size || 0) - (b.response?.body_size || 0));
+      case 'duration': return m * ((a.duration || 0) - (b.duration || 0));
+      case 'time': return m * (String(a.created_at || '')).localeCompare(String(b.created_at || ''));
+      default: return 0;
+    }
+  });
+  return sorted;
+}
+
 export function SessionList({ sessions, selectedIds, activeId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending, marks = new Map() }: SessionListProps) {
   const [contextSession, setContextSession] = useState<SessionExt | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  const sortedSessions = useMemo(() => {
+    if (!sortKey) return sessions;
+    return sortSessions(sessions, sortKey, sortDir);
+  }, [sessions, sortKey, sortDir]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return null;
+    return sortDir === 'asc' ? <ChevronUp className="h-3 w-3 inline" /> : <ChevronDown className="h-3 w-3 inline" />;
+  };
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -145,26 +190,26 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
           {/* Header */}
           <div className="flex shrink-0">
             <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-            <div className={cn(headerClass, 'w-15 shrink-0')}>Proto</div>
-            <div className={cn(headerClass, 'w-[180px] shrink-0')}>Host</div>
-            <div className={cn(headerClass, 'w-15 shrink-0')}>Method</div>
-            <div className={cn(headerClass, 'flex-1')}>Path</div>
-            <div className={cn(headerClass, 'w-14 text-center shrink-0')}>Status</div>
-            <div className={cn(headerClass, 'w-14 shrink-0')}>Type</div>
-            <div className={cn(headerClass, 'w-16 text-right shrink-0')}>Size</div>
-            <div className={cn(headerClass, 'w-16 text-right shrink-0')}>Duration</div>
-            <div className={cn(headerClass, 'w-16 shrink-0')}>Time</div>
+            <div className={cn(headerClass, 'w-15 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('protocol')}>Proto <SortIcon col="protocol" /></div>
+            <div className={cn(headerClass, 'w-[180px] shrink-0 cursor-pointer select-none')} onClick={() => handleSort('host')}>Host <SortIcon col="host" /></div>
+            <div className={cn(headerClass, 'w-15 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('method')}>Method <SortIcon col="method" /></div>
+            <div className={cn(headerClass, 'flex-1 cursor-pointer select-none')} onClick={() => handleSort('path')}>Path <SortIcon col="path" /></div>
+            <div className={cn(headerClass, 'w-14 text-center shrink-0 cursor-pointer select-none')} onClick={() => handleSort('status')}>Status <SortIcon col="status" /></div>
+            <div className={cn(headerClass, 'w-14 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('type')}>Type <SortIcon col="type" /></div>
+            <div className={cn(headerClass, 'w-16 text-right shrink-0 cursor-pointer select-none')} onClick={() => handleSort('size')}>Size <SortIcon col="size" /></div>
+            <div className={cn(headerClass, 'w-16 text-right shrink-0 cursor-pointer select-none')} onClick={() => handleSort('duration')}>Duration <SortIcon col="duration" /></div>
+            <div className={cn(headerClass, 'w-16 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('time')}>Time <SortIcon col="time" /></div>
           </div>
 
           {/* Virtualized rows */}
-          {sessions.length === 0 ? (
+          {sortedSessions.length === 0 ? (
             <div className="text-center text-muted-foreground py-10 text-sm">No sessions captured</div>
           ) : (
             <List
               rowHeight={ROW_HEIGHT}
-              rowCount={sessions.length}
+              rowCount={sortedSessions.length}
               rowComponent={SessionRow}
-              rowProps={{ sessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession, marks }}
+              rowProps={{ sessions: sortedSessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession, marks }}
               style={{ height: containerHeight, width: '100%' }}
             />
           )}
