@@ -7,6 +7,7 @@ import { formatTime, formatDuration, formatBytes, shortContentType, getPath } fr
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 import { ChevronUp, ChevronDown } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Session may have runtime-added tags/comment fields from Go backend
 type SessionExt = model.Session & { tags?: string[]; comment?: string };
@@ -148,6 +149,36 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
   const [containerHeight, setContainerHeight] = useState(600);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+  const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
+    try {
+      const stored = localStorage.getItem('coroxy-hidden-cols');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [showColMenu, setShowColMenu] = useState(false);
+
+  const toggleCol = (col: string) => {
+    setHiddenCols(prev => {
+      const next = new Set(prev);
+      if (next.has(col)) next.delete(col); else next.add(col);
+      localStorage.setItem('coroxy-hidden-cols', JSON.stringify([...next]));
+      return next;
+    });
+  };
+
+  const allCols = [
+    { key: 'protocol', label: 'Proto', width: 'w-15' },
+    { key: 'host', label: 'Host', width: 'w-[180px]' },
+    { key: 'method', label: 'Method', width: 'w-15' },
+    { key: 'path', label: 'Path', width: 'flex-1' },
+    { key: 'status', label: 'Status', width: 'w-14 text-center' },
+    { key: 'type', label: 'Type', width: 'w-14' },
+    { key: 'size', label: 'Size', width: 'w-16 text-right' },
+    { key: 'duration', label: 'Duration', width: 'w-16 text-right' },
+    { key: 'time', label: 'Time', width: 'w-16' },
+  ];
+
+  const visibleCols = allCols.filter(c => !hiddenCols.has(c.key));
 
   const sortedSessions = useMemo(() => {
     if (!sortKey) return sessions;
@@ -188,18 +219,29 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
       <ContextMenuTrigger asChild>
         <div ref={containerRef} className="flex-1 overflow-hidden bg-background flex flex-col">
           {/* Header */}
-          <div className="flex shrink-0">
-            <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-            <div className={cn(headerClass, 'w-15 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('protocol')}>Proto <SortIcon col="protocol" /></div>
-            <div className={cn(headerClass, 'w-[180px] shrink-0 cursor-pointer select-none')} onClick={() => handleSort('host')}>Host <SortIcon col="host" /></div>
-            <div className={cn(headerClass, 'w-15 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('method')}>Method <SortIcon col="method" /></div>
-            <div className={cn(headerClass, 'flex-1 cursor-pointer select-none')} onClick={() => handleSort('path')}>Path <SortIcon col="path" /></div>
-            <div className={cn(headerClass, 'w-14 text-center shrink-0 cursor-pointer select-none')} onClick={() => handleSort('status')}>Status <SortIcon col="status" /></div>
-            <div className={cn(headerClass, 'w-14 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('type')}>Type <SortIcon col="type" /></div>
-            <div className={cn(headerClass, 'w-16 text-right shrink-0 cursor-pointer select-none')} onClick={() => handleSort('size')}>Size <SortIcon col="size" /></div>
-            <div className={cn(headerClass, 'w-16 text-right shrink-0 cursor-pointer select-none')} onClick={() => handleSort('duration')}>Duration <SortIcon col="duration" /></div>
-            <div className={cn(headerClass, 'w-16 shrink-0 cursor-pointer select-none')} onClick={() => handleSort('time')}>Time <SortIcon col="time" /></div>
-          </div>
+          <DropdownMenu open={showColMenu} onOpenChange={setShowColMenu}>
+            <DropdownMenuTrigger asChild>
+              <div className="flex shrink-0" onContextMenu={(e) => { e.preventDefault(); setShowColMenu(true); }}>
+                <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
+                {visibleCols.map(col => (
+                  <div
+                    key={col.key}
+                    className={cn(headerClass, col.width, 'shrink-0 cursor-pointer select-none')}
+                    onClick={() => handleSort(col.key as SortKey)}
+                  >
+                    {col.label} <SortIcon col={col.key as SortKey} />
+                  </div>
+                ))}
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {allCols.map(col => (
+                <DropdownMenuCheckboxItem key={col.key} checked={!hiddenCols.has(col.key)} onCheckedChange={() => toggleCol(col.key)}>
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Virtualized rows */}
           {sortedSessions.length === 0 ? (
