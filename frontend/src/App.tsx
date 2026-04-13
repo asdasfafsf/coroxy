@@ -21,7 +21,8 @@ function App() {
   const { theme, setTheme } = useTheme();
   const [sessions, setSessions] = useState<model.Session[]>([]);
   const [proxyState, setProxyState] = useState('stopped');
-  const [selectedSession, setSelectedSession] = useState<model.Session | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
@@ -53,9 +54,67 @@ function App() {
 
   const isRunning = proxyState === 'running';
 
+  const filteredSessions = useMemo(() => {
+    if (!searchQuery.trim()) return sessions;
+    const q = searchQuery.toLowerCase();
+    return sessions.filter((s) => {
+      const host = s.target?.host?.toLowerCase() || '';
+      const url = s.request?.url?.toLowerCase() || '';
+      const method = s.request?.method?.toLowerCase() || '';
+      const status = String(s.response?.status_code || '');
+      const ct = s.response?.content_type?.toLowerCase() || '';
+      return host.includes(q) || url.includes(q) || method.includes(q) || status.includes(q) || ct.includes(q);
+    });
+  }, [sessions, searchQuery]);
+
+  // Active session for Inspector (last clicked)
+  const activeSession = useMemo(() => {
+    if (!activeSessionId) return null;
+    return sessions.find(s => s.id === activeSessionId) || null;
+  }, [sessions, activeSessionId]);
+
+  const handleSelect = useCallback((session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
+    setActiveSessionId(session.id);
+
+    if (e?.shiftKey && activeSessionId) {
+      // Shift+click: range select
+      const sessionIds = filteredSessions.map(s => s.id);
+      const startIdx = sessionIds.indexOf(activeSessionId);
+      const endIdx = sessionIds.indexOf(session.id);
+      if (startIdx >= 0 && endIdx >= 0) {
+        const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+        const rangeIds = sessionIds.slice(lo, hi + 1);
+        setSelectedIds(prev => {
+          const next = new Set(prev);
+          for (const id of rangeIds) next.add(id);
+          return next;
+        });
+        return;
+      }
+    }
+
+    if (e?.metaKey || e?.ctrlKey) {
+      // Cmd/Ctrl+click: toggle individual
+      setSelectedIds(prev => {
+        const next = new Set(prev);
+        if (next.has(session.id)) {
+          next.delete(session.id);
+        } else {
+          next.add(session.id);
+        }
+        return next;
+      });
+      return;
+    }
+
+    // Normal click: single select
+    setSelectedIds(new Set([session.id]));
+  }, [activeSessionId, filteredSessions]);
+
   const handleSessionsClear = useCallback(() => {
     setSessions([]);
-    setSelectedSession(null);
+    setSelectedIds(new Set());
+    setActiveSessionId(null);
   }, []);
 
   const handleToggleProxy = useCallback(async () => {
@@ -104,19 +163,6 @@ function App() {
     setShowComposer(true);
   }, []);
 
-  const filteredSessions = useMemo(() => {
-    if (!searchQuery.trim()) return sessions;
-    const q = searchQuery.toLowerCase();
-    return sessions.filter((s) => {
-      const host = s.target?.host?.toLowerCase() || '';
-      const url = s.request?.url?.toLowerCase() || '';
-      const method = s.request?.method?.toLowerCase() || '';
-      const status = String(s.response?.status_code || '');
-      const ct = s.response?.content_type?.toLowerCase() || '';
-      return host.includes(q) || url.includes(q) || method.includes(q) || status.includes(q) || ct.includes(q);
-    });
-  }, [sessions, searchQuery]);
-
   const showDiff = !!diffSessionA && !!diffSessionB;
 
   return (
@@ -125,7 +171,7 @@ function App() {
         <AppMenubar
           isRunning={isRunning}
           sysProxy={sysProxy}
-          hasSelection={!!selectedSession}
+          hasSelection={!!activeSession}
           onToggleProxy={handleToggleProxy}
           onToggleSysProxy={handleToggleSysProxy}
           onClear={handleClear}
@@ -136,11 +182,11 @@ function App() {
           onSettingsClick={() => setShowSettings(true)}
           onRulesClick={() => setShowRules(true)}
           onComposerClick={() => setShowComposer(true)}
-          onCopyUrl={() => selectedSession && copyToClipboard(copyUrl(selectedSession))}
-          onCopyRequestHeaders={() => selectedSession && copyToClipboard(copyRequestHeaders(selectedSession))}
-          onCopyResponseHeaders={() => selectedSession && copyToClipboard(copyResponseHeaders(selectedSession))}
-          onCopyCurl={() => selectedSession && copyToClipboard(copyCurl(selectedSession))}
-          onCopyResponseBody={() => selectedSession && copyToClipboard(copyResponseBody(selectedSession))}
+          onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
+          onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
+          onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
+          onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
+          onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
@@ -151,8 +197,9 @@ function App() {
           <ResizablePanel defaultSize={65} minSize={30}>
             <SessionList
               sessions={filteredSessions}
-              selectedId={selectedSession?.id || null}
-              onSelect={setSelectedSession}
+              selectedIds={selectedIds}
+              activeId={activeSessionId}
+              onSelect={handleSelect}
               onReplay={handleReplay}
               onComposerPrefill={handleComposerPrefill}
               onDiff={handleDiff}
@@ -162,11 +209,17 @@ function App() {
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={35} minSize={20}>
             <div className="h-full bg-card">
-              <Inspector session={selectedSession} />
+              <Inspector session={activeSession} />
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-        <StatusBar sessionCount={sessions.length} isRunning={isRunning} theme={theme} onThemeChange={setTheme} />
+        <StatusBar
+          sessionCount={sessions.length}
+          selectedCount={selectedIds.size}
+          isRunning={isRunning}
+          theme={theme}
+          onThemeChange={setTheme}
+        />
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
         <RuleEditor open={showRules} onOpenChange={setShowRules} />
