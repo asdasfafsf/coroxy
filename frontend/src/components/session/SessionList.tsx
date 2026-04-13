@@ -12,8 +12,9 @@ type SessionExt = model.Session & { tags?: string[]; comment?: string };
 
 interface SessionListProps {
   sessions: model.Session[];
-  selectedId: string | null;
-  onSelect: (session: model.Session) => void;
+  selectedIds: Set<string>;
+  activeId: string | null;
+  onSelect: (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
   onReplay?: (session: model.Session) => void;
   onComposerPrefill?: (session: model.Session) => void;
   onDiff?: (session: model.Session) => void;
@@ -55,13 +56,14 @@ const ROW_HEIGHT = 28;
 
 interface RowProps {
   sessions: model.Session[];
-  selectedId: string | null;
-  onSelect: (session: model.Session) => void;
+  selectedIds: Set<string>;
+  activeId: string | null;
+  onSelect: (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
   onContextSession: (session: model.Session) => void;
 }
 
 function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' } } & RowProps) {
-  const { index, style, sessions, selectedId, onSelect, onContextSession } = props;
+  const { index, style, sessions, selectedIds, activeId, onSelect, onContextSession } = props;
   const session = sessions[index];
   const badge = protoBadge(session.protocol);
   const cellClass = 'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
@@ -71,9 +73,10 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
       style={style}
       className={cn(
         'flex items-center hover:bg-muted/50 cursor-pointer border-b border-border/30',
-        selectedId === session.id ? 'bg-primary/[0.08]' : rowTintClass(session)
+        selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
+        activeId === session.id && 'ring-1 ring-inset ring-primary/30'
       )}
-      onClick={() => onSelect(session)}
+      onClick={(e) => onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })}
       onContextMenu={() => onContextSession(session)}
     >
       <div className={cn(cellClass, 'w-10 text-muted-foreground shrink-0')}>{index + 1}</div>
@@ -98,7 +101,7 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
   );
 }
 
-export function SessionList({ sessions, selectedId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending }: SessionListProps) {
+export function SessionList({ sessions, selectedIds, activeId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending }: SessionListProps) {
   const [contextSession, setContextSession] = useState<SessionExt | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
@@ -144,7 +147,7 @@ export function SessionList({ sessions, selectedId, onSelect, onReplay, onCompos
               rowHeight={ROW_HEIGHT}
               rowCount={sessions.length}
               rowComponent={SessionRow}
-              rowProps={{ sessions, selectedId, onSelect, onContextSession: handleContextSession }}
+              rowProps={{ sessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession }}
               style={{ height: containerHeight, width: '100%' }}
             />
           )}

@@ -6,12 +6,13 @@ type Theme = 'system' | 'dark' | 'light';
 
 interface StatusBarProps {
   sessionCount: number;
+  selectedCount: number;
   isRunning: boolean;
   theme: Theme;
   onThemeChange: (theme: Theme) => void;
 }
 
-export function StatusBar({ sessionCount, isRunning, theme, onThemeChange }: StatusBarProps) {
+export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThemeChange }: StatusBarProps) {
   return (
     <div className="flex items-center px-3 py-1 bg-card border-t border-border text-xs text-muted-foreground">
       <span className="flex items-center gap-1.5">
@@ -19,7 +20,9 @@ export function StatusBar({ sessionCount, isRunning, theme, onThemeChange }: Sta
         {isRunning ? 'Listening on :8673' : 'Stopped'}
       </span>
       <span className="flex-1" />
-      <span className="mr-3">{sessionCount} sessions</span>
+      <span className="mr-3">
+        {sessionCount} sessions{selectedCount > 1 && ` (${selectedCount} selected)`}
+      </span>
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
