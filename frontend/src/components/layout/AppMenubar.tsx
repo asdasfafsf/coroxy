@@ -36,6 +36,7 @@ interface AppMenubarProps {
   onShortcutsClick: () => void;
   onSelectAll: () => void;
   onDeleteSelected: () => void;
+  onTextWizardClick: () => void;
 }
 
 export function AppMenubar({
@@ -61,6 +62,7 @@ export function AppMenubar({
   onShortcutsClick,
   onSelectAll,
   onDeleteSelected,
+  onTextWizardClick,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -159,7 +161,7 @@ export function AppMenubar({
             Composer
             <MenubarShortcut>{shortcut('N', true)}</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem disabled>TextWizard...</MenubarItem>
+          <MenubarItem onClick={onTextWizardClick}>TextWizard...</MenubarItem>
           <MenubarItem disabled>Compare Sessions...</MenubarItem>
         </MenubarContent>
       </MenubarMenu>

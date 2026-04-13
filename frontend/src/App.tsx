@@ -16,6 +16,7 @@ import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
 import { AboutDialog } from '@/components/tools/AboutDialog';
 import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
+import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 import { useHotkeys } from '@/hooks/useHotkeys';
@@ -36,6 +37,7 @@ function App() {
   const [sysProxy, setSysProxy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showTextWizard, setShowTextWizard] = useState(false);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -248,6 +250,7 @@ function App() {
           onShortcutsClick={() => setShowShortcuts(true)}
           onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
           onDeleteSelected={handleDeleteSelected}
+          onTextWizardClick={() => setShowTextWizard(true)}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
@@ -300,6 +303,7 @@ function App() {
         <BreakpointPanel />
         <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
         <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
+        <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
       </div>
     </TooltipProvider>
   );
