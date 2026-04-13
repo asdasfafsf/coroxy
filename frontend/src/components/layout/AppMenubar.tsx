@@ -34,6 +34,8 @@ interface AppMenubarProps {
   onCopyResponseBody: () => void;
   onAboutClick: () => void;
   onShortcutsClick: () => void;
+  onSelectAll: () => void;
+  onDeleteSelected: () => void;
 }
 
 export function AppMenubar({
@@ -57,6 +59,8 @@ export function AppMenubar({
   onCopyResponseBody,
   onAboutClick,
   onShortcutsClick,
+  onSelectAll,
+  onDeleteSelected,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -115,8 +119,8 @@ export function AppMenubar({
             <MenubarShortcut>{shortcut('F')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem disabled>Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
-          <MenubarItem disabled>Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>
+          <MenubarItem onClick={onSelectAll}>Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
+          <MenubarItem onClick={onDeleteSelected}>Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
