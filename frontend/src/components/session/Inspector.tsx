@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
+import { ChevronRight, Copy, Check } from 'lucide-react';
 
 interface InspectorProps {
   session: model.Session | null;
@@ -96,20 +98,45 @@ function countBadge(items: unknown[] | undefined | null): string {
   return ` (${items.length})`;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+const IMPORTANT_HEADERS = new Set([
+  'authorization', 'content-type', 'set-cookie', 'cookie',
+  'cache-control', 'location', 'x-forwarded-for', 'origin',
+  'access-control-allow-origin', 'content-encoding', 'transfer-encoding',
+]);
+
+function CollapsibleSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div>
-      <h3 className="text-muted-foreground text-[11px] font-semibold mb-1">{title}</h3>
-      <div className="space-y-0.5">{children}</div>
-    </div>
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-1 text-muted-foreground text-[11px] font-semibold mb-1 hover:text-foreground transition-colors w-full">
+        <ChevronRight className={cn('h-3 w-3 transition-transform', open && 'rotate-90')} />
+        {title}
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="space-y-0.5 ml-4">{children}</div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function CopyableRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <div className="flex text-xs">
-      <span className="text-primary w-40 shrink-0 truncate">{label}</span>
-      <span className="text-foreground break-all">{value}</span>
+    <div className="flex text-xs group items-start">
+      <span className={cn('w-40 shrink-0 truncate', highlight ? 'text-status-warning font-medium' : 'text-primary')}>{label}</span>
+      <span className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1" onClick={handleCopy}>
+        {value}
+      </span>
+      <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0">
+        {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+      </button>
     </div>
   );
 }
@@ -119,19 +146,24 @@ function RequestHeaders({ session }: { session: model.Session }) {
   if (!req) return <Empty />;
   return (
     <div className="space-y-3">
-      <Section title="General">
-        <Row label="URL" value={req.url || '-'} />
-        <Row label="Method" value={req.method || '-'} />
-        <Row label="HTTP Version" value={req.http_version || '-'} />
-        <Row label="Host" value={session.target?.host || '-'} />
-        <Row label="Content-Type" value={req.content_type || '-'} />
-      </Section>
+      <CollapsibleSection title="General">
+        <CopyableRow label="URL" value={req.url || '-'} />
+        <CopyableRow label="Method" value={req.method || '-'} />
+        <CopyableRow label="HTTP Version" value={req.http_version || '-'} />
+        <CopyableRow label="Host" value={session.target?.host || '-'} />
+        <CopyableRow label="Content-Type" value={req.content_type || '-'} />
+      </CollapsibleSection>
       {req.headers && (
-        <Section title="Request Headers">
+        <CollapsibleSection title={`Request Headers (${Object.keys(req.headers).length})`}>
           {Object.entries(req.headers).map(([key, values]) => (
-            <Row key={key} label={key} value={(values as string[]).join(', ')} />
+            <CopyableRow
+              key={key}
+              label={key}
+              value={(values as string[]).join(', ')}
+              highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
+            />
           ))}
-        </Section>
+        </CollapsibleSection>
       )}
     </div>
   );
@@ -142,19 +174,24 @@ function ResponseHeaders({ session }: { session: model.Session }) {
   if (!resp) return <Empty />;
   return (
     <div className="space-y-3">
-      <Section title="General">
-        <Row label="Status" value={resp.status_text || String(resp.status_code)} />
-        <Row label="HTTP Version" value={resp.http_version || '-'} />
-        <Row label="Content-Type" value={resp.content_type || '-'} />
-        <Row label="Content-Encoding" value={resp.content_encoding || 'none'} />
-        <Row label="Body Size" value={formatBytes(resp.body_size)} />
-      </Section>
+      <CollapsibleSection title="General">
+        <CopyableRow label="Status" value={resp.status_text || String(resp.status_code)} />
+        <CopyableRow label="HTTP Version" value={resp.http_version || '-'} />
+        <CopyableRow label="Content-Type" value={resp.content_type || '-'} />
+        <CopyableRow label="Content-Encoding" value={resp.content_encoding || 'none'} />
+        <CopyableRow label="Body Size" value={formatBytes(resp.body_size)} />
+      </CollapsibleSection>
       {resp.headers && (
-        <Section title="Response Headers">
+        <CollapsibleSection title={`Response Headers (${Object.keys(resp.headers).length})`}>
           {Object.entries(resp.headers).map(([key, values]) => (
-            <Row key={key} label={key} value={(values as string[]).join(', ')} />
+            <CopyableRow
+              key={key}
+              label={key}
+              value={(values as string[]).join(', ')}
+              highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
+            />
           ))}
-        </Section>
+        </CollapsibleSection>
       )}
     </div>
   );
