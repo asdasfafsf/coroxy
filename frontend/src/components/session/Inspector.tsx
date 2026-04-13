@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
 
@@ -18,61 +19,67 @@ export function Inspector({ session }: InspectorProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <ResizablePanelGroup orientation="vertical" id="coroxy-inspector" className="h-full">
       {/* Request Pane */}
-      <div className="flex-1 flex flex-col min-h-0 border-b border-border">
-        <PaneHeader title="Request" />
-        <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-            <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
-            <TabsTrigger value="query" className="text-[11px] h-6 px-2">
-              Query{countBadge(session.request?.query_params)}
-            </TabsTrigger>
-            <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
-              Cookies{countBadge(session.request?.cookies)}
-            </TabsTrigger>
-            <TabsTrigger value="webforms" className="text-[11px] h-6 px-2">WebForms</TabsTrigger>
-            <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
-            <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
-            <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
-          </TabsList>
-          <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
-            <TabsContent value="headers" className="mt-0"><RequestHeaders session={session} /></TabsContent>
-            <TabsContent value="query" className="mt-0"><QueryView params={session.request?.query_params} /></TabsContent>
-            <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.request?.cookies} /></TabsContent>
-            <TabsContent value="webforms" className="mt-0"><WebFormsView body={session.request?.body} contentType={session.request?.content_type} /></TabsContent>
-            <TabsContent value="body" className="mt-0"><BodyContent body={session.request?.body} contentType={session.request?.content_type} size={session.request?.body_size} /></TabsContent>
-            <TabsContent value="hex" className="mt-0"><HexView body={session.request?.body} /></TabsContent>
-            <TabsContent value="raw" className="mt-0"><RawRequest session={session} /></TabsContent>
-          </div>
-        </Tabs>
-      </div>
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <div className="flex flex-col h-full">
+          <PaneHeader title="Request" />
+          <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
+            <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
+              <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
+              <TabsTrigger value="query" className="text-[11px] h-6 px-2">
+                Query{countBadge(session.request?.query_params)}
+              </TabsTrigger>
+              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
+                Cookies{countBadge(session.request?.cookies)}
+              </TabsTrigger>
+              <TabsTrigger value="webforms" className="text-[11px] h-6 px-2">WebForms</TabsTrigger>
+              <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
+              <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
+              <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
+            </TabsList>
+            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+              <TabsContent value="headers" className="mt-0"><RequestHeaders session={session} /></TabsContent>
+              <TabsContent value="query" className="mt-0"><QueryView params={session.request?.query_params} /></TabsContent>
+              <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.request?.cookies} /></TabsContent>
+              <TabsContent value="webforms" className="mt-0"><WebFormsView body={session.request?.body} contentType={session.request?.content_type} /></TabsContent>
+              <TabsContent value="body" className="mt-0"><BodyContent body={session.request?.body} contentType={session.request?.content_type} size={session.request?.body_size} /></TabsContent>
+              <TabsContent value="hex" className="mt-0"><HexView body={session.request?.body} /></TabsContent>
+              <TabsContent value="raw" className="mt-0"><RawRequest session={session} /></TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
 
       {/* Response Pane */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <PaneHeader title="Response" />
-        <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
-          <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-            <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
-            <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
-              Cookies{countBadge(session.response?.cookies)}
-            </TabsTrigger>
-            <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
-            <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
-            <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
-            <TabsTrigger value="timing" className="text-[11px] h-6 px-2">Timing</TabsTrigger>
-          </TabsList>
-          <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
-            <TabsContent value="headers" className="mt-0"><ResponseHeaders session={session} /></TabsContent>
-            <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.response?.cookies} /></TabsContent>
-            <TabsContent value="body" className="mt-0"><BodyContent body={session.response?.body} contentType={session.response?.content_type} size={session.response?.body_size} /></TabsContent>
-            <TabsContent value="hex" className="mt-0"><HexView body={session.response?.body} /></TabsContent>
-            <TabsContent value="raw" className="mt-0"><RawResponse session={session} /></TabsContent>
-            <TabsContent value="timing" className="mt-0"><TimingView session={session} /></TabsContent>
-          </div>
-        </Tabs>
-      </div>
-    </div>
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <div className="flex flex-col h-full">
+          <PaneHeader title="Response" />
+          <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
+            <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
+              <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
+              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
+                Cookies{countBadge(session.response?.cookies)}
+              </TabsTrigger>
+              <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
+              <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
+              <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
+              <TabsTrigger value="timing" className="text-[11px] h-6 px-2">Timing</TabsTrigger>
+            </TabsList>
+            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+              <TabsContent value="headers" className="mt-0"><ResponseHeaders session={session} /></TabsContent>
+              <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.response?.cookies} /></TabsContent>
+              <TabsContent value="body" className="mt-0"><BodyContent body={session.response?.body} contentType={session.response?.content_type} size={session.response?.body_size} /></TabsContent>
+              <TabsContent value="hex" className="mt-0"><HexView body={session.response?.body} /></TabsContent>
+              <TabsContent value="raw" className="mt-0"><RawResponse session={session} /></TabsContent>
+              <TabsContent value="timing" className="mt-0"><TimingView session={session} /></TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
 

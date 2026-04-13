@@ -3,6 +3,7 @@ import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessio
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
@@ -137,20 +138,25 @@ function App() {
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
         />
-        <div className="flex flex-1 overflow-hidden">
-          <SessionList
-            sessions={filteredSessions}
-            selectedId={selectedSession?.id || null}
-            onSelect={setSelectedSession}
-            onReplay={handleReplay}
-            onComposerPrefill={handleComposerPrefill}
-            onDiff={handleDiff}
-            diffPending={!!diffSessionA && !diffSessionB}
-          />
-          <div className="w-[400px] border-l border-border bg-card">
-            <Inspector session={selectedSession} />
-          </div>
-        </div>
+        <ResizablePanelGroup orientation="horizontal" id="coroxy-main" className="flex-1">
+          <ResizablePanel defaultSize={65} minSize={30}>
+            <SessionList
+              sessions={filteredSessions}
+              selectedId={selectedSession?.id || null}
+              onSelect={setSelectedSession}
+              onReplay={handleReplay}
+              onComposerPrefill={handleComposerPrefill}
+              onDiff={handleDiff}
+              diffPending={!!diffSessionA && !diffSessionB}
+            />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={35} minSize={20}>
+            <div className="h-full bg-card">
+              <Inspector session={selectedSession} />
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
         <StatusBar sessionCount={sessions.length} isRunning={isRunning} />
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
