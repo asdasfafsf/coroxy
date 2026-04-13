@@ -122,6 +122,13 @@ function App() {
     setActiveSessionId(null);
   }, []);
 
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedIds.size === 0) return;
+    setSessions(prev => prev.filter(s => !selectedIds.has(s.id)));
+    setSelectedIds(new Set());
+    setActiveSessionId(null);
+  }, [selectedIds]);
+
   const handleToggleProxy = useCallback(async () => {
     try {
       if (isRunning) { await StopProxy(); } else { await StartProxy(); }
@@ -201,6 +208,9 @@ function App() {
     // Navigation
     { key: 'ArrowDown', handler: () => navigateSession('down') },
     { key: 'ArrowUp', handler: () => navigateSession('up') },
+    // Delete
+    { key: 'Delete', handler: handleDeleteSelected },
+    { key: 'Backspace', handler: handleDeleteSelected },
     // Help
     { key: '?', handler: () => setShowShortcuts(true) },
     // General
@@ -210,7 +220,7 @@ function App() {
       setShowComposer(false);
       if (showDiff) { setDiffSessionA(null); setDiffSessionB(null); }
     }},
-  ], [handleToggleProxy, handleClear, activeSession, filteredSessions, navigateSession, showDiff]));
+  ], [handleToggleProxy, handleClear, handleDeleteSelected, activeSession, filteredSessions, navigateSession, showDiff]));
 
   return (
     <TooltipProvider>
@@ -236,6 +246,8 @@ function App() {
           onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
           onAboutClick={() => setShowAbout(true)}
           onShortcutsClick={() => setShowShortcuts(true)}
+          onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
+          onDeleteSelected={handleDeleteSelected}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
