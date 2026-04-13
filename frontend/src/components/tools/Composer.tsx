@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SendRequest } from '../../../wailsjs/go/app/App';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatBytes, tryFormatJson } from '@/lib/format';
+import { cn } from '@/lib/utils';
+import { X, Send, History, Clock } from 'lucide-react';
 
 interface ComposerPrefill {
   method: string;
@@ -16,17 +18,27 @@ interface ComposerPrefill {
 
 interface ComposerProps {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
+  onClose: () => void;
   prefill?: ComposerPrefill | null;
 }
 
-export function Composer({ open, onOpenChange, prefill }: ComposerProps) {
+interface HistoryEntry {
+  method: string;
+  url: string;
+  status: number;
+  duration: number;
+  timestamp: Date;
+}
+
+export function Composer({ open, onClose, prefill }: ComposerProps) {
   const [method, setMethod] = useState(prefill?.method || 'GET');
   const [url, setUrl] = useState(prefill?.url || 'https://');
   const [headers, setHeaders] = useState(prefill?.headers || '');
   const [body, setBody] = useState(prefill?.body || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [response, setResponse] = useState<{
     status_code: number;
     status_text: string;
@@ -36,7 +48,7 @@ export function Composer({ open, onOpenChange, prefill }: ComposerProps) {
     duration_ms: number;
   } | null>(null);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     setLoading(true);
     setError('');
     setResponse(null);
@@ -50,82 +62,119 @@ export function Composer({ open, onOpenChange, prefill }: ComposerProps) {
       }
       const resp = await SendRequest({ method, url, headers: headerMap, body });
       setResponse(resp);
+      setHistory(prev => [{
+        method, url, status: resp.status_code, duration: resp.duration_ms, timestamp: new Date()
+      }, ...prev.slice(0, 49)]);
     } catch (e) {
       setError(String(e));
     } finally {
       setLoading(false);
     }
+  }, [method, url, headers, body]);
+
+  const loadFromHistory = (entry: HistoryEntry) => {
+    setMethod(entry.method);
+    setUrl(entry.url);
+    setShowHistory(false);
   };
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Composer</DialogTitle>
-        </DialogHeader>
+  if (!open) return null;
 
-        <div className="space-y-3">
+  return (
+    <div className="border-t border-border bg-card">
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border">
+        <div className="flex items-center gap-2">
+          <Send className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-semibold text-foreground">Composer</span>
+          {history.length > 0 && (
+            <Button
+              size="sm"
+              variant={showHistory ? 'secondary' : 'ghost'}
+              className="h-5 px-1.5 text-[10px] gap-1"
+              onClick={() => setShowHistory(!showHistory)}
+            >
+              <History className="h-3 w-3" />
+              {history.length}
+            </Button>
+          )}
+        </div>
+        <Button variant="ghost" size="sm" className="h-5 w-5 p-0" onClick={onClose}>
+          <X className="h-3 w-3" />
+        </Button>
+      </div>
+
+      <div className="flex">
+        {/* History sidebar */}
+        {showHistory && (
+          <ScrollArea className="w-48 border-r border-border h-48">
+            <div className="p-1">
+              {history.map((entry, i) => (
+                <button
+                  key={i}
+                  className="w-full text-left px-2 py-1 rounded text-[11px] hover:bg-muted/50 flex flex-col"
+                  onClick={() => loadFromHistory(entry)}
+                >
+                  <span className="flex items-center gap-1">
+                    <span className="text-primary font-medium">{entry.method}</span>
+                    <span className={cn('text-[10px]', entry.status < 400 ? 'text-status-success' : 'text-destructive')}>{entry.status}</span>
+                    <span className="text-muted-foreground text-[10px]">{entry.duration}ms</span>
+                  </span>
+                  <span className="text-muted-foreground truncate">{entry.url}</span>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+
+        {/* Main content */}
+        <div className="flex-1 p-3 space-y-2 max-h-48 overflow-auto">
           <div className="flex gap-2">
             <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger className="w-24 h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(m => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input className="flex-1 h-8 text-xs font-mono" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://api.example.com/endpoint" />
-            <Button size="sm" onClick={handleSend} disabled={loading} className="h-8">
+            <Input className="flex-1 h-7 text-xs font-mono" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://api.example.com/endpoint" />
+            <Button size="sm" onClick={handleSend} disabled={loading} className="h-7">
               {loading ? '...' : 'Send'}
             </Button>
           </div>
 
-          <div>
-            <div className="text-muted-foreground text-xs font-medium mb-1">Headers (one per line: Name: Value)</div>
-            <Textarea className="h-16 resize-none font-mono text-xs" value={headers} onChange={(e) => setHeaders(e.target.value)} placeholder={'Content-Type: application/json\nAuthorization: Bearer token'} />
+          <div className="flex gap-2">
+            <div className="flex-1">
+              <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Headers</div>
+              <Textarea className="h-12 resize-none font-mono text-[11px]" value={headers} onChange={(e) => setHeaders(e.target.value)} placeholder={'Content-Type: application/json'} />
+            </div>
+            {['POST', 'PUT', 'PATCH'].includes(method) && (
+              <div className="flex-1">
+                <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Body</div>
+                <Textarea className="h-12 resize-none font-mono text-[11px]" value={body} onChange={(e) => setBody(e.target.value)} placeholder='{"key": "value"}' />
+              </div>
+            )}
           </div>
 
-          {['POST', 'PUT', 'PATCH'].includes(method) && (
-            <div>
-              <div className="text-muted-foreground text-xs font-medium mb-1">Body</div>
-              <Textarea className="h-20 resize-none font-mono text-xs" value={body} onChange={(e) => setBody(e.target.value)} placeholder='{"key": "value"}' />
-            </div>
-          )}
+          {error && <div className="text-[11px] text-destructive">{error}</div>}
 
-          {error && <div className="text-xs text-destructive">{error}</div>}
-        </div>
-
-        {response && (
-          <div className="border-t border-border pt-4 flex-1 overflow-auto space-y-3">
-            <div className="flex items-center gap-3">
-              <span className={`text-sm font-semibold ${response.status_code < 400 ? 'text-status-success' : 'text-destructive'}`}>
-                {response.status_text}
-              </span>
-              <span className="text-xs text-muted-foreground">{response.duration_ms}ms</span>
-              <span className="text-xs text-muted-foreground">{formatBytes(response.body_size)}</span>
-            </div>
-
-            <div>
-              <div className="text-muted-foreground text-xs font-medium mb-1">Response Headers</div>
-              <div className="text-xs space-y-0.5">
-                {Object.entries(response.headers).map(([k, v]) => (
-                  <div key={k} className="flex">
-                    <span className="text-primary w-40 shrink-0 truncate">{k}</span>
-                    <span className="text-foreground break-all">{v}</span>
-                  </div>
-                ))}
+          {response && (
+            <div className="bg-secondary rounded-md p-2 space-y-1">
+              <div className="flex items-center gap-2">
+                <span className={cn('text-xs font-semibold', response.status_code < 400 ? 'text-status-success' : 'text-destructive')}>
+                  {response.status_text}
+                </span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Clock className="h-3 w-3" />{response.duration_ms}ms</span>
+                <span className="text-[10px] text-muted-foreground">{formatBytes(response.body_size)}</span>
               </div>
-            </div>
-
-            <div>
-              <div className="text-muted-foreground text-xs font-medium mb-1">Response Body</div>
-              <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary p-3 rounded-md max-h-[250px] overflow-auto">
+              <pre className="whitespace-pre-wrap text-foreground text-[11px] leading-4 max-h-20 overflow-auto">
                 {tryFormatJson(response.body)}
               </pre>
             </div>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

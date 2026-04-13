@@ -315,6 +315,11 @@ function App() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        <Composer
+          open={showComposer}
+          onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
+          prefill={composerPrefill}
+        />
         <StatusBar
           sessionCount={sessions.length}
           selectedCount={selectedIds.size}
@@ -327,11 +332,6 @@ function App() {
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
         <RuleEditor open={showRules} onOpenChange={setShowRules} />
-        <Composer
-          open={showComposer}
-          onOpenChange={(open) => { setShowComposer(open); if (!open) setComposerPrefill(null); }}
-          prefill={composerPrefill}
-        />
         {showDiff && diffSessionA && diffSessionB && (
           <SessionDiff
             sessionA={diffSessionA}
