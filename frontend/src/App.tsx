@@ -20,6 +20,7 @@ import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 import { useHotkeys } from '@/hooks/useHotkeys';
+import { type SessionFilter, EMPTY_FILTER, filterSessions } from '@/lib/filter';
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -31,7 +32,7 @@ function App() {
   const [showRules, setShowRules] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
   const [composerPrefill, setComposerPrefill] = useState<{ method: string; url: string; headers: string; body: string } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<SessionFilter>(EMPTY_FILTER);
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
   const [sysProxy, setSysProxy] = useState(false);
@@ -62,18 +63,7 @@ function App() {
 
   const isRunning = proxyState === 'running';
 
-  const filteredSessions = useMemo(() => {
-    if (!searchQuery.trim()) return sessions;
-    const q = searchQuery.toLowerCase();
-    return sessions.filter((s) => {
-      const host = s.target?.host?.toLowerCase() || '';
-      const url = s.request?.url?.toLowerCase() || '';
-      const method = s.request?.method?.toLowerCase() || '';
-      const status = String(s.response?.status_code || '');
-      const ct = s.response?.content_type?.toLowerCase() || '';
-      return host.includes(q) || url.includes(q) || method.includes(q) || status.includes(q) || ct.includes(q);
-    });
-  }, [sessions, searchQuery]);
+  const filteredSessions = useMemo(() => filterSessions(sessions, filter), [sessions, filter]);
 
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
@@ -225,7 +215,7 @@ function App() {
     // Edit
     { key: 'x', mod: true, shift: true, handler: handleClear },
     { key: 'c', mod: true, handler: () => activeSession && copyToClipboard(copyUrl(activeSession)) },
-    { key: 'f', mod: true, handler: () => document.querySelector<HTMLInputElement>('[placeholder*="Filter"]')?.focus() },
+    { key: 'f', mod: true, handler: () => document.querySelector<HTMLInputElement>('[placeholder*="filter" i]')?.focus() },
     { key: 'a', mod: true, handler: () => setSelectedIds(new Set(filteredSessions.map(s => s.id))) },
     // Rules
     { key: 'r', mod: true, shift: true, handler: () => setShowRules(true) },
@@ -282,8 +272,8 @@ function App() {
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          filter={filter}
+          onFilterChange={setFilter}
         />
         <ResizablePanelGroup orientation="horizontal" id="coroxy-main" className="flex-1">
           <ResizablePanel defaultSize={65} minSize={30}>
