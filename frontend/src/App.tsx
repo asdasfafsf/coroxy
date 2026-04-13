@@ -296,6 +296,8 @@ function App() {
           isRunning={isRunning}
           theme={theme}
           onThemeChange={setTheme}
+          totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
+          totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
         />
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
