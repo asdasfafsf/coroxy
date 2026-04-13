@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
 import { ChevronRight, Copy, Check } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
+import { HexViewer } from '@/components/shared/HexViewer';
 
 interface InspectorProps {
   session: model.Session | null;
@@ -430,29 +431,7 @@ function HexView({ body }: { body: number[] | Uint8Array | string | undefined | 
     ? new TextEncoder().encode(body)
     : body instanceof Uint8Array ? body : new Uint8Array(body);
   if (bytes.length === 0) return <div className="text-muted-foreground text-xs">Empty body</div>;
-
-  const rows: string[] = [];
-  const bytesPerRow = 16;
-  const limit = Math.min(bytes.length, 8192);
-  for (let offset = 0; offset < limit; offset += bytesPerRow) {
-    const chunk = bytes.slice(offset, offset + bytesPerRow);
-    const offsetStr = offset.toString(16).padStart(8, '0');
-    const hexParts: string[] = [];
-    for (let i = 0; i < bytesPerRow; i++) {
-      hexParts.push(i < chunk.length ? chunk[i].toString(16).padStart(2, '0') : '  ');
-    }
-    const hexStr = hexParts.slice(0, 8).join(' ') + '  ' + hexParts.slice(8).join(' ');
-    const asciiStr = Array.from(chunk).map(b => (b >= 0x20 && b <= 0x7e) ? String.fromCharCode(b) : '.').join('');
-    rows.push(`${offsetStr}  ${hexStr}  |${asciiStr}|`);
-  }
-  if (bytes.length > limit) rows.push(`... (${bytes.length - limit} more bytes truncated)`);
-
-  return (
-    <pre className="text-foreground text-[11px] leading-4 font-mono whitespace-pre">
-      <span className="text-muted-foreground">{'Offset    00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F  |ASCII           |'}</span>
-      {'\n'}{rows.join('\n')}
-    </pre>
-  );
+  return <HexViewer data={bytes} />;
 }
 
 function RawRequest({ session }: { session: model.Session }) {
