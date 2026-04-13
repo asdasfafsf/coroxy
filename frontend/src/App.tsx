@@ -162,6 +162,17 @@ function App() {
     }
   }, [diffSessionA]);
 
+  const handleCompareFromMenu = useCallback(() => {
+    if (selectedIds.size !== 2) return;
+    const ids = [...selectedIds];
+    const a = sessions.find(s => s.id === ids[0]);
+    const b = sessions.find(s => s.id === ids[1]);
+    if (a && b) {
+      setDiffSessionA(a);
+      setDiffSessionB(b);
+    }
+  }, [selectedIds, sessions]);
+
   const handleComposerPrefill = useCallback((session: model.Session) => {
     const req = session.request;
     if (!req) return;
@@ -251,6 +262,8 @@ function App() {
           onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
           onDeleteSelected={handleDeleteSelected}
           onTextWizardClick={() => setShowTextWizard(true)}
+          onCompareClick={handleCompareFromMenu}
+          selectedCount={selectedIds.size}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
