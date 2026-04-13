@@ -2,15 +2,16 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Sessions, ProxyState, ReplaySession } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
-import { Toolbar } from './components/Toolbar';
-import { SessionList } from './components/SessionList';
-import { Inspector } from './components/Inspector';
-import { StatusBar } from './components/StatusBar';
-import { Settings } from './components/Settings';
-import { RuleEditor } from './components/RuleEditor';
-import { BreakpointPanel } from './components/BreakpointPanel';
-import { Composer } from './components/Composer';
-import { SessionDiff } from './components/SessionDiff';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toolbar } from '@/components/layout/Toolbar';
+import { SessionList } from '@/components/session/SessionList';
+import { Inspector } from '@/components/session/Inspector';
+import { StatusBar } from '@/components/layout/StatusBar';
+import { Settings } from '@/components/tools/Settings';
+import { RuleEditor } from '@/components/tools/RuleEditor';
+import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
+import { Composer } from '@/components/tools/Composer';
+import { SessionDiff } from '@/components/tools/SessionDiff';
 
 function App() {
   const [sessions, setSessions] = useState<model.Session[]>([]);
@@ -70,7 +71,7 @@ function App() {
       method: req.method || 'GET',
       url: req.url || '',
       headers: headerLines,
-      body: req.body ? atob(req.body) : '',
+      body: req.body ? (typeof req.body === 'string' ? atob(req.body) : new TextDecoder().decode(new Uint8Array(req.body))) : '',
     });
     setShowComposer(true);
   }, []);
@@ -88,39 +89,53 @@ function App() {
     });
   }, [sessions, searchQuery]);
 
+  const showDiff = !!diffSessionA && !!diffSessionB;
+
   return (
-    <div className="flex flex-col h-screen bg-[#1e1e2e] text-[#cdd6f4] font-sans">
-      <Toolbar
-        onSessionsClear={handleSessionsClear}
-        onSettingsClick={() => setShowSettings(true)}
-        onRulesClick={() => setShowRules(true)}
-        onComposerClick={() => setShowComposer(true)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-      />
-      <div className="flex flex-1 overflow-hidden">
-        <SessionList
-          sessions={filteredSessions}
-          selectedId={selectedSession?.id || null}
-          onSelect={setSelectedSession}
-          onReplay={handleReplay}
-          onComposerPrefill={handleComposerPrefill}
-          onDiff={handleDiff}
-          diffPending={!!diffSessionA && !diffSessionB}
+    <TooltipProvider>
+      <div className="flex flex-col h-screen bg-background text-foreground font-sans">
+        <Toolbar
+          onSessionsClear={handleSessionsClear}
+          onSettingsClick={() => setShowSettings(true)}
+          onRulesClick={() => setShowRules(true)}
+          onComposerClick={() => setShowComposer(true)}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
         />
-        <div className="w-[400px] border-l border-[#313244] bg-[#181825]">
-          <Inspector session={selectedSession} />
+        <div className="flex flex-1 overflow-hidden">
+          <SessionList
+            sessions={filteredSessions}
+            selectedId={selectedSession?.id || null}
+            onSelect={setSelectedSession}
+            onReplay={handleReplay}
+            onComposerPrefill={handleComposerPrefill}
+            onDiff={handleDiff}
+            diffPending={!!diffSessionA && !diffSessionB}
+          />
+          <div className="w-[400px] border-l border-border bg-card">
+            <Inspector session={selectedSession} />
+          </div>
         </div>
+        <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
+
+        <Settings open={showSettings} onOpenChange={setShowSettings} />
+        <RuleEditor open={showRules} onOpenChange={setShowRules} />
+        <Composer
+          open={showComposer}
+          onOpenChange={(open) => { setShowComposer(open); if (!open) setComposerPrefill(null); }}
+          prefill={composerPrefill}
+        />
+        {showDiff && diffSessionA && diffSessionB && (
+          <SessionDiff
+            sessionA={diffSessionA}
+            sessionB={diffSessionB}
+            open={showDiff}
+            onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+          />
+        )}
+        <BreakpointPanel />
       </div>
-      <StatusBar sessionCount={sessions.length} isRunning={proxyState === 'running'} />
-      {showSettings && <Settings onClose={() => setShowSettings(false)} />}
-      {showRules && <RuleEditor onClose={() => setShowRules(false)} />}
-      {showComposer && <Composer onClose={() => { setShowComposer(false); setComposerPrefill(null); }} prefill={composerPrefill} />}
-      {diffSessionA && diffSessionB && (
-        <SessionDiff sessionA={diffSessionA} sessionB={diffSessionB} onClose={() => { setDiffSessionA(null); setDiffSessionB(null); }} />
-      )}
-      <BreakpointPanel />
-    </div>
+    </TooltipProvider>
   );
 }
 

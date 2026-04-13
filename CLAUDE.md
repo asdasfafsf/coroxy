@@ -3,6 +3,7 @@
 Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, UDP를 지원하는 크로스플랫폼 standalone GUI 프로그램.
 
 프로젝트 설계는 @DESIGN.md 를 참조한다.
+프론트엔드 디자인 시스템은 @frontend/DESIGN_SYSTEM.md 를 참조한다.
 
 ## 커맨드
 
@@ -16,6 +17,7 @@ Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, U
 `.claude/rules/` 에 자동 로드됨:
 - `git.md` — Git 브랜치, 커밋, PR, 머지 규칙
 - `linear.md` — Linear 이슈 관리 규칙 + 프로젝트 설정값
+- `frontend.md` — 프론트엔드 코드 원칙 (Effective TypeScript + React + shadcn/ui)
 
 ## 빠른 참조
 
@@ -32,7 +34,7 @@ Fiddler와 유사한 로컬 네트워크 디버깅 프록시. HTTP/HTTPS, TCP, U
 ## 기술 스택
 
 - Go + Wails v2 (GUI)
-- React + TypeScript (Frontend)
+- React + TypeScript + shadcn/ui + Tailwind CSS v4 (Frontend)
 - goenv로 Go 버전 관리 (.go-version)
 
 ## 외부 연동
