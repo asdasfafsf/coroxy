@@ -14,6 +14,7 @@ import { RuleEditor } from '@/components/tools/RuleEditor';
 import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
 import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
+import { AboutDialog } from '@/components/tools/AboutDialog';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
 import { useHotkeys } from '@/hooks/useHotkeys';
@@ -32,6 +33,7 @@ function App() {
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
   const [sysProxy, setSysProxy] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -228,6 +230,7 @@ function App() {
           onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
           onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
           onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
+          onAboutClick={() => setShowAbout(true)}
         />
         <Toolbar
           onSessionsClear={handleSessionsClear}
@@ -278,6 +281,7 @@ function App() {
           />
         )}
         <BreakpointPanel />
+        <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
       </div>
     </TooltipProvider>
   );
