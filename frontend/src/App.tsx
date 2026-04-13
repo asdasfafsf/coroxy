@@ -14,8 +14,10 @@ import { RuleEditor } from '@/components/tools/RuleEditor';
 import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
 import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
+import { useTheme } from '@/hooks/useTheme';
 
 function App() {
+  const { theme, setTheme } = useTheme();
   const [sessions, setSessions] = useState<model.Session[]>([]);
   const [proxyState, setProxyState] = useState('stopped');
   const [selectedSession, setSelectedSession] = useState<model.Session | null>(null);
@@ -157,7 +159,7 @@ function App() {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
-        <StatusBar sessionCount={sessions.length} isRunning={isRunning} />
+        <StatusBar sessionCount={sessions.length} isRunning={isRunning} theme={theme} onThemeChange={setTheme} />
 
         <Settings open={showSettings} onOpenChange={setShowSettings} />
         <RuleEditor open={showRules} onOpenChange={setShowRules} />
