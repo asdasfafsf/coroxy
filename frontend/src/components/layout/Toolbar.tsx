@@ -85,6 +85,7 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
               value={filter.text}
               onChange={(e) => onFilterChange({ ...filter, text: e.target.value })}
               className="h-7 pl-7 pr-7 text-xs bg-background/50"
+              aria-label="Filter sessions"
             />
             {filter.text && (
               <button

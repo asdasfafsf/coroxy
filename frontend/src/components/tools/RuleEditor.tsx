@@ -138,7 +138,7 @@ function RuleForm({ onSubmit, onCancel }: { onSubmit: (r: model.Rule) => void; o
     rule.match = new model.MatchCondition();
     rule.match.host = host;
     rule.match.path = path;
-    rule.match.method = method;
+    rule.match.method = method === '__any__' ? '' : method;
     if (action === 'auto_respond') {
       rule.auto_response = new model.AutoResponse();
       rule.auto_response.status_code = arStatus;
@@ -183,7 +183,7 @@ function RuleForm({ onSubmit, onCancel }: { onSubmit: (r: model.Rule) => void; o
           <Select value={method} onValueChange={setMethod}>
             <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Any" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value=" ">Any</SelectItem>
+              <SelectItem value="__any__">Any</SelectItem>
               <SelectItem value="GET">GET</SelectItem>
               <SelectItem value="POST">POST</SelectItem>
               <SelectItem value="PUT">PUT</SelectItem>
