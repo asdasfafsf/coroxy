@@ -1,5 +1,183 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+
+@custom-variant dark (&:is(.dark *));
 
 body {
   margin: 0;
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Status colors for protocol/HTTP badges */
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-error: var(--status-error);
+  --color-status-info: var(--status-info);
+  --color-status-purple: var(--status-purple);
+}
+
+/* ========================================
+   Coroxy Design System — Light Mode
+   Linear precision + Warp warmth
+   ======================================== */
+:root {
+  --background: oklch(0.980 0.003 270);
+  --foreground: oklch(0.200 0.010 270);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.200 0.010 270);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.200 0.010 270);
+  --primary: oklch(0.500 0.130 240);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.955 0.005 270);
+  --secondary-foreground: oklch(0.200 0.010 270);
+  --muted: oklch(0.935 0.005 270);
+  --muted-foreground: oklch(0.480 0.010 270);
+  --accent: oklch(0.935 0.005 270);
+  --accent-foreground: oklch(0.200 0.010 270);
+  --destructive: oklch(0.550 0.230 27);
+  --border: oklch(0.900 0.005 270);
+  --input: oklch(0.900 0.005 270);
+  --ring: oklch(0.500 0.130 240);
+  --chart-1: oklch(0.500 0.130 240);
+  --chart-2: oklch(0.550 0.160 155);
+  --chart-3: oklch(0.520 0.160 300);
+  --chart-4: oklch(0.620 0.150 85);
+  --chart-5: oklch(0.580 0.150 50);
+  --radius: 0.375rem;
+  --sidebar: oklch(0.970 0.003 270);
+  --sidebar-foreground: oklch(0.200 0.010 270);
+  --sidebar-primary: oklch(0.500 0.130 240);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.935 0.005 270);
+  --sidebar-accent-foreground: oklch(0.200 0.010 270);
+  --sidebar-border: oklch(0.900 0.005 270);
+  --sidebar-ring: oklch(0.500 0.130 240);
+
+  /* Status */
+  --status-success: oklch(0.550 0.160 155);
+  --status-warning: oklch(0.620 0.150 85);
+  --status-error: oklch(0.550 0.230 27);
+  --status-info: oklch(0.500 0.200 260);
+  --status-purple: oklch(0.520 0.200 300);
+}
+
+/* ========================================
+   Coroxy Design System — Dark Mode (Primary)
+   ======================================== */
+.dark {
+  --background: oklch(0.130 0.008 270);
+  --foreground: oklch(0.935 0.006 90);
+  --card: oklch(0.160 0.008 270);
+  --card-foreground: oklch(0.935 0.006 90);
+  --popover: oklch(0.195 0.012 268);
+  --popover-foreground: oklch(0.935 0.006 90);
+  --primary: oklch(0.680 0.120 230);
+  --primary-foreground: oklch(0.980 0 0);
+  --secondary: oklch(0.195 0.008 270);
+  --secondary-foreground: oklch(0.935 0.006 90);
+  --muted: oklch(0.230 0.008 270);
+  --muted-foreground: oklch(0.530 0.010 270);
+  --accent: oklch(0.210 0.010 270);
+  --accent-foreground: oklch(0.935 0.006 90);
+  --destructive: oklch(0.650 0.200 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.680 0.120 230);
+  --chart-1: oklch(0.680 0.120 230);
+  --chart-2: oklch(0.680 0.180 155);
+  --chart-3: oklch(0.660 0.160 300);
+  --chart-4: oklch(0.750 0.160 85);
+  --chart-5: oklch(0.680 0.170 50);
+  --sidebar: oklch(0.120 0.008 270);
+  --sidebar-foreground: oklch(0.935 0.006 90);
+  --sidebar-primary: oklch(0.680 0.120 230);
+  --sidebar-primary-foreground: oklch(0.980 0 0);
+  --sidebar-accent: oklch(0.240 0.008 270);
+  --sidebar-accent-foreground: oklch(0.935 0.006 90);
+  --sidebar-border: oklch(1 0 0 / 7%);
+  --sidebar-ring: oklch(0.680 0.120 230);
+
+  /* Status — desaturated for less visual noise */
+  --status-success: oklch(0.680 0.180 155);
+  --status-warning: oklch(0.750 0.160 85);
+  --status-error: oklch(0.650 0.200 25);
+  --status-info: oklch(0.620 0.170 260);
+  --status-purple: oklch(0.660 0.160 300);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  html {
+    @apply font-sans;
+  }
+  /* Scrollbar styling for dark mode */
+  .dark ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .dark ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.350 0 0 / 40%);
+    border-radius: 3px;
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.450 0 0 / 60%);
+  }
 }

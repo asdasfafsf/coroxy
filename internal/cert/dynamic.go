@@ -70,7 +70,11 @@ func (ci *certIssuer) issueCert(host string, originalCert *x509.Certificate) (*t
 		return nil, err
 	}
 
-	return result.(*tls.Certificate), nil
+	cert, ok := result.(*tls.Certificate)
+	if !ok {
+		return nil, fmt.Errorf("unexpected type from singleflight: %T", result)
+	}
+	return cert, nil
 }
 
 // generate creates a new leaf certificate for the given host.

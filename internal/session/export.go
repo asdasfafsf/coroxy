@@ -3,9 +3,15 @@ package session
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
+	"coroxy/internal/constant"
 	"coroxy/internal/model"
 )
 
@@ -298,6 +304,145 @@ func ExportJSON(sessions []*model.Session) ([]byte, error) {
 		return nil, fmt.Errorf("marshal JSON: %w", err)
 	}
 	return data, nil
+}
+
+// maxHARFileSize is the maximum size for HAR import (512 MB).
+const maxHARFileSize = 512 << 20
+
+// ImportHAR reads a HAR file and returns sessions.
+func ImportHAR(path string) ([]*model.Session, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("stat HAR file: %w", err)
+	}
+	if info.Size() > maxHARFileSize {
+		return nil, fmt.Errorf("HAR file too large: %d bytes (max %d)", info.Size(), maxHARFileSize)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("read HAR file: %w", err)
+	}
+
+	var har HAR
+	if err := json.Unmarshal(data, &har); err != nil {
+		return nil, fmt.Errorf("parse HAR: %w", err)
+	}
+
+	sessions := make([]*model.Session, 0, len(har.Log.Entries))
+	for _, entry := range har.Log.Entries {
+		s := &model.Session{
+			ID:       uuid.NewString(),
+			Protocol: constant.ProtocolHTTP,
+			State:    constant.SessionStateCompleted,
+		}
+
+		// Parse timing.
+		startTime, errT := time.Parse(time.RFC3339Nano, entry.StartedDateTime)
+		if errT == nil {
+			s.CreatedAt = startTime
+		}
+		s.Duration = time.Duration(entry.Time * float64(time.Millisecond))
+
+		// Request.
+		s.Request = harRequestToMessage(&entry.Request)
+
+		// Extract target from URL.
+		if parsed, errU := url.Parse(entry.Request.URL); errU == nil {
+			s.Target.Host = parsed.Hostname()
+			if parsed.Scheme == "https" {
+				s.Protocol = constant.ProtocolTLS
+				s.Target.Port = 443
+			} else {
+				s.Target.Port = 80
+			}
+		}
+
+		// Response.
+		s.Response = harResponseToMessage(&entry.Response)
+
+		// Timing.
+		s.Timing = &model.Timing{
+			DNS:      entry.Timings.DNS,
+			Connect:  entry.Timings.Connect,
+			TLS:      entry.Timings.SSL,
+			TTFB:     entry.Timings.Wait,
+			Transfer: entry.Timings.Receive,
+		}
+
+		sessions = append(sessions, s)
+	}
+
+	return sessions, nil
+}
+
+func harRequestToMessage(req *HARRequest) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		Method:      req.Method,
+		URL:         req.URL,
+		HTTPVersion: req.HTTPVersion,
+		Headers:     harNameValuesToHeaders(req.Headers),
+		BodySize:    req.BodySize,
+	}
+
+	if req.PostData != nil {
+		msg.Body = []byte(req.PostData.Text)
+		msg.BodySize = int64(len(msg.Body))
+		msg.ContentType = req.PostData.MimeType
+	}
+
+	// Query params.
+	for _, nv := range req.QueryString {
+		msg.QueryParams = append(msg.QueryParams, model.QueryParam{Name: nv.Name, Value: nv.Value})
+	}
+
+	// Cookies.
+	for _, c := range req.Cookies {
+		msg.Cookies = append(msg.Cookies, model.HTTPCookie{Name: c.Name, Value: c.Value, Domain: c.Domain, Path: c.Path})
+	}
+
+	if msg.ContentType == "" && msg.Headers != nil {
+		msg.ContentType = msg.Headers.Get("Content-Type")
+	}
+
+	return msg
+}
+
+func harResponseToMessage(resp *HARResponse) *model.HTTPMessage {
+	msg := &model.HTTPMessage{
+		StatusCode:  resp.Status,
+		StatusText:  resp.StatusText,
+		HTTPVersion: resp.HTTPVersion,
+		Headers:     harNameValuesToHeaders(resp.Headers),
+		BodySize:    resp.Content.Size,
+		ContentType: resp.Content.MimeType,
+	}
+
+	if resp.Content.Text != "" {
+		msg.Body = []byte(resp.Content.Text)
+		msg.BodySize = int64(len(msg.Body))
+	}
+
+	// Cookies.
+	for _, c := range resp.Cookies {
+		msg.Cookies = append(msg.Cookies, model.HTTPCookie{
+			Name: c.Name, Value: c.Value, Domain: c.Domain, Path: c.Path,
+			HTTPOnly: c.HTTPOnly, Secure: c.Secure, SameSite: c.SameSite,
+		})
+	}
+
+	return msg
+}
+
+func harNameValuesToHeaders(nvs []HARNameValue) http.Header {
+	if len(nvs) == 0 {
+		return http.Header{}
+	}
+	headers := make(http.Header, len(nvs))
+	for _, nv := range nvs {
+		headers.Add(nv.Name, nv.Value)
+	}
+	return headers
 }
 
 func getContentType(msg *model.HTTPMessage) string {

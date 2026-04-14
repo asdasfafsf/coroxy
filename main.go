@@ -7,6 +7,11 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/wailsapp/wails/v2"
+	"github.com/wailsapp/wails/v2/pkg/options"
+	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
+
 	"coroxy/internal/app"
 	"coroxy/internal/cert"
 	"coroxy/internal/intercept"
@@ -14,11 +19,6 @@ import (
 	"coroxy/internal/proxy"
 	"coroxy/internal/rule"
 	"coroxy/internal/session"
-
-	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/options"
-	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
-	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 //go:embed all:frontend/dist
@@ -42,24 +42,30 @@ func main() {
 	store := session.NewMemoryStore()
 	ruleEngine := rule.NewEngine()
 
-	a := app.NewApp(nil, store, caManager, ruleEngine)
+	a := app.NewApp(nil, store, caManager, ruleEngine, logger)
 
 	// Auto-save: .csaz archive with dual trigger (50 sessions / 30s).
 	archivePath, err := store.ArchivePath()
 	if err != nil {
 		log.Fatal(err)
 	}
-	autoSaver := session.NewAutoSaver(
+	autoSaver, err := session.NewAutoSaver(
 		store,
 		session.DefaultStoragePolicy(),
 		logger,
 		func() string { return archivePath },
 	)
+	if err != nil {
+		log.Fatal(err)
+	}
 	a.SetAutoSaver(autoSaver)
 	autoSaver.Start()
 
 	pipeline := intercept.NewPipeline()
 	pipeline.Add(ruleEngine)
+
+	modifier := intercept.NewModifier(ruleEngine.Rules)
+	pipeline.Add(modifier)
 
 	ar := intercept.NewAutoResponder(ruleEngine.Rules)
 	pipeline.Add(ar)
@@ -68,8 +74,8 @@ func main() {
 		ruleEngine.Rules,
 		func(pending *intercept.PendingRequest) {
 			// Emit event to GUI when a breakpoint is hit.
-			if a != nil && a.GetContext() != nil {
-				wailsRuntime.EventsEmit(a.GetContext(), "coroxy:breakpoint:hit", map[string]string{
+			if a != nil && a.Context() != nil {
+				wailsRuntime.EventsEmit(a.Context(), "coroxy:breakpoint:hit", map[string]string{
 					"id":     pending.ID,
 					"method": pending.Request.Method,
 					"url":    pending.Request.URL.String(),

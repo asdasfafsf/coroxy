@@ -11,10 +11,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // handleMITM performs HTTPS MITM interception on a CONNECT tunnel.
@@ -60,8 +60,11 @@ func (h *HTTPProxy) handleMITM(clientConn net.Conn, host string, mitm MITMProvid
 	}
 
 	// 4. TLS handshake with client using the leaf certificate.
+	// Advertise only HTTP/1.1 to client — HTTP/2 from the target server
+	// is downgraded to HTTP/1.1 at the proxy level.
 	clientTLSConn := tls.Server(clientConn, &tls.Config{
 		Certificates: []tls.Certificate{*leafCert},
+		NextProtos:   []string{"http/1.1"},
 	})
 	if err := clientTLSConn.Handshake(); err != nil {
 		_ = targetTLSConn.Close()
@@ -101,11 +104,20 @@ func (h *HTTPProxy) captureErrorSession(host string, err error) {
 	h.onSession(session)
 }
 
-// relayHTTP reads HTTP requests from the client, forwards them to the target,
-// and captures the traffic as sessions.
+// relayHTTP reads HTTP/1.1 requests from the client, forwards them to the target
+// using http.Transport (which supports HTTP/2 to the server), and captures traffic.
 func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
+	// Create a transport that uses the existing TLS connection to the target.
+	// This allows the transport to negotiate HTTP/2 if the server supports it.
+	transport := &http.Transport{
+		DialTLS: func(network, addr string) (net.Conn, error) {
+			return targetConn, nil
+		},
+		ForceAttemptHTTP2: true,
+	}
+	defer transport.CloseIdleConnections()
+
 	clientReader := bufio.NewReader(clientConn)
-	targetReader := bufio.NewReader(targetConn)
 
 	for {
 		start := time.Now()
@@ -124,24 +136,17 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 		// Capture request body before forwarding.
 		var reqBody []byte
 		if req.Body != nil {
-			reqBody, _ = readLimited(req.Body, maxCaptureSize)
+			var readErr error
+			reqBody, readErr = readLimited(req.Body, maxCaptureSize)
+			_ = readErr // capture failure should not break proxying
 			req.Body = io.NopCloser(bytes.NewReader(reqBody))
 			req.ContentLength = int64(len(reqBody))
 		}
 
-		// Forward to target.
-		if err := req.Write(targetConn); err != nil {
-			h.logger.Error("write to target",
-				slog.String("host", host),
-				slog.String("error", err.Error()),
-			)
-			return
-		}
-
-		// Read response from target.
-		resp, err := http.ReadResponse(targetReader, req)
+		// Forward to target via Transport (supports HTTP/2).
+		resp, err := transport.RoundTrip(req)
 		if err != nil {
-			h.logger.Error("read response from target",
+			h.logger.Error("forward to target",
 				slog.String("host", host),
 				slog.String("error", err.Error()),
 			)
@@ -150,7 +155,7 @@ func (h *HTTPProxy) relayHTTP(clientConn, targetConn net.Conn, host string) {
 
 		removeHopByHopHeaders(resp.Header)
 
-		// Stream response to client while capturing up to maxCaptureSize for inspection.
+		// Stream response to client (HTTP/1.1) while capturing.
 		var captureBuf bytes.Buffer
 		resp.Body = io.NopCloser(io.TeeReader(resp.Body, &limitWriter{w: &captureBuf, n: maxCaptureSize}))
 

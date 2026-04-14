@@ -10,6 +10,9 @@ import (
 type Action string
 
 const (
+	// ActionUnknown is the zero value for interceptor action.
+	ActionUnknown Action = "unknown"
+
 	// ActionForward passes the request/response through unchanged.
 	ActionForward Action = "forward"
 

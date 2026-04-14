@@ -22,7 +22,7 @@ func TestAutoSaverFlushOnThreshold(t *testing.T) {
 
 	var flushCount atomic.Int32
 
-	saver := NewAutoSaver(
+	saver, err := NewAutoSaver(
 		store,
 		DefaultStoragePolicy(),
 		logger,
@@ -33,6 +33,9 @@ func TestAutoSaverFlushOnThreshold(t *testing.T) {
 		WithDirtyThreshold(3),
 		WithInterval(time.Hour), // disable timer-based flush for this test
 	)
+	if err != nil {
+		t.Fatalf("new autosaver: %v", err)
+	}
 	saver.Start()
 	defer func() { _ = saver.Stop() }()
 
@@ -78,7 +81,7 @@ func TestAutoSaverFlushOnTimer(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	saver := NewAutoSaver(
+	saver, err := NewAutoSaver(
 		store,
 		DefaultStoragePolicy(),
 		logger,
@@ -86,6 +89,9 @@ func TestAutoSaverFlushOnTimer(t *testing.T) {
 		WithInterval(100*time.Millisecond),
 		WithDirtyThreshold(1000), // high threshold to avoid threshold trigger
 	)
+	if err != nil {
+		t.Fatalf("new autosaver: %v", err)
+	}
 	saver.Start()
 
 	// Mark dirty once (below threshold).
@@ -113,7 +119,7 @@ func TestAutoSaverTimerSkipsCleanState(t *testing.T) {
 	store := NewMemoryStore()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	saver := NewAutoSaver(
+	saver, err := NewAutoSaver(
 		store,
 		DefaultStoragePolicy(),
 		logger,
@@ -121,6 +127,9 @@ func TestAutoSaverTimerSkipsCleanState(t *testing.T) {
 		WithInterval(100*time.Millisecond),
 		WithDirtyThreshold(1000),
 	)
+	if err != nil {
+		t.Fatalf("new autosaver: %v", err)
+	}
 	saver.Start()
 
 	// Don't mark dirty — timer should skip flush.
@@ -146,7 +155,7 @@ func TestAutoSaverShutdownFlush(t *testing.T) {
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	saver := NewAutoSaver(
+	saver, err := NewAutoSaver(
 		store,
 		DefaultStoragePolicy(),
 		logger,
@@ -154,6 +163,9 @@ func TestAutoSaverShutdownFlush(t *testing.T) {
 		WithInterval(time.Hour),    // no timer flush
 		WithDirtyThreshold(1000),   // no threshold flush
 	)
+	if err != nil {
+		t.Fatalf("new autosaver: %v", err)
+	}
 	saver.Start()
 	saver.MarkDirty()
 
@@ -178,7 +190,7 @@ func TestAutoSaverConcurrency(t *testing.T) {
 	store := NewMemoryStore()
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
-	saver := NewAutoSaver(
+	saver, err := NewAutoSaver(
 		store,
 		DefaultStoragePolicy(),
 		logger,
@@ -186,6 +198,9 @@ func TestAutoSaverConcurrency(t *testing.T) {
 		WithInterval(50*time.Millisecond),
 		WithDirtyThreshold(10),
 	)
+	if err != nil {
+		t.Fatalf("new autosaver: %v", err)
+	}
 	saver.Start()
 
 	// Concurrent session adds.

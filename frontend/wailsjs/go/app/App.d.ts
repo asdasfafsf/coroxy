@@ -11,7 +11,11 @@ export function AddRule(arg1:model.Rule):Promise<void>;
 
 export function BreakpointDrop(arg1:string):Promise<void>;
 
+export function BreakpointResumeWithEdit(arg1:string, arg2:intercept.EditedRequest):Promise<void>;
+
 export function BreakpointResume(arg1:string):Promise<void>;
+
+export function CommentSession(arg1:string, arg2:string):Promise<void>;
 
 export function ClearSessions():Promise<void>;
 
@@ -27,19 +31,21 @@ export function ExportSessionsJSON():Promise<void>;
 
 export function ExportSessionsSAZ():Promise<void>;
 
-export function GetCAInfo():Promise<model.CAInfo>;
+export function CAInfo():Promise<model.CAInfo>;
 
-export function GetContext():Promise<context.Context>;
+export function Context():Promise<context.Context>;
 
-export function GetPendingBreakpoints():Promise<Array<app.BreakpointPending>>;
+export function PendingBreakpoints():Promise<Array<app.BreakpointPending>>;
 
-export function GetProxyState():Promise<string>;
+export function ProxyState():Promise<string>;
 
-export function GetSessions():Promise<Array<model.Session>>;
+export function Sessions():Promise<Array<model.Session>>;
 
-export function GetSessionsFiltered(arg1:model.SessionFilter):Promise<Array<model.Session>>;
+export function SessionsFiltered(arg1:model.SessionFilter):Promise<Array<model.Session>>;
 
 export function HandleNewSession(arg1:model.Session):Promise<void>;
+
+export function ImportSessionsHAR():Promise<number>;
 
 export function ImportSessionsSAZ():Promise<number>;
 
@@ -51,6 +57,8 @@ export function ListRules():Promise<Array<model.Rule>>;
 
 export function RemoveRule(arg1:string):Promise<void>;
 
+export function ReplaySession(arg1:string):Promise<app.ComposerResponse>;
+
 export function SendRequest(arg1:app.ComposerRequest):Promise<app.ComposerResponse>;
 
 export function SetAutoSaver(arg1:session.AutoSaver):Promise<void>;
@@ -60,6 +68,8 @@ export function SetBreakpoint(arg1:intercept.Breakpoint):Promise<void>;
 export function SetEngine(arg1:adapter.ProxyEngine):Promise<void>;
 
 export function StartProxy():Promise<void>;
+
+export function TagSession(arg1:string, arg2:string, arg3:boolean):Promise<void>;
 
 export function StopProxy():Promise<void>;
 

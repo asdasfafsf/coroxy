@@ -27,6 +27,7 @@ type AutoSaver struct {
 	flushCh  chan struct{} // non-blocking gate for threshold flush
 	stopCh   chan struct{}
 	stopped  bool
+	wg       sync.WaitGroup
 }
 
 // AutoSaveOption configures an AutoSaver.
@@ -44,12 +45,12 @@ func WithDirtyThreshold(n int) AutoSaveOption {
 
 // NewAutoSaver creates an AutoSaver.
 // dirtyFn returns the archive file path for writing.
-func NewAutoSaver(store *MemoryStore, policy StoragePolicy, logger *slog.Logger, dirtyFn func() string, opts ...AutoSaveOption) *AutoSaver {
+func NewAutoSaver(store *MemoryStore, policy StoragePolicy, logger *slog.Logger, dirtyFn func() string, opts ...AutoSaveOption) (*AutoSaver, error) {
 	if store == nil {
-		panic("session: NewAutoSaver requires non-nil store")
+		return nil, fmt.Errorf("create autosaver: store is nil")
 	}
 	if logger == nil {
-		panic("session: NewAutoSaver requires non-nil logger")
+		return nil, fmt.Errorf("create autosaver: logger is nil")
 	}
 	if dirtyFn == nil {
 		panic("session: NewAutoSaver requires non-nil dirtyFn")
@@ -70,12 +71,16 @@ func NewAutoSaver(store *MemoryStore, policy StoragePolicy, logger *slog.Logger,
 		opt(a)
 	}
 
-	return a
+	return a, nil
 }
 
 // Start begins the background auto-save goroutine.
 func (a *AutoSaver) Start() {
-	go a.run()
+	a.wg.Add(1)
+	go func() {
+		defer a.wg.Done()
+		a.run()
+	}()
 }
 
 // MarkDirty increments the dirty counter by 1. If the threshold is reached, triggers a flush.
@@ -96,7 +101,9 @@ func (a *AutoSaver) MarkDirtyN(count int) {
 		}
 		select {
 		case a.flushCh <- struct{}{}:
+			a.wg.Add(1)
 			go func() {
+				defer a.wg.Done()
 				a.flush("threshold")
 				<-a.flushCh
 			}()
@@ -121,6 +128,8 @@ func (a *AutoSaver) Stop() error {
 	a.stopped = true
 	close(a.stopCh)
 	a.mu.Unlock()
+
+	a.wg.Wait()
 
 	return a.Flush()
 }

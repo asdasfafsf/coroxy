@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"io"
 	"log/slog"
 	"net"
@@ -9,10 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
 
 // isWebSocketUpgrade checks if the request is a WebSocket upgrade.
@@ -70,23 +71,25 @@ func (h *HTTPProxy) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.captureWebSocketSession(r)
+	start := time.Now()
 
-	// Relay bidirectional traffic.
+	// Capture raw bytes while relaying (same approach as TCP capture).
+	var clientBuf, serverBuf bytes.Buffer
+	clientCapture := &limitWriter{w: &clientBuf, n: maxWSPayloadCapture * 10}
+	serverCapture := &limitWriter{w: &serverBuf, n: maxWSPayloadCapture * 10}
+
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		_, _ = io.Copy(targetConn, clientConn)
-		// 클라이언트→타겟 종료 시 타겟 write 종료를 알림.
+		_, _ = io.Copy(io.MultiWriter(targetConn, clientCapture), clientConn)
 		if tc, ok := targetConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		_, _ = io.Copy(clientConn, targetConn)
-		// 타겟→클라이언트 종료 시 클라이언트 write 종료를 알림.
+		_, _ = io.Copy(io.MultiWriter(clientConn, serverCapture), targetConn)
 		if tc, ok := clientConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
 		}
@@ -94,10 +97,16 @@ func (h *HTTPProxy) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	_ = clientConn.Close()
 	_ = targetConn.Close()
+
+	// Parse captured bytes into WS frames.
+	var frames []model.WSFrame
+	frames = append(frames, parseWSFrames(clientBuf.Bytes(), "client")...)
+	frames = append(frames, parseWSFrames(serverBuf.Bytes(), "server")...)
+	h.captureWebSocketSessionWithFrames(r, frames, start, time.Since(start))
 }
 
-// captureWebSocketSession creates a session for a WebSocket connection.
-func (h *HTTPProxy) captureWebSocketSession(r *http.Request) {
+// captureWebSocketSessionWithFrames creates a session for a WebSocket connection with captured frames.
+func (h *HTTPProxy) captureWebSocketSessionWithFrames(r *http.Request, frames []model.WSFrame, start time.Time, duration time.Duration) {
 	if h.onSession == nil {
 		return
 	}
@@ -114,14 +123,16 @@ func (h *HTTPProxy) captureWebSocketSession(r *http.Request) {
 			URL:     r.URL.String(),
 			Headers: r.Header.Clone(),
 		},
-		State:     constant.SessionStateActive,
-		CreatedAt: time.Now(),
+		WSFrames:  frames,
+		State:     constant.SessionStateCompleted,
+		CreatedAt: start,
+		Duration:  duration,
 	}
 
 	h.onSession(session)
 }
 
-// addWebSocketDetection adds WebSocket upgrade detection to handleHTTP.
+// isWebSocket reports whether the request is a WebSocket upgrade.
 func (h *HTTPProxy) isWebSocket(r *http.Request) bool {
 	return isWebSocketUpgrade(r)
 }

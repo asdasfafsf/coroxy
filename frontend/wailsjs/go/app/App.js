@@ -10,8 +10,16 @@ export function BreakpointDrop(arg1) {
   return window['go']['app']['App']['BreakpointDrop'](arg1);
 }
 
+export function BreakpointResumeWithEdit(arg1, arg2) {
+  return window['go']['app']['App']['BreakpointResumeWithEdit'](arg1, arg2);
+}
+
 export function BreakpointResume(arg1) {
   return window['go']['app']['App']['BreakpointResume'](arg1);
+}
+
+export function CommentSession(arg1, arg2) {
+  return window['go']['app']['App']['CommentSession'](arg1, arg2);
 }
 
 export function ClearSessions() {
@@ -42,32 +50,36 @@ export function ExportSessionsSAZ() {
   return window['go']['app']['App']['ExportSessionsSAZ']();
 }
 
-export function GetCAInfo() {
-  return window['go']['app']['App']['GetCAInfo']();
+export function CAInfo() {
+  return window['go']['app']['App']['CAInfo']();
 }
 
-export function GetContext() {
-  return window['go']['app']['App']['GetContext']();
+export function Context() {
+  return window['go']['app']['App']['Context']();
 }
 
-export function GetPendingBreakpoints() {
-  return window['go']['app']['App']['GetPendingBreakpoints']();
+export function PendingBreakpoints() {
+  return window['go']['app']['App']['PendingBreakpoints']();
 }
 
-export function GetProxyState() {
-  return window['go']['app']['App']['GetProxyState']();
+export function ProxyState() {
+  return window['go']['app']['App']['ProxyState']();
 }
 
-export function GetSessions() {
-  return window['go']['app']['App']['GetSessions']();
+export function Sessions() {
+  return window['go']['app']['App']['Sessions']();
 }
 
-export function GetSessionsFiltered(arg1) {
-  return window['go']['app']['App']['GetSessionsFiltered'](arg1);
+export function SessionsFiltered(arg1) {
+  return window['go']['app']['App']['SessionsFiltered'](arg1);
 }
 
 export function HandleNewSession(arg1) {
   return window['go']['app']['App']['HandleNewSession'](arg1);
+}
+
+export function ImportSessionsHAR() {
+  return window['go']['app']['App']['ImportSessionsHAR']();
 }
 
 export function ImportSessionsSAZ() {
@@ -90,6 +102,10 @@ export function RemoveRule(arg1) {
   return window['go']['app']['App']['RemoveRule'](arg1);
 }
 
+export function ReplaySession(arg1) {
+  return window['go']['app']['App']['ReplaySession'](arg1);
+}
+
 export function SendRequest(arg1) {
   return window['go']['app']['App']['SendRequest'](arg1);
 }
@@ -108,6 +124,10 @@ export function SetEngine(arg1) {
 
 export function StartProxy() {
   return window['go']['app']['App']['StartProxy']();
+}
+
+export function TagSession(arg1, arg2, arg3) {
+  return window['go']['app']['App']['TagSession'](arg1, arg2, arg3);
 }
 
 export function StopProxy() {

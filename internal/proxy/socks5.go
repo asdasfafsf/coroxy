@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -10,13 +11,16 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
+
+// maxTCPCaptureSize is the max bytes to capture per direction (32 KB).
+const maxTCPCaptureSize = 32 << 10
 
 // SOCKS5 protocol constants.
 const (
@@ -76,26 +80,31 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 
 	start := time.Now()
 
-	// Relay bidirectional traffic.
+	// Capture buffers for TCP data (limited size).
+	var clientBuf, serverBuf bytes.Buffer
+	clientCapture := &limitWriter{w: &clientBuf, n: maxTCPCaptureSize}
+	serverCapture := &limitWriter{w: &serverBuf, n: maxTCPCaptureSize}
+
+	// Relay bidirectional traffic with capture.
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		_, _ = io.Copy(targetConn, clientConn)
+		_, _ = io.Copy(io.MultiWriter(targetConn, clientCapture), clientConn)
 		if tc, ok := targetConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		_, _ = io.Copy(clientConn, targetConn)
+		_, _ = io.Copy(io.MultiWriter(clientConn, serverCapture), targetConn)
 		if tc, ok := clientConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
 		}
 	}()
 	wg.Wait()
 
-	s.captureSession(targetAddr, time.Since(start))
+	s.captureSessionWithFrames(targetAddr, time.Since(start), start, clientBuf.Bytes(), serverBuf.Bytes())
 }
 
 // handshake performs SOCKS5 version and auth method negotiation.
@@ -116,7 +125,7 @@ func (s *SOCKS5Proxy) handshake(conn net.Conn) error {
 	}
 
 	// Check if no-auth is supported.
-	hasNoAuth := false
+	var hasNoAuth bool
 	for _, m := range methods {
 		if m == socks5NoAuth {
 			hasNoAuth = true
@@ -192,20 +201,37 @@ func (s *SOCKS5Proxy) sendReply(conn net.Conn, status byte) {
 	_, _ = conn.Write(reply)
 }
 
-// captureSession creates a completed TCP session record.
-func (s *SOCKS5Proxy) captureSession(targetAddr string, duration time.Duration) {
+// captureSessionWithFrames creates a completed TCP session record with captured data.
+func (s *SOCKS5Proxy) captureSessionWithFrames(targetAddr string, duration time.Duration, start time.Time, clientData, serverData []byte) {
 	if s.onSession == nil {
 		return
 	}
 
 	targetHost, targetPort := splitHostPort(targetAddr, 0)
 
+	var frames []model.TCPFrame
+	if len(clientData) > 0 {
+		frames = append(frames, model.TCPFrame{
+			Direction: "client_to_server",
+			Data:      clientData,
+			Timestamp: start,
+		})
+	}
+	if len(serverData) > 0 {
+		frames = append(frames, model.TCPFrame{
+			Direction: "server_to_client",
+			Data:      serverData,
+			Timestamp: start,
+		})
+	}
+
 	session := &model.Session{
 		ID:        uuid.NewString(),
 		Protocol:  constant.ProtocolTCP,
 		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
+		TCPFrames: frames,
 		State:     constant.SessionStateCompleted,
-		CreatedAt: time.Now().Add(-duration),
+		CreatedAt: start,
 		Duration:  duration,
 	}
 

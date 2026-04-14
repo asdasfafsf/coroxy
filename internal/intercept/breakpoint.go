@@ -1,21 +1,32 @@
 package intercept
 
 import (
+	"io"
 	"net/http"
+	"strings"
 	"sync"
+
+	"github.com/google/uuid"
 
 	"coroxy/internal/adapter"
 	"coroxy/internal/constant"
 	"coroxy/internal/model"
-
-	"github.com/google/uuid"
 )
+
+// EditedRequest holds user edits applied to a paused request.
+type EditedRequest struct {
+	Method  string            `json:"method"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
 
 // PendingRequest represents a request paused at a breakpoint.
 type PendingRequest struct {
 	ID      string
 	Request *http.Request
 	RuleID  string
+	Edited  *EditedRequest // populated by ResumeWithEdit
 	resume  chan struct{}
 	once    sync.Once
 }
@@ -98,6 +109,36 @@ func (b *Breakpoint) Resume(pendingID string) {
 	b.mu.Unlock()
 
 	if ok {
+		pending.once.Do(func() { close(pending.resume) })
+	}
+}
+
+// ResumeWithEdit applies edits to the paused request before resuming.
+func (b *Breakpoint) ResumeWithEdit(pendingID string, edit EditedRequest) {
+	b.mu.Lock()
+	pending, ok := b.pending[pendingID]
+	b.mu.Unlock()
+
+	if ok {
+		// Apply edits to the actual request.
+		req := pending.Request
+		if edit.Method != "" {
+			req.Method = edit.Method
+		}
+		if edit.URL != "" {
+			req.URL.Path = edit.URL
+			req.RequestURI = edit.URL
+		}
+		if edit.Headers != nil {
+			for k, v := range edit.Headers {
+				req.Header.Set(k, v)
+			}
+		}
+		if edit.Body != "" {
+			req.Body = io.NopCloser(strings.NewReader(edit.Body))
+			req.ContentLength = int64(len(edit.Body))
+		}
+		pending.Edited = &edit
 		pending.once.Do(func() { close(pending.resume) })
 	}
 }

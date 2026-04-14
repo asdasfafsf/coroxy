@@ -10,14 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/runtime"
+
 	"coroxy/internal/adapter"
 	"coroxy/internal/intercept"
 	"coroxy/internal/model"
 	"coroxy/internal/proxy"
 	"coroxy/internal/rule"
 	"coroxy/internal/session"
-
-	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"coroxy/internal/throttle"
 )
 
 // App is the Wails binding struct that bridges GUI and Core.
@@ -29,16 +30,20 @@ type App struct {
 	ruleEngine     *rule.Engine
 	breakpoint     *intercept.Breakpoint
 	autoSaver      *session.AutoSaver
+	logger         *slog.Logger
 	sysProxyActive bool
+	throttler      *throttle.Throttler
 }
 
 // NewApp creates a new App with its dependencies.
-func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager, ruleEngine *rule.Engine) *App {
+func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager adapter.CAManager, ruleEngine *rule.Engine, logger *slog.Logger) *App {
 	return &App{
 		engine:     engine,
 		store:      store,
 		caManager:  caManager,
 		ruleEngine: ruleEngine,
+		logger:     logger,
+		throttler:  throttle.New(),
 	}
 }
 
@@ -57,8 +62,8 @@ func (a *App) SetEngine(engine adapter.ProxyEngine) {
 	a.engine = engine
 }
 
-// GetContext returns the Wails context. Used for event emission from outside App.
-func (a *App) GetContext() context.Context {
+// Context returns the Wails context. Used for event emission from outside App.
+func (a *App) Context() context.Context {
 	return a.ctx
 }
 
@@ -68,7 +73,7 @@ func (a *App) Startup(ctx context.Context) {
 
 	// Load persisted sessions from disk.
 	if err := a.store.Load(); err != nil {
-		slog.Error("load sessions", slog.String("error", err.Error()))
+		a.logger.Error("load sessions", slog.String("error", err.Error()))
 	}
 }
 
@@ -77,18 +82,18 @@ func (a *App) Shutdown(_ context.Context) {
 	// Disable system proxy if active.
 	if a.sysProxyActive {
 		if err := proxy.SetSystemProxy(false, ""); err != nil {
-			slog.Error("disable system proxy on shutdown", slog.String("error", err.Error()))
+			a.logger.Error("disable system proxy on shutdown", slog.String("error", err.Error()))
 		}
 	}
 
 	// Stop auto-saver (flushes remaining data) or persist directly.
 	if a.autoSaver != nil {
 		if err := a.autoSaver.Stop(); err != nil {
-			slog.Error("stop autosaver", slog.String("error", err.Error()))
+			a.logger.Error("stop autosaver", slog.String("error", err.Error()))
 		}
 	} else {
 		if err := a.store.Persist(); err != nil {
-			slog.Error("persist sessions", slog.String("error", err.Error()))
+			a.logger.Error("persist sessions", slog.String("error", err.Error()))
 		}
 	}
 }
@@ -103,18 +108,18 @@ func (a *App) StopProxy() error {
 	return a.engine.Stop(a.ctx)
 }
 
-// GetProxyState returns the current proxy engine state.
-func (a *App) GetProxyState() string {
+// ProxyState returns the current proxy engine state.
+func (a *App) ProxyState() string {
 	return string(a.engine.State())
 }
 
-// GetSessions returns all captured sessions.
-func (a *App) GetSessions() []*model.Session {
+// Sessions returns all captured sessions.
+func (a *App) Sessions() []*model.Session {
 	return a.store.List()
 }
 
-// GetSessionsFiltered returns sessions matching the given filter.
-func (a *App) GetSessionsFiltered(filter model.SessionFilter) []*model.Session {
+// SessionsFiltered returns sessions matching the given filter.
+func (a *App) SessionsFiltered(filter model.SessionFilter) []*model.Session {
 	return a.store.ListWithFilter(filter)
 }
 
@@ -136,8 +141,8 @@ func (a *App) UninstallCA() error {
 	return a.caManager.UninstallCA()
 }
 
-// GetCAInfo returns metadata about the Root CA.
-func (a *App) GetCAInfo() model.CAInfo {
+// CAInfo returns metadata about the Root CA.
+func (a *App) CAInfo() model.CAInfo {
 	return a.caManager.CAInfo()
 }
 
@@ -238,6 +243,100 @@ func (a *App) ExportSessionsSAZ() error {
 	return session.ExportSAZ(path, sessions)
 }
 
+// SaveSessions saves all sessions to a user-selected .csaz file.
+func (a *App) SaveSessions() error {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Save Sessions",
+		DefaultFilename: "coroxy-sessions.csaz",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return nil
+	}
+
+	sessions := a.store.List()
+	return session.WriteArchive(path, sessions)
+}
+
+// LoadSessions loads sessions from a user-selected .csaz file and adds them to the store.
+func (a *App) LoadSessions() (int, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Load Sessions",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if path == "" {
+		return 0, nil
+	}
+
+	sessions, err := session.ReadArchive(path)
+	if err != nil {
+		return 0, fmt.Errorf("read archive: %w", err)
+	}
+
+	for _, s := range sessions {
+		a.store.Add(s)
+		runtime.EventsEmit(a.ctx, "coroxy:session:new", s)
+	}
+	return len(sessions), nil
+}
+
+// ThrottleConfig represents throttling settings exposed to the frontend.
+type ThrottleConfig struct {
+	Preset      string `json:"preset"`
+	BytesPerSec int64  `json:"bytes_per_sec"`
+	LatencyMs   int64  `json:"latency_ms"`
+	Enabled     bool   `json:"enabled"`
+}
+
+// SetThrottle configures network throttling.
+func (a *App) SetThrottle(preset string) {
+	switch preset {
+	case "3g":
+		a.throttler.SetConfig(throttle.Preset3G)
+	case "4g":
+		a.throttler.SetConfig(throttle.Preset4G)
+	case "wifi":
+		a.throttler.SetConfig(throttle.PresetWiFi)
+	default:
+		a.throttler.SetConfig(throttle.Off)
+	}
+}
+
+// GetThrottle returns the current throttling state.
+func (a *App) GetThrottle() ThrottleConfig {
+	cfg := a.throttler.GetConfig()
+	preset := "off"
+	switch {
+	case cfg.BytesPerSec == throttle.Preset3G.BytesPerSec:
+		preset = "3g"
+	case cfg.BytesPerSec == throttle.Preset4G.BytesPerSec:
+		preset = "4g"
+	case cfg.BytesPerSec == throttle.PresetWiFi.BytesPerSec:
+		preset = "wifi"
+	}
+	return ThrottleConfig{
+		Preset:      preset,
+		BytesPerSec: cfg.BytesPerSec,
+		LatencyMs:   cfg.Latency.Milliseconds(),
+		Enabled:     cfg.BytesPerSec > 0,
+	}
+}
+
+// Throttler returns the throttler instance for proxy engine integration.
+func (a *App) Throttler() *throttle.Throttler {
+	return a.throttler
+}
+
 // ImportSessionsSAZ imports sessions from a user-selected SAZ file.
 func (a *App) ImportSessionsSAZ() (int, error) {
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
@@ -269,6 +368,76 @@ func (a *App) ImportSessionsSAZ() (int, error) {
 	return len(sessions), nil
 }
 
+// ImportSessionsHAR imports sessions from a user-selected HAR file.
+func (a *App) ImportSessionsHAR() (int, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Import HAR",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "HAR Files", Pattern: "*.har"},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if path == "" {
+		return 0, nil
+	}
+
+	sessions, err := session.ImportHAR(path)
+	if err != nil {
+		return 0, fmt.Errorf("import HAR: %w", err)
+	}
+
+	for _, s := range sessions {
+		a.store.Add(s)
+	}
+
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirtyN(len(sessions))
+	}
+
+	return len(sessions), nil
+}
+
+// TagSession adds or removes a tag on a session.
+func (a *App) TagSession(sessionID string, tag string, remove bool) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return
+	}
+	if remove {
+		filtered := make([]string, 0, len(s.Tags))
+		for _, t := range s.Tags {
+			if t != tag {
+				filtered = append(filtered, t)
+			}
+		}
+		s.Tags = filtered
+	} else {
+		for _, t := range s.Tags {
+			if t == tag {
+				return // already tagged
+			}
+		}
+		s.Tags = append(s.Tags, tag)
+	}
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
+}
+
+// CommentSession sets a comment on a session.
+func (a *App) CommentSession(sessionID string, comment string) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return
+	}
+	s.Comment = comment
+	if a.autoSaver != nil {
+		a.autoSaver.MarkDirty()
+	}
+}
+
 // ListRules returns all rules.
 func (a *App) ListRules() []*model.Rule {
 	return a.ruleEngine.Rules()
@@ -287,6 +456,13 @@ func (a *App) RemoveRule(id string) {
 // ToggleRule enables or disables a rule.
 func (a *App) ToggleRule(id string) {
 	a.ruleEngine.ToggleRule(id)
+}
+
+// BreakpointResumeWithEdit resumes a paused request with edits applied.
+func (a *App) BreakpointResumeWithEdit(pendingID string, edit intercept.EditedRequest) {
+	if a.breakpoint != nil {
+		a.breakpoint.ResumeWithEdit(pendingID, edit)
+	}
 }
 
 // BreakpointResume resumes a paused request.
@@ -312,8 +488,8 @@ type BreakpointPending struct {
 	RuleID string `json:"rule_id"`
 }
 
-// GetPendingBreakpoints returns all currently paused requests.
-func (a *App) GetPendingBreakpoints() []BreakpointPending {
+// PendingBreakpoints returns all currently paused requests.
+func (a *App) PendingBreakpoints() []BreakpointPending {
 	if a.breakpoint == nil {
 		return []BreakpointPending{}
 	}
@@ -374,7 +550,10 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, _ := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 32<<20))
+	if err != nil {
+		return nil, fmt.Errorf("read response body: %w", err)
+	}
 
 	headers := make(map[string]string)
 	for k, v := range resp.Header {
@@ -383,12 +562,39 @@ func (a *App) SendRequest(req ComposerRequest) (*ComposerResponse, error) {
 
 	return &ComposerResponse{
 		StatusCode: resp.StatusCode,
-		StatusText: resp.Status,
+		StatusText: http.StatusText(resp.StatusCode),
 		Headers:    headers,
 		Body:       string(body),
 		BodySize:   int64(len(body)),
 		DurationMs: time.Since(start).Milliseconds(),
 	}, nil
+}
+
+// ReplaySession re-sends the request from an existing session and returns the response.
+func (a *App) ReplaySession(sessionID string) (*ComposerResponse, error) {
+	s := a.store.Get(sessionID)
+	if s == nil {
+		return nil, fmt.Errorf("session not found: %s", sessionID)
+	}
+	if s.Request == nil {
+		return nil, fmt.Errorf("session has no request: %s", sessionID)
+	}
+
+	headers := make(map[string]string)
+	for k, vs := range s.Request.Headers {
+		if len(vs) > 0 {
+			headers[k] = vs[0]
+		}
+	}
+
+	req := ComposerRequest{
+		Method:  s.Request.Method,
+		URL:     s.Request.URL,
+		Headers: headers,
+		Body:    string(s.Request.Body),
+	}
+
+	return a.SendRequest(req)
 }
 
 // HandleNewSession is called by the proxy when a new session is captured.

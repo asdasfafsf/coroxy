@@ -14,12 +14,9 @@ import (
 func TestPersistAndLoad(t *testing.T) {
 	// Use temp dir for test.
 	tmpDir := t.TempDir()
-	origFunc := sessionsDir
-	sessionsDir = func() (string, error) { return tmpDir, nil }
-	defer func() { sessionsDir = origFunc }()
-
 	// Create store with sessions.
 	store := NewMemoryStore()
+	store.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	store.Add(&model.Session{
 		ID:        "s1",
 		Protocol:  constant.ProtocolHTTP,
@@ -51,6 +48,7 @@ func TestPersistAndLoad(t *testing.T) {
 
 	// Load into a new store.
 	store2 := NewMemoryStore()
+	store2.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	if err := store2.Load(); err != nil {
 		t.Fatalf("load: %v", err)
 	}
@@ -73,11 +71,9 @@ func TestPersistAndLoad(t *testing.T) {
 
 func TestLoadNoFile(t *testing.T) {
 	tmpDir := t.TempDir()
-	origFunc := sessionsDir
-	sessionsDir = func() (string, error) { return tmpDir, nil }
-	defer func() { sessionsDir = origFunc }()
 
 	store := NewMemoryStore()
+	store.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	if err := store.Load(); err != nil {
 		t.Fatalf("load with no file should not error: %v", err)
 	}
@@ -88,9 +84,6 @@ func TestLoadNoFile(t *testing.T) {
 
 func TestLoadLegacyJSONFallback(t *testing.T) {
 	tmpDir := t.TempDir()
-	origFunc := sessionsDir
-	sessionsDir = func() (string, error) { return tmpDir, nil }
-	defer func() { sessionsDir = origFunc }()
 
 	// Write a legacy sessions.json file.
 	sessions := []*model.Session{
@@ -116,6 +109,7 @@ func TestLoadLegacyJSONFallback(t *testing.T) {
 
 	// Load should use legacy JSON.
 	store := NewMemoryStore()
+	store.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	if err := store.Load(); err != nil {
 		t.Fatalf("load legacy: %v", err)
 	}
@@ -135,9 +129,6 @@ func TestLoadLegacyJSONFallback(t *testing.T) {
 
 func TestLoadPrefersArchiveOverJSON(t *testing.T) {
 	tmpDir := t.TempDir()
-	origFunc := sessionsDir
-	sessionsDir = func() (string, error) { return tmpDir, nil }
-	defer func() { sessionsDir = origFunc }()
 
 	// Write both .csaz and .json files.
 	archiveSessions := []*model.Session{
@@ -167,6 +158,7 @@ func TestLoadPrefersArchiveOverJSON(t *testing.T) {
 
 	// Load should prefer .csaz.
 	store := NewMemoryStore()
+	store.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	if err := store.Load(); err != nil {
 		t.Fatalf("load: %v", err)
 	}
@@ -185,11 +177,9 @@ func TestLoadPrefersArchiveOverJSON(t *testing.T) {
 
 func TestArchivePath(t *testing.T) {
 	tmpDir := t.TempDir()
-	origFunc := sessionsDir
-	sessionsDir = func() (string, error) { return tmpDir, nil }
-	defer func() { sessionsDir = origFunc }()
 
 	store := NewMemoryStore()
+	store.sessionsDirFn = func() (string, error) { return tmpDir, nil }
 	path, err := store.ArchivePath()
 	if err != nil {
 		t.Fatalf("archive path: %v", err)
