@@ -240,6 +240,53 @@ func (a *App) ExportSessionsSAZ() error {
 	return session.ExportSAZ(path, sessions)
 }
 
+// SaveSessions saves all sessions to a user-selected .csaz file.
+func (a *App) SaveSessions() error {
+	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           "Save Sessions",
+		DefaultFilename: "coroxy-sessions.csaz",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if path == "" {
+		return nil
+	}
+
+	sessions := a.store.List()
+	return session.WriteArchive(path, sessions)
+}
+
+// LoadSessions loads sessions from a user-selected .csaz file and adds them to the store.
+func (a *App) LoadSessions() (int, error) {
+	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: "Load Sessions",
+		Filters: []runtime.FileFilter{
+			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	if path == "" {
+		return 0, nil
+	}
+
+	sessions, err := session.ReadArchive(path)
+	if err != nil {
+		return 0, fmt.Errorf("read archive: %w", err)
+	}
+
+	for _, s := range sessions {
+		a.store.Add(s)
+		runtime.EventsEmit(a.ctx, "coroxy:session:new", s)
+	}
+	return len(sessions), nil
+}
+
 // ImportSessionsSAZ imports sessions from a user-selected SAZ file.
 func (a *App) ImportSessionsSAZ() (int, error) {
 	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
