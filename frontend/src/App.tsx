@@ -19,6 +19,7 @@ import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
+import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { type SessionFilter, EMPTY_FILTER, filterSessions } from '@/lib/filter';
 
@@ -201,7 +202,7 @@ function App() {
       method: req.method || 'GET',
       url: req.url || '',
       headers: headerLines,
-      body: req.body ? (typeof req.body === 'string' ? atob(req.body) : new TextDecoder().decode(new Uint8Array(req.body))) : '',
+      body: decodeBody(req.body) || '',
     });
     setShowComposer(true);
   }, []);

@@ -175,7 +175,7 @@ function RequestHeaders({ session }: { session: model.Session }) {
             <CopyableRow
               key={key}
               label={key}
-              value={(values as string[]).join(', ')}
+              value={(Array.isArray(values) ? values : [values]).join(', ')}
               highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
             />
           ))}
@@ -203,7 +203,7 @@ function ResponseHeaders({ session }: { session: model.Session }) {
             <CopyableRow
               key={key}
               label={key}
-              value={(values as string[]).join(', ')}
+              value={(Array.isArray(values) ? values : [values]).join(', ')}
               highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
             />
           ))}
