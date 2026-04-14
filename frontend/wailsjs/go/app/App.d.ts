@@ -76,3 +76,11 @@ export function StopProxy():Promise<void>;
 export function ToggleRule(arg1:string):Promise<void>;
 
 export function UninstallCA():Promise<void>;
+
+export function SaveSessions():Promise<void>;
+
+export function LoadSessions():Promise<number>;
+
+export function SetThrottle(arg1:string):Promise<void>;
+
+export function GetThrottle():Promise<app.ThrottleConfig>;
