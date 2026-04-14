@@ -88,7 +88,7 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
     <div
       style={style}
       className={cn(
-        'flex items-center hover:bg-muted/50 cursor-pointer border-b border-border/30',
+        'flex items-center hover:bg-muted/60 cursor-pointer border-b border-border/20 transition-colors',
         selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
         activeId === session.id && 'ring-1 ring-inset ring-primary/30'
       )}
