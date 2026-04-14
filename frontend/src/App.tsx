@@ -316,7 +316,7 @@ function App() {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={35} minSize={20}>
-            <div className="h-full bg-card">
+            <div className="h-full bg-card border-l border-border">
               <Inspector session={activeSession} />
             </div>
           </ResizablePanel>

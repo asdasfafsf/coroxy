@@ -102,8 +102,8 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1 bg-secondary text-primary text-[11px] font-semibold border-b border-border">
-      {icon}
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 text-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border">
+      <span className="text-primary">{icon}</span>
       {title}
     </div>
   );
