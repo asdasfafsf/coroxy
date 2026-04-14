@@ -7,6 +7,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
+import { SessionSidebar } from '@/components/session/SessionSidebar';
 import { Inspector } from '@/components/session/Inspector';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { Settings } from '@/components/tools/Settings';
@@ -43,6 +44,27 @@ function App() {
   const [marks, setMarks] = useState<Map<string, string>>(new Map());
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [throttlePreset, setThrottlePreset] = useState('off');
+
+  // Multi-session tabs
+  const [sessionTabs, setSessionTabs] = useState([
+    { id: 'default', label: 'All Traffic', filterId: 'default' },
+  ]);
+  const [activeTabId, setActiveTabId] = useState('default');
+
+  const handleTabAdd = useCallback(() => {
+    const id = `tab-${Date.now()}`;
+    setSessionTabs(prev => [...prev, { id, label: `Session ${prev.length + 1}`, filterId: id }]);
+    setActiveTabId(id);
+  }, []);
+
+  const handleTabClose = useCallback((tabId: string) => {
+    setSessionTabs(prev => {
+      const next = prev.filter(t => t.id !== tabId);
+      if (next.length === 0) return prev;
+      if (activeTabId === tabId) setActiveTabId(next[0].id);
+      return next;
+    });
+  }, [activeTabId]);
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
@@ -296,32 +318,35 @@ function App() {
             return next;
           })}
         />
-        <Toolbar
-          onSessionsClear={handleSessionsClear}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
-        <ResizablePanelGroup orientation="horizontal" id="coroxy-main" className="flex-1">
-          <ResizablePanel defaultSize={65} minSize={30}>
-            <SessionList
+        <div className="flex flex-1 overflow-hidden">
+          {/* Left sidebar — session list */}
+          <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border shrink-0 resize-x overflow-hidden" style={{ resize: 'horizontal' }}>
+            <SessionSidebar
               sessions={filteredSessions}
               selectedIds={selectedIds}
               activeId={activeSessionId}
               onSelect={handleSelect}
-              onReplay={handleReplay}
-              onComposerPrefill={handleComposerPrefill}
-              onDiff={handleDiff}
-              diffPending={!!diffSessionA && !diffSessionB}
               marks={marks}
+              tabs={sessionTabs}
+              activeTabId={activeTabId}
+              onTabChange={setActiveTabId}
+              onTabAdd={handleTabAdd}
+              onTabClose={handleTabClose}
             />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={35} minSize={20}>
-            <div className="h-full bg-card border-l border-border">
+          </div>
+
+          {/* Right main area — toolbar + inspector */}
+          <div className="flex flex-col flex-1 min-w-0">
+            <Toolbar
+              onSessionsClear={handleSessionsClear}
+              filter={filter}
+              onFilterChange={setFilter}
+            />
+            <div className="flex-1 bg-card overflow-hidden">
               <Inspector session={activeSession} />
             </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+          </div>
+        </div>
         <Composer
           open={showComposer}
           onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
