@@ -8,6 +8,9 @@ import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
 import { ChevronRight, Copy, Check } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
+import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
+
+type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
 
 interface InspectorProps {
   session: model.Session | null;
@@ -71,6 +74,11 @@ export function Inspector({ session }: InspectorProps) {
               <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
               <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
               <TabsTrigger value="timing" className="text-[11px] h-6 px-2">Timing</TabsTrigger>
+              {(session as SessionWithWS).ws_frames && (session as SessionWithWS).ws_frames!.length > 0 && (
+                <TabsTrigger value="websocket" className="text-[11px] h-6 px-2">
+                  WS ({(session as SessionWithWS).ws_frames!.length})
+                </TabsTrigger>
+              )}
             </TabsList>
             <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
               <TabsContent value="headers" className="mt-0"><ResponseHeaders session={session} /></TabsContent>
@@ -79,6 +87,9 @@ export function Inspector({ session }: InspectorProps) {
               <TabsContent value="hex" className="mt-0"><HexView body={session.response?.body} /></TabsContent>
               <TabsContent value="raw" className="mt-0"><RawResponse session={session} /></TabsContent>
               <TabsContent value="timing" className="mt-0"><TimingView session={session} /></TabsContent>
+              {(session as SessionWithWS).ws_frames && (
+                <TabsContent value="websocket" className="mt-0 -m-3"><WebSocketViewer frames={(session as SessionWithWS).ws_frames!} /></TabsContent>
+              )}
             </div>
           </Tabs>
         </div>
