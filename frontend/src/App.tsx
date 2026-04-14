@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive } from '../wailsjs/go/app/App';
+import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive, SaveSessions, LoadSessions } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -283,6 +283,8 @@ function App() {
           onMark={handleMark}
           onUnmarkAll={handleUnmarkAll}
           hiddenTypes={hiddenTypes}
+          onSave={() => SaveSessions().catch(console.error)}
+          onLoad={() => LoadSessions().catch(console.error)}
           onToggleHide={(type) => setHiddenTypes(prev => {
             const next = new Set(prev);
             if (next.has(type)) next.delete(type); else next.add(type);

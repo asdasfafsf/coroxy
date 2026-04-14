@@ -43,6 +43,8 @@ interface AppMenubarProps {
   onUnmarkAll: () => void;
   hiddenTypes: Set<string>;
   onToggleHide: (type: string) => void;
+  onSave: () => void;
+  onLoad: () => void;
 }
 
 export function AppMenubar({
@@ -75,6 +77,8 @@ export function AppMenubar({
   onUnmarkAll,
   hiddenTypes,
   onToggleHide,
+  onSave,
+  onLoad,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -85,6 +89,15 @@ export function AppMenubar({
           <MenubarItem onClick={onToggleProxy}>
             {isRunning ? 'Stop Capture' : 'Start Capture'}
             <MenubarShortcut>{shortcut('E')}</MenubarShortcut>
+          </MenubarItem>
+          <MenubarSeparator />
+          <MenubarItem onClick={onSave}>
+            Save Sessions
+            <MenubarShortcut>{shortcut('S')}</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onClick={onLoad}>
+            Load Sessions...
+            <MenubarShortcut>{shortcut('O')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
