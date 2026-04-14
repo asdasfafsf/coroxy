@@ -212,7 +212,7 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
     setContextSession(session as SessionExt);
   }, []);
 
-  const headerClass = 'px-2.5 py-1.5 text-left bg-card text-muted-foreground font-medium text-[11px] border-b border-border whitespace-nowrap';
+  const headerClass = 'px-2.5 py-1.5 text-left bg-card/90 text-muted-foreground font-semibold text-[10px] uppercase tracking-wider border-b border-border whitespace-nowrap';
 
   return (
     <ContextMenu>
