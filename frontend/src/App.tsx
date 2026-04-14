@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive, SaveSessions, LoadSessions } from '../wailsjs/go/app/App';
+import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive, SaveSessions, LoadSessions, SetThrottle, GetThrottle } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -41,11 +41,13 @@ function App() {
   const [showTextWizard, setShowTextWizard] = useState(false);
   const [marks, setMarks] = useState<Map<string, string>>(new Map());
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
+  const [throttlePreset, setThrottlePreset] = useState('off');
 
   useEffect(() => {
     Sessions().then((s) => setSessions(s || []));
     ProxyState().then(setProxyState);
     IsSystemProxyActive().then(setSysProxy);
+    GetThrottle().then(cfg => setThrottlePreset(cfg.preset));
   }, []);
 
   useEffect(() => {
@@ -285,6 +287,8 @@ function App() {
           hiddenTypes={hiddenTypes}
           onSave={() => SaveSessions().catch(console.error)}
           onLoad={() => LoadSessions().catch(console.error)}
+          throttlePreset={throttlePreset}
+          onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
           onToggleHide={(type) => setHiddenTypes(prev => {
             const next = new Set(prev);
             if (next.has(type)) next.delete(type); else next.add(type);

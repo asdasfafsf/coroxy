@@ -18,6 +18,7 @@ import (
 	"coroxy/internal/proxy"
 	"coroxy/internal/rule"
 	"coroxy/internal/session"
+	"coroxy/internal/throttle"
 )
 
 // App is the Wails binding struct that bridges GUI and Core.
@@ -31,6 +32,7 @@ type App struct {
 	autoSaver      *session.AutoSaver
 	logger         *slog.Logger
 	sysProxyActive bool
+	throttler      *throttle.Throttler
 }
 
 // NewApp creates a new App with its dependencies.
@@ -41,6 +43,7 @@ func NewApp(engine adapter.ProxyEngine, store *session.MemoryStore, caManager ad
 		caManager:  caManager,
 		ruleEngine: ruleEngine,
 		logger:     logger,
+		throttler:  throttle.New(),
 	}
 }
 
@@ -285,6 +288,53 @@ func (a *App) LoadSessions() (int, error) {
 		runtime.EventsEmit(a.ctx, "coroxy:session:new", s)
 	}
 	return len(sessions), nil
+}
+
+// ThrottleConfig represents throttling settings exposed to the frontend.
+type ThrottleConfig struct {
+	Preset      string `json:"preset"`
+	BytesPerSec int64  `json:"bytes_per_sec"`
+	LatencyMs   int64  `json:"latency_ms"`
+	Enabled     bool   `json:"enabled"`
+}
+
+// SetThrottle configures network throttling.
+func (a *App) SetThrottle(preset string) {
+	switch preset {
+	case "3g":
+		a.throttler.SetConfig(throttle.Preset3G)
+	case "4g":
+		a.throttler.SetConfig(throttle.Preset4G)
+	case "wifi":
+		a.throttler.SetConfig(throttle.PresetWiFi)
+	default:
+		a.throttler.SetConfig(throttle.Off)
+	}
+}
+
+// GetThrottle returns the current throttling state.
+func (a *App) GetThrottle() ThrottleConfig {
+	cfg := a.throttler.GetConfig()
+	preset := "off"
+	switch {
+	case cfg.BytesPerSec == throttle.Preset3G.BytesPerSec:
+		preset = "3g"
+	case cfg.BytesPerSec == throttle.Preset4G.BytesPerSec:
+		preset = "4g"
+	case cfg.BytesPerSec == throttle.PresetWiFi.BytesPerSec:
+		preset = "wifi"
+	}
+	return ThrottleConfig{
+		Preset:      preset,
+		BytesPerSec: cfg.BytesPerSec,
+		LatencyMs:   cfg.Latency.Milliseconds(),
+		Enabled:     cfg.BytesPerSec > 0,
+	}
+}
+
+// Throttler returns the throttler instance for proxy engine integration.
+func (a *App) Throttler() *throttle.Throttler {
+	return a.throttler
 }
 
 // ImportSessionsSAZ imports sessions from a user-selected SAZ file.
