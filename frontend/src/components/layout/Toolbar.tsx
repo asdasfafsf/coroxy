@@ -115,11 +115,12 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
           )}
         </Button>
 
-        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+        <span className={`flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full ${
           isRunning
             ? 'text-status-success bg-status-success/10'
             : 'text-muted-foreground'
         }`}>
+          {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse-dot" />}
           {isRunning ? 'Capturing' : 'Stopped'}
         </span>
       </div>
