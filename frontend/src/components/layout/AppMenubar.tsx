@@ -45,6 +45,8 @@ interface AppMenubarProps {
   onToggleHide: (type: string) => void;
   onSave: () => void;
   onLoad: () => void;
+  throttlePreset: string;
+  onThrottleChange: (preset: string) => void;
 }
 
 export function AppMenubar({
@@ -79,6 +81,8 @@ export function AppMenubar({
   onToggleHide,
   onSave,
   onLoad,
+  throttlePreset,
+  onThrottleChange,
 }: AppMenubarProps) {
   return (
     <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
@@ -202,7 +206,21 @@ export function AppMenubar({
               ))}
             </MenubarSubContent>
           </MenubarSub>
-          <MenubarItem disabled>Network Throttling...</MenubarItem>
+          <MenubarSub>
+            <MenubarSubTrigger>Network Throttling</MenubarSubTrigger>
+            <MenubarSubContent>
+              {[
+                { key: 'off', label: 'No Throttling' },
+                { key: '3g', label: '3G (750 kbps)' },
+                { key: '4g', label: '4G (4 Mbps)' },
+                { key: 'wifi', label: 'WiFi (30 Mbps)' },
+              ].map(({ key, label }) => (
+                <MenubarCheckboxItem key={key} checked={throttlePreset === key} onClick={() => onThrottleChange(key)}>
+                  {label}
+                </MenubarCheckboxItem>
+              ))}
+            </MenubarSubContent>
+          </MenubarSub>
         </MenubarContent>
       </MenubarMenu>
 
