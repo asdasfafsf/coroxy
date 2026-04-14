@@ -141,3 +141,19 @@ export function ToggleRule(arg1) {
 export function UninstallCA() {
   return window['go']['app']['App']['UninstallCA']();
 }
+
+export function SaveSessions() {
+  return window['go']['app']['App']['SaveSessions']();
+}
+
+export function LoadSessions() {
+  return window['go']['app']['App']['LoadSessions']();
+}
+
+export function SetThrottle(arg1) {
+  return window['go']['app']['App']['SetThrottle'](arg1);
+}
+
+export function GetThrottle() {
+  return window['go']['app']['App']['GetThrottle']();
+}

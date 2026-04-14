@@ -1,5 +1,23 @@
 export namespace app {
-	
+
+	export class ThrottleConfig {
+	    preset: string;
+	    bytes_per_sec: number;
+	    latency_ms: number;
+	    enabled: boolean;
+
+	    static createFrom(source: any = {}) {
+	        return new ThrottleConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.preset = source["preset"];
+	        this.bytes_per_sec = source["bytes_per_sec"];
+	        this.latency_ms = source["latency_ms"];
+	        this.enabled = source["enabled"];
+	    }
+	}
 	export class BreakpointPending {
 	    id: string;
 	    method: string;
@@ -395,6 +413,25 @@ export namespace model {
 		    }
 		    return a;
 		}
+	}
+	export class WSFrame {
+	    direction: string;
+	    opcode: number;
+	    payload: number[];
+	    // Go type: time
+	    timestamp: any;
+
+	    static createFrom(source: any = {}) {
+	        return new WSFrame(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.direction = source["direction"];
+	        this.opcode = source["opcode"];
+	        this.payload = source["payload"];
+	        this.timestamp = source["timestamp"];
+	    }
 	}
 	export class SessionFilter {
 	    protocol?: string;
