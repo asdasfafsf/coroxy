@@ -12,6 +12,7 @@ import {
   MenubarCheckboxItem,
 } from '@/components/ui/menubar';
 import { shortcut } from '@/lib/platform';
+import { Play, Square, Save, FolderOpen, Download, Upload, Settings, Scissors, Clipboard, Search, Paintbrush, CheckSquare, Trash2, Shield, Pause, EyeOff, Gauge, Send, Wand2, GitCompare, Keyboard, Info } from 'lucide-react';
 
 interface AppMenubarProps {
   isRunning: boolean;
@@ -85,34 +86,37 @@ export function AppMenubar({
   onThrottleChange,
 }: AppMenubarProps) {
   return (
-    <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-background">
+    <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 px-2 h-8 bg-card/50">
       {/* File */}
       <MenubarMenu>
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">File</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onToggleProxy}>
+            {isRunning ? <Square className="h-3.5 w-3.5 mr-2" /> : <Play className="h-3.5 w-3.5 mr-2" />}
             {isRunning ? 'Stop Capture' : 'Start Capture'}
             <MenubarShortcut>{shortcut('E')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarItem onClick={onSave}>
+            <Save className="h-3.5 w-3.5 mr-2" />
             Save Sessions
             <MenubarShortcut>{shortcut('S')}</MenubarShortcut>
           </MenubarItem>
           <MenubarItem onClick={onLoad}>
+            <FolderOpen className="h-3.5 w-3.5 mr-2" />
             Load Sessions...
             <MenubarShortcut>{shortcut('O')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Export</MenubarSubTrigger>
+            <MenubarSubTrigger><Download className="h-3.5 w-3.5 mr-2" />Export</MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onClick={onExportHAR}>HAR (.har)</MenubarItem>
               <MenubarItem onClick={onExportJSON}>JSON (.json)</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSub>
-            <MenubarSubTrigger>Import</MenubarSubTrigger>
+            <MenubarSubTrigger><Upload className="h-3.5 w-3.5 mr-2" />Import</MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onClick={onImportHAR}>HAR (.har)</MenubarItem>
               <MenubarItem onClick={onImportSAZ}>SAZ (.saz)</MenubarItem>
@@ -120,7 +124,7 @@ export function AppMenubar({
           </MenubarSub>
           <MenubarSeparator />
           <MenubarItem onClick={onSettingsClick}>
-            Settings
+            <Settings className="h-3.5 w-3.5 mr-2" />Settings
             <MenubarShortcut>{shortcut(',')}</MenubarShortcut>
           </MenubarItem>
         </MenubarContent>
@@ -131,12 +135,12 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Edit</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onClear}>
-            Clear All Sessions
+            <Scissors className="h-3.5 w-3.5 mr-2" />Clear All Sessions
             <MenubarShortcut>{shortcut('X', true)}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Copy</MenubarSubTrigger>
+            <MenubarSubTrigger><Clipboard className="h-3.5 w-3.5 mr-2" />Copy</MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem disabled={!hasSelection} onClick={onCopyUrl}>URL <MenubarShortcut>{shortcut('C')}</MenubarShortcut></MenubarItem>
               <MenubarItem disabled={!hasSelection} onClick={onCopyRequestHeaders}>Request Headers</MenubarItem>
@@ -146,12 +150,12 @@ export function AppMenubar({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem disabled>
-            Find...
+            <Search className="h-3.5 w-3.5 mr-2" />Find...
             <MenubarShortcut>{shortcut('F')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Mark</MenubarSubTrigger>
+            <MenubarSubTrigger><Paintbrush className="h-3.5 w-3.5 mr-2" />Mark</MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { color: '#ef4444', label: 'Red' },
@@ -170,8 +174,8 @@ export function AppMenubar({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSeparator />
-          <MenubarItem onClick={onSelectAll}>Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
-          <MenubarItem onClick={onDeleteSelected}>Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>
+          <MenubarItem onClick={onSelectAll}><CheckSquare className="h-3.5 w-3.5 mr-2" />Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
+          <MenubarItem onClick={onDeleteSelected}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -180,17 +184,17 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Rules</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onRulesClick}>
-            AutoResponder...
+            <Shield className="h-3.5 w-3.5 mr-2" />AutoResponder...
             <MenubarShortcut>{shortcut('R', true)}</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem disabled>Breakpoints...</MenubarItem>
+          <MenubarItem disabled><Pause className="h-3.5 w-3.5 mr-2" />Breakpoints...</MenubarItem>
           <MenubarSeparator />
           <MenubarCheckboxItem checked={sysProxy} onClick={onToggleSysProxy}>
             System Proxy
           </MenubarCheckboxItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger>Hide</MenubarSubTrigger>
+            <MenubarSubTrigger><EyeOff className="h-3.5 w-3.5 mr-2" />Hide</MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { key: 'image', label: 'Images' },
@@ -207,7 +211,7 @@ export function AppMenubar({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSub>
-            <MenubarSubTrigger>Network Throttling</MenubarSubTrigger>
+            <MenubarSubTrigger><Gauge className="h-3.5 w-3.5 mr-2" />Network Throttling</MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { key: 'off', label: 'No Throttling' },
@@ -229,11 +233,11 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Tools</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onComposerClick}>
-            Composer
+            <Send className="h-3.5 w-3.5 mr-2" />Composer
             <MenubarShortcut>{shortcut('N', true)}</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem onClick={onTextWizardClick}>TextWizard...</MenubarItem>
-          <MenubarItem disabled={selectedCount !== 2} onClick={onCompareClick}>Compare Sessions...</MenubarItem>
+          <MenubarItem onClick={onTextWizardClick}><Wand2 className="h-3.5 w-3.5 mr-2" />TextWizard...</MenubarItem>
+          <MenubarItem disabled={selectedCount !== 2} onClick={onCompareClick}><GitCompare className="h-3.5 w-3.5 mr-2" />Compare Sessions...</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -242,11 +246,11 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Help</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onShortcutsClick}>
-            Keyboard Shortcuts
+            <Keyboard className="h-3.5 w-3.5 mr-2" />Keyboard Shortcuts
             <MenubarShortcut>?</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onClick={onAboutClick}>About Coroxy</MenubarItem>
+          <MenubarItem onClick={onAboutClick}><Info className="h-3.5 w-3.5 mr-2" />About Coroxy</MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>
