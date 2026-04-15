@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { WindowSetDarkTheme, WindowSetLightTheme, WindowSetSystemDefaultTheme, WindowSetBackgroundColour } from '../../wailsjs/runtime/runtime';
 
 type Theme = 'system' | 'dark' | 'light';
 
 const STORAGE_KEY = 'coroxy-theme';
 
-// CSS dark background ≈ oklch(0.130 0.010 270) → RGB(18, 18, 22)
-// CSS dark card ≈ oklch(0.155 0.010 270) → RGB(23, 23, 28)
-// CSS light background ≈ oklch(0.975 0.003 270) → RGB(245, 244, 243)
-const DARK_BG = { r: 23, g: 23, b: 28 };
+const DARK_BG = { r: 20, g: 20, b: 26 };
 const LIGHT_BG = { r: 245, g: 244, b: 243 };
 
 function getSystemTheme(): 'dark' | 'light' {
@@ -17,45 +13,49 @@ function getSystemTheme(): 'dark' | 'light' {
 
 function applyTheme(theme: Theme) {
   const resolved = theme === 'system' ? getSystemTheme() : theme;
+
+  // 1. CSS class toggle — this MUST happen regardless of Wails
   document.documentElement.classList.remove('dark', 'light');
   document.documentElement.classList.add(resolved);
 
-  // Sync Wails native window appearance
-  try {
-    if (theme === 'system') {
-      WindowSetSystemDefaultTheme();
-    } else if (resolved === 'dark') {
-      WindowSetDarkTheme();
-    } else {
-      WindowSetLightTheme();
+  // 2. Wails native window — optional, may fail in browser
+  if (typeof window !== 'undefined' && 'runtime' in window) {
+    try {
+      const rt = (window as Record<string, unknown>).runtime as Record<string, (...args: unknown[]) => void>;
+      if (theme === 'system') {
+        rt.WindowSetSystemDefaultTheme();
+      } else if (resolved === 'dark') {
+        rt.WindowSetDarkTheme();
+      } else {
+        rt.WindowSetLightTheme();
+      }
+      const bg = resolved === 'dark' ? DARK_BG : LIGHT_BG;
+      rt.WindowSetBackgroundColour(bg.r, bg.g, bg.b, 255);
+    } catch {
+      // Not in Wails context — ignore
     }
-
-    // Update native window background to match CSS theme
-    const bg = resolved === 'dark' ? DARK_BG : LIGHT_BG;
-    WindowSetBackgroundColour(bg.r, bg.g, bg.b, 255);
-  } catch {
-    // Wails runtime not available (e.g. running in browser dev)
   }
 }
 
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return (stored as Theme) || 'dark';
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
+    } catch { /* ignore */ }
+    return 'dark';
   });
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    localStorage.setItem(STORAGE_KEY, t);
+    try { localStorage.setItem(STORAGE_KEY, t); } catch { /* ignore */ }
     applyTheme(t);
   }, []);
 
-  // Apply on mount
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
-  // Listen for system theme changes when in 'system' mode
   useEffect(() => {
     if (theme !== 'system') return;
     const mq = window.matchMedia('(prefers-color-scheme: dark)');

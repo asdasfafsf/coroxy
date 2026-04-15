@@ -86,7 +86,7 @@ export function AppMenubar({
   onThrottleChange,
 }: AppMenubarProps) {
   return (
-    <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 pl-[78px] pr-2 h-9 bg-card" style={{ '--wails-draggable': 'drag' } as React.CSSProperties}>
+    <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 pl-[78px] pr-2 h-9 bg-sidebar" style={{ '--wails-draggable': 'drag' } as React.CSSProperties}>
       {/* File */}
       <MenubarMenu>
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">File</MenubarTrigger>

@@ -114,41 +114,45 @@ export function SessionSidebar({
   onTabClose,
 }: SessionSidebarProps) {
   return (
-    <div className="flex flex-col h-full bg-background min-w-[240px]">
+    <div className="flex flex-col h-full bg-sidebar min-w-[240px]">
       {/* Session tabs */}
-      <div className="flex items-center border-b border-border bg-card shrink-0 overflow-x-auto">
+      <div className="flex items-center border-b border-border bg-sidebar shrink-0 overflow-x-auto">
         {tabs.map((tab) => (
           <div
             key={tab.id}
             className={cn(
-              'flex items-center gap-1 px-3 py-1.5 text-[11px] cursor-pointer border-r border-border/50 shrink-0 transition-colors',
+              'group flex items-center gap-1 px-3 py-2 text-[11px] cursor-pointer shrink-0 transition-colors relative',
               activeTabId === tab.id
-                ? 'bg-background text-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                ? 'text-foreground font-semibold'
+                : 'text-muted-foreground hover:text-foreground'
             )}
             onClick={() => onTabChange(tab.id)}
           >
             <span className="truncate max-w-[140px]">{tab.label}</span>
             {tabs.length > 1 && (
               <button
-                className="opacity-50 hover:opacity-100 hover:text-destructive ml-0.5"
+                className="opacity-0 group-hover:opacity-60 hover:!opacity-100 hover:text-destructive ml-0.5"
                 onClick={(e) => { e.stopPropagation(); onTabClose(tab.id); }}
               >
                 <X className="h-2.5 w-2.5" />
               </button>
             )}
+            {/* Active indicator bar */}
+            {activeTabId === tab.id && (
+              <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-full" />
+            )}
           </div>
         ))}
         <button
-          className="flex items-center px-2 py-1.5 text-muted-foreground hover:text-foreground shrink-0"
+          className="flex items-center px-2.5 py-2 text-muted-foreground/60 hover:text-foreground shrink-0 transition-colors"
           onClick={onTabAdd}
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-3.5 w-3.5" />
         </button>
       </div>
 
       {/* Session count header */}
-      <div className="flex items-center justify-between px-2.5 py-1 border-b border-border/50 bg-card/50">
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-sidebar-border bg-sidebar">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Sessions ({sessions.length})
         </span>

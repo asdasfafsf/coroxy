@@ -320,7 +320,7 @@ function App() {
         />
         <div className="flex flex-1 overflow-hidden">
           {/* Left sidebar — session list */}
-          <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border shrink-0 resize-x overflow-hidden" style={{ resize: 'horizontal' }}>
+          <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border/50 shrink-0 overflow-hidden">
             <SessionSidebar
               sessions={filteredSessions}
               selectedIds={selectedIds}

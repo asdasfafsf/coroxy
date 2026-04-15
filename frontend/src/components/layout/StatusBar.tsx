@@ -19,7 +19,7 @@ interface StatusBarProps {
 
 export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThemeChange, totalRequestBytes, totalResponseBytes }: StatusBarProps) {
   return (
-    <div className="flex items-center px-3 py-0.5 bg-card border-t border-border text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
+    <div className="flex items-center px-3 py-0.5 bg-sidebar border-t border-border text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
       {/* Proxy status */}
       <span className="flex items-center gap-1.5">
         <span className={cn(

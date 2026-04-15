@@ -111,44 +111,47 @@ body {
    Coroxy Design System — Dark Mode (Primary)
    ======================================== */
 .dark {
-  --background: oklch(0.130 0.010 270);
-  --foreground: oklch(0.930 0.006 90);
-  --card: oklch(0.155 0.010 270);
-  --card-foreground: oklch(0.930 0.006 90);
-  --popover: oklch(0.185 0.012 268);
-  --popover-foreground: oklch(0.930 0.006 90);
-  --primary: oklch(0.680 0.120 230);
+  /* 3-layer depth: sidebar(darkest) < background < card(brightest) */
+  --background: oklch(0.155 0.008 265);       /* main area — mid-dark */
+  --foreground: oklch(0.920 0.008 90);
+  --card: oklch(0.180 0.008 265);              /* elevated panels — brighter */
+  --card-foreground: oklch(0.920 0.008 90);
+  --popover: oklch(0.195 0.012 265);           /* floating — brightest solid */
+  --popover-foreground: oklch(0.920 0.008 90);
+  --primary: oklch(0.650 0.160 250);           /* vivid blue — more saturated */
   --primary-foreground: oklch(0.980 0 0);
-  --secondary: oklch(0.185 0.010 270);
-  --secondary-foreground: oklch(0.930 0.006 90);
-  --muted: oklch(0.220 0.010 270);
-  --muted-foreground: oklch(0.520 0.010 270);
-  --accent: oklch(0.200 0.010 270);
-  --accent-foreground: oklch(0.930 0.006 90);
-  --destructive: oklch(0.650 0.200 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 12%);
-  --ring: oklch(0.680 0.120 230);
-  --chart-1: oklch(0.680 0.120 230);
+  --secondary: oklch(0.195 0.008 265);
+  --secondary-foreground: oklch(0.920 0.008 90);
+  --muted: oklch(0.230 0.008 265);
+  --muted-foreground: oklch(0.550 0.012 265);  /* brighter muted text */
+  --accent: oklch(0.210 0.010 265);
+  --accent-foreground: oklch(0.920 0.008 90);
+  --destructive: oklch(0.620 0.220 25);
+  --border: oklch(1 0 0 / 12%);               /* stronger borders */
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.650 0.160 250);
+  --chart-1: oklch(0.650 0.160 250);
   --chart-2: oklch(0.680 0.180 155);
   --chart-3: oklch(0.660 0.160 300);
   --chart-4: oklch(0.750 0.160 85);
   --chart-5: oklch(0.680 0.170 50);
-  --sidebar: oklch(0.120 0.008 270);
-  --sidebar-foreground: oklch(0.930 0.006 90);
-  --sidebar-primary: oklch(0.680 0.120 230);
-  --sidebar-primary-foreground: oklch(0.980 0 0);
-  --sidebar-accent: oklch(0.240 0.008 270);
-  --sidebar-accent-foreground: oklch(0.930 0.006 90);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.680 0.120 230);
 
-  /* Status — desaturated for less visual noise */
-  --status-success: oklch(0.680 0.180 155);
-  --status-warning: oklch(0.750 0.160 85);
-  --status-error: oklch(0.650 0.200 25);
-  --status-info: oklch(0.620 0.170 260);
-  --status-purple: oklch(0.660 0.160 300);
+  /* Sidebar — darkest layer */
+  --sidebar: oklch(0.115 0.010 265);           /* noticeably darker */
+  --sidebar-foreground: oklch(0.920 0.008 90);
+  --sidebar-primary: oklch(0.650 0.160 250);
+  --sidebar-primary-foreground: oklch(0.980 0 0);
+  --sidebar-accent: oklch(0.180 0.008 265);
+  --sidebar-accent-foreground: oklch(0.920 0.008 90);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.650 0.160 250);
+
+  /* Status — vibrant, not desaturated */
+  --status-success: oklch(0.700 0.190 155);
+  --status-warning: oklch(0.780 0.170 85);
+  --status-error: oklch(0.660 0.220 25);
+  --status-info: oklch(0.650 0.180 260);
+  --status-purple: oklch(0.680 0.170 300);
 }
 
 @layer base {
