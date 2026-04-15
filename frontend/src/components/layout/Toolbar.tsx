@@ -51,7 +51,7 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-1 px-2 py-1.5 bg-card/80 border-b border-border">
+      <div className="flex items-center gap-1 px-2 py-1.5 bg-card border-b border-border">
         {/* Proxy control group */}
         <div className="flex items-center gap-1">
           <Button
