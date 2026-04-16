@@ -19,10 +19,14 @@ interface InspectorProps {
 export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-3">
-        <MousePointerClick className="h-10 w-10 opacity-20" />
-        <span className="text-sm">Select a session to inspect</span>
-        <span className="text-xs opacity-60">Click a row in the session list</span>
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center">
+          <MousePointerClick className="h-8 w-8 opacity-40" />
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-medium text-foreground/60">Select a session</div>
+          <div className="text-xs mt-1 opacity-50">Click a request in the sidebar to inspect it</div>
+        </div>
       </div>
     );
   }

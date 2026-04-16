@@ -161,9 +161,14 @@ export function SessionSidebar({
       {/* Session list */}
       <ScrollArea className="flex-1">
         {sessions.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-            <Globe className="h-8 w-8 opacity-20" />
-            <span className="text-xs">No sessions</span>
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+            <div className="w-12 h-12 rounded-xl bg-sidebar-accent/50 flex items-center justify-center">
+              <Globe className="h-6 w-6 opacity-40" />
+            </div>
+            <div className="text-center">
+              <div className="text-xs font-medium">No sessions yet</div>
+              <div className="text-[10px] mt-0.5 opacity-50">Start capturing to see traffic</div>
+            </div>
           </div>
         ) : (
           sessions.map((session) => (
