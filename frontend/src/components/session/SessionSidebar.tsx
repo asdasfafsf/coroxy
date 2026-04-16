@@ -115,8 +115,8 @@ export function SessionSidebar({
 }: SessionSidebarProps) {
   return (
     <div className="flex flex-col h-full bg-sidebar min-w-[240px]">
-      {/* Session tabs */}
-      <div className="flex items-center border-b border-border bg-sidebar shrink-0 overflow-x-auto">
+      {/* Session tabs — pl-[70px] for macOS traffic lights */}
+      <div className="flex items-center border-b border-border bg-sidebar shrink-0 overflow-x-auto pl-[70px]" style={{ '--wails-draggable': 'drag' } as React.CSSProperties}>
         {tabs.map((tab) => (
           <div
             key={tab.id}

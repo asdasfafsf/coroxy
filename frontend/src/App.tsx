@@ -280,105 +280,108 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-        <AppMenubar
-          isRunning={isRunning}
-          sysProxy={sysProxy}
-          hasSelection={!!activeSession}
-          onToggleProxy={handleToggleProxy}
-          onToggleSysProxy={handleToggleSysProxy}
-          onClear={handleClear}
-          onExportHAR={() => ExportSessionsHAR().catch(console.error)}
-          onExportJSON={() => ExportSessionsJSON().catch(console.error)}
-          onImportHAR={() => ImportSessionsHAR().catch(console.error)}
-          onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
-          onSettingsClick={() => setShowSettings(true)}
-          onRulesClick={() => setShowRules(true)}
-          onComposerClick={() => setShowComposer(true)}
-          onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-          onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
-          onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
-          onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-          onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
-          onAboutClick={() => setShowAbout(true)}
-          onShortcutsClick={() => setShowShortcuts(true)}
-          onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
-          onDeleteSelected={handleDeleteSelected}
-          onTextWizardClick={() => setShowTextWizard(true)}
-          onCompareClick={handleCompareFromMenu}
-          selectedCount={selectedIds.size}
-          onMark={handleMark}
-          onUnmarkAll={handleUnmarkAll}
-          hiddenTypes={hiddenTypes}
-          onSave={() => SaveSessions().catch(console.error)}
-          onLoad={() => LoadSessions().catch(console.error)}
-          throttlePreset={throttlePreset}
-          onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
-          onToggleHide={(type) => setHiddenTypes(prev => {
-            const next = new Set(prev);
-            if (next.has(type)) next.delete(type); else next.add(type);
-            return next;
-          })}
-        />
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left sidebar — session list */}
-          <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border/50 shrink-0 overflow-hidden">
-            <SessionSidebar
-              sessions={filteredSessions}
-              selectedIds={selectedIds}
-              activeId={activeSessionId}
-              onSelect={handleSelect}
-              marks={marks}
-              tabs={sessionTabs}
-              activeTabId={activeTabId}
-              onTabChange={setActiveTabId}
-              onTabAdd={handleTabAdd}
-              onTabClose={handleTabClose}
-            />
-          </div>
-
-          {/* Right main area — toolbar + inspector */}
-          <div className="flex flex-col flex-1 min-w-0">
-            <Toolbar
-              onSessionsClear={handleSessionsClear}
-              filter={filter}
-              onFilterChange={setFilter}
-            />
-            <div className="flex-1 bg-card overflow-hidden">
-              <Inspector session={activeSession} />
-            </div>
-          </div>
-        </div>
-        <Composer
-          open={showComposer}
-          onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
-          prefill={composerPrefill}
-        />
-        <StatusBar
-          sessionCount={sessions.length}
-          selectedCount={selectedIds.size}
-          isRunning={isRunning}
-          theme={theme}
-          onThemeChange={setTheme}
-          totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
-          totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
-        />
-
-        <Settings open={showSettings} onOpenChange={setShowSettings} />
-        <RuleEditor open={showRules} onOpenChange={setShowRules} />
-        {showDiff && diffSessionA && diffSessionB && (
-          <SessionDiff
-            sessionA={diffSessionA}
-            sessionB={diffSessionB}
-            open={showDiff}
-            onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+      <div className="flex h-screen bg-background text-foreground font-sans">
+        {/* ===== Left sidebar column ===== */}
+        <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border/50 shrink-0 flex flex-col overflow-hidden bg-sidebar">
+          <SessionSidebar
+            sessions={filteredSessions}
+            selectedIds={selectedIds}
+            activeId={activeSessionId}
+            onSelect={handleSelect}
+            marks={marks}
+            tabs={sessionTabs}
+            activeTabId={activeTabId}
+            onTabChange={setActiveTabId}
+            onTabAdd={handleTabAdd}
+            onTabClose={handleTabClose}
           />
-        )}
-        <BreakpointPanel />
-        <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
-        <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
-        <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
+        </div>
+
+        {/* ===== Right main column ===== */}
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Menubar row — same height as sidebar tab row */}
+          <AppMenubar
+            isRunning={isRunning}
+            sysProxy={sysProxy}
+            hasSelection={!!activeSession}
+            onToggleProxy={handleToggleProxy}
+            onToggleSysProxy={handleToggleSysProxy}
+            onClear={handleClear}
+            onExportHAR={() => ExportSessionsHAR().catch(console.error)}
+            onExportJSON={() => ExportSessionsJSON().catch(console.error)}
+            onImportHAR={() => ImportSessionsHAR().catch(console.error)}
+            onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
+            onSettingsClick={() => setShowSettings(true)}
+            onRulesClick={() => setShowRules(true)}
+            onComposerClick={() => setShowComposer(true)}
+            onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
+            onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
+            onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
+            onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
+            onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
+            onAboutClick={() => setShowAbout(true)}
+            onShortcutsClick={() => setShowShortcuts(true)}
+            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
+            onDeleteSelected={handleDeleteSelected}
+            onTextWizardClick={() => setShowTextWizard(true)}
+            onCompareClick={handleCompareFromMenu}
+            selectedCount={selectedIds.size}
+            onMark={handleMark}
+            onUnmarkAll={handleUnmarkAll}
+            hiddenTypes={hiddenTypes}
+            onSave={() => SaveSessions().catch(console.error)}
+            onLoad={() => LoadSessions().catch(console.error)}
+            throttlePreset={throttlePreset}
+            onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
+            onToggleHide={(type) => setHiddenTypes(prev => {
+              const next = new Set(prev);
+              if (next.has(type)) next.delete(type); else next.add(type);
+              return next;
+            })}
+          />
+          {/* Toolbar */}
+          <Toolbar
+            onSessionsClear={handleSessionsClear}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+          {/* Inspector */}
+          <div className="flex-1 bg-card overflow-hidden">
+            <Inspector session={activeSession} />
+          </div>
+          {/* StatusBar inside main column */}
+          <StatusBar
+            sessionCount={sessions.length}
+            selectedCount={selectedIds.size}
+            isRunning={isRunning}
+            theme={theme}
+            onThemeChange={setTheme}
+            totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
+            totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
+          />
+        </div>
       </div>
+
+      {/* Modals — outside main flex layout */}
+      <Composer
+        open={showComposer}
+        onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
+        prefill={composerPrefill}
+      />
+      <Settings open={showSettings} onOpenChange={setShowSettings} />
+      <RuleEditor open={showRules} onOpenChange={setShowRules} />
+      {showDiff && diffSessionA && diffSessionB && (
+        <SessionDiff
+          sessionA={diffSessionA}
+          sessionB={diffSessionB}
+          open={showDiff}
+          onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+        />
+      )}
+      <BreakpointPanel />
+      <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
+      <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
+      <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
     </TooltipProvider>
   );
 }
