@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Play, Square, Trash2, Search, Filter, X, Regex } from 'lucide-react';
+import { Play, Square, Trash2, Search, Filter, X, Regex, Globe, Shield, Wifi } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SessionFilter } from '@/lib/filter';
 import { getActiveFilterCount } from '@/lib/filter';
@@ -71,6 +71,32 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
           <Button size="sm" variant="ghost" onClick={handleClear} className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
             <Trash2 className="h-3 w-3" />Clear
           </Button>
+        </div>
+
+        <Separator orientation="vertical" className="h-4 mx-1" />
+
+        {/* Protocol quick filters */}
+        <div className="flex items-center gap-0.5 bg-muted/30 rounded-md p-0.5">
+          {(['All', 'HTTP', 'HTTPS', 'WS'] as const).map((proto) => (
+            <button
+              key={proto}
+              className={cn(
+                'px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
+                filter.text === '' && proto === 'All'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              )}
+              onClick={() => {
+                if (proto === 'All') {
+                  onFilterChange({ ...filter, text: '' });
+                } else {
+                  onFilterChange({ ...filter, text: proto.toLowerCase() });
+                }
+              }}
+            >
+              {proto}
+            </button>
+          ))}
         </div>
 
         <Separator orientation="vertical" className="h-4 mx-1" />
