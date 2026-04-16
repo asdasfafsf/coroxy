@@ -67,22 +67,24 @@ function App() {
   }, [activeTabId]);
 
   useEffect(() => {
-    Sessions().then((s) => setSessions(s || []));
-    ProxyState().then(setProxyState);
-    IsSystemProxyActive().then(setSysProxy);
-    GetThrottle().then(cfg => setThrottlePreset(cfg.preset));
+    Sessions().then((s) => setSessions(s || [])).catch(() => {});
+    ProxyState().then(setProxyState).catch(() => {});
+    IsSystemProxyActive().then(setSysProxy).catch(() => {});
+    GetThrottle().then(cfg => setThrottlePreset(cfg.preset)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const cancel = EventsOn('coroxy:session:new', (session: model.Session) => {
-      setSessions((prev) => [session, ...prev]);
-    });
-    return cancel;
+    try {
+      const cancel = EventsOn('coroxy:session:new', (session: model.Session) => {
+        setSessions((prev) => [session, ...prev]);
+      });
+      return cancel;
+    } catch { /* not in Wails */ }
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      ProxyState().then(setProxyState);
+      ProxyState().then(setProxyState).catch(() => {});
     }, 2000);
     return () => clearInterval(interval);
   }, []);
