@@ -281,25 +281,19 @@ function App() {
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground font-sans">
-        {/* ===== Left sidebar column ===== */}
-        <div className="w-[320px] min-w-[240px] max-w-[480px] border-r border-border/50 shrink-0 flex flex-col overflow-hidden bg-sidebar">
+        {/* ===== Left sidebar — session groups ===== */}
+        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border/50 shrink-0 flex flex-col overflow-hidden">
           <SessionSidebar
-            sessions={filteredSessions}
-            selectedIds={selectedIds}
-            activeId={activeSessionId}
-            onSelect={handleSelect}
-            marks={marks}
-            tabs={sessionTabs}
-            activeTabId={activeTabId}
-            onTabChange={setActiveTabId}
-            onTabAdd={handleTabAdd}
-            onTabClose={handleTabClose}
+            groups={sessionTabs.map(t => ({ id: t.id, label: t.label, count: t.id === activeTabId ? filteredSessions.length : 0 }))}
+            activeGroupId={activeTabId}
+            onGroupChange={setActiveTabId}
+            onGroupAdd={handleTabAdd}
           />
         </div>
 
         {/* ===== Right main column ===== */}
         <div className="flex flex-col flex-1 min-w-0">
-          {/* Menubar row — same height as sidebar tab row */}
+          {/* Menubar */}
           <AppMenubar
             isRunning={isRunning}
             sysProxy={sysProxy}
@@ -345,10 +339,28 @@ function App() {
             filter={filter}
             onFilterChange={setFilter}
           />
-          {/* Inspector */}
-          <div className="flex-1 bg-card overflow-hidden">
-            <Inspector session={activeSession} />
-          </div>
+          {/* Request table + Inspector — vertical split */}
+          <ResizablePanelGroup orientation="vertical" className="flex-1">
+            <ResizablePanel defaultSize={45} minSize={20}>
+              <SessionList
+                sessions={filteredSessions}
+                selectedIds={selectedIds}
+                activeId={activeSessionId}
+                onSelect={handleSelect}
+                onReplay={handleReplay}
+                onComposerPrefill={handleComposerPrefill}
+                onDiff={handleDiff}
+                diffPending={!!diffSessionA && !diffSessionB}
+                marks={marks}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={55} minSize={20}>
+              <div className="h-full bg-card overflow-hidden">
+                <Inspector session={activeSession} />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
           {/* StatusBar inside main column */}
           <StatusBar
             sessionCount={sessions.length}
