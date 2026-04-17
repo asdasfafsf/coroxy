@@ -1,8 +1,28 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Sessions, ProxyState, ReplaySession, StartProxy, StopProxy, ClearSessions, ExportSessionsHAR, ExportSessionsJSON, ImportSessionsHAR, ImportSessionsSAZ, EnableSystemProxy, DisableSystemProxy, IsSystemProxyActive, SaveSessions, LoadSessions, SetThrottle, GetThrottle } from '../wailsjs/go/app/App';
+import {
+  Sessions,
+  ProxyState,
+  ReplaySession,
+  StartProxy,
+  StopProxy,
+  ClearSessions,
+  ExportSessionsHAR,
+  ExportSessionsJSON,
+  ImportSessionsHAR,
+  ImportSessionsSAZ,
+  EnableSystemProxy,
+  DisableSystemProxy,
+  IsSystemProxyActive,
+  SaveSessions,
+  LoadSessions,
+  SetThrottle,
+  GetThrottle,
+} from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
@@ -19,7 +39,14 @@ import { AboutDialog } from '@/components/tools/AboutDialog';
 import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
-import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
+import {
+  copyToClipboard,
+  copyUrl,
+  copyRequestHeaders,
+  copyResponseHeaders,
+  copyCurl,
+  copyResponseBody,
+} from '@/lib/copy';
 import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { type SessionFilter, EMPTY_FILTER, filterSessions } from '@/lib/filter';
@@ -33,7 +60,12 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [showComposer, setShowComposer] = useState(false);
-  const [composerPrefill, setComposerPrefill] = useState<{ method: string; url: string; headers: string; body: string } | null>(null);
+  const [composerPrefill, setComposerPrefill] = useState<{
+    method: string;
+    url: string;
+    headers: string;
+    body: string;
+  } | null>(null);
   const [filter, setFilter] = useState<SessionFilter>(EMPTY_FILTER);
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
@@ -53,24 +85,23 @@ function App() {
 
   const handleTabAdd = useCallback(() => {
     const id = `tab-${Date.now()}`;
-    setSessionTabs(prev => [...prev, { id, label: `Session ${prev.length + 1}`, filterId: id }]);
+    setSessionTabs((prev) => [...prev, { id, label: `Session ${prev.length + 1}`, filterId: id }]);
     setActiveTabId(id);
   }, []);
 
-  const handleTabClose = useCallback((tabId: string) => {
-    setSessionTabs(prev => {
-      const next = prev.filter(t => t.id !== tabId);
-      if (next.length === 0) return prev;
-      if (activeTabId === tabId) setActiveTabId(next[0].id);
-      return next;
-    });
-  }, [activeTabId]);
-
   useEffect(() => {
-    Sessions().then((s) => setSessions(s || [])).catch(() => {});
-    ProxyState().then(setProxyState).catch(() => {});
-    IsSystemProxyActive().then(setSysProxy).catch(() => {});
-    GetThrottle().then(cfg => setThrottlePreset(cfg.preset)).catch(() => {});
+    Sessions()
+      .then((s) => setSessions(s || []))
+      .catch(() => {});
+    ProxyState()
+      .then(setProxyState)
+      .catch(() => {});
+    IsSystemProxyActive()
+      .then(setSysProxy)
+      .catch(() => {});
+    GetThrottle()
+      .then((cfg) => setThrottlePreset(cfg.preset))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -79,12 +110,16 @@ function App() {
         setSessions((prev) => [session, ...prev]);
       });
       return cancel;
-    } catch { /* not in Wails */ }
+    } catch {
+      /* not in Wails */
+    }
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      ProxyState().then(setProxyState).catch(() => {});
+      ProxyState()
+        .then(setProxyState)
+        .catch(() => {});
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -94,7 +129,7 @@ function App() {
   const filteredSessions = useMemo(() => {
     let result = filterSessions(sessions, filter);
     if (hiddenTypes.size > 0) {
-      result = result.filter(s => {
+      result = result.filter((s) => {
         const ct = s.response?.content_type?.toLowerCase() || '';
         for (const hidden of hiddenTypes) {
           if (ct.includes(hidden)) return false;
@@ -108,46 +143,49 @@ function App() {
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
     if (!activeSessionId) return null;
-    return sessions.find(s => s.id === activeSessionId) || null;
+    return sessions.find((s) => s.id === activeSessionId) || null;
   }, [sessions, activeSessionId]);
 
-  const handleSelect = useCallback((session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
-    setActiveSessionId(session.id);
+  const handleSelect = useCallback(
+    (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => {
+      setActiveSessionId(session.id);
 
-    if (e?.shiftKey && activeSessionId) {
-      // Shift+click: range select
-      const sessionIds = filteredSessions.map(s => s.id);
-      const startIdx = sessionIds.indexOf(activeSessionId);
-      const endIdx = sessionIds.indexOf(session.id);
-      if (startIdx >= 0 && endIdx >= 0) {
-        const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
-        const rangeIds = sessionIds.slice(lo, hi + 1);
-        setSelectedIds(prev => {
+      if (e?.shiftKey && activeSessionId) {
+        // Shift+click: range select
+        const sessionIds = filteredSessions.map((s) => s.id);
+        const startIdx = sessionIds.indexOf(activeSessionId);
+        const endIdx = sessionIds.indexOf(session.id);
+        if (startIdx >= 0 && endIdx >= 0) {
+          const [lo, hi] = startIdx < endIdx ? [startIdx, endIdx] : [endIdx, startIdx];
+          const rangeIds = sessionIds.slice(lo, hi + 1);
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            for (const id of rangeIds) next.add(id);
+            return next;
+          });
+          return;
+        }
+      }
+
+      if (e?.metaKey || e?.ctrlKey) {
+        // Cmd/Ctrl+click: toggle individual
+        setSelectedIds((prev) => {
           const next = new Set(prev);
-          for (const id of rangeIds) next.add(id);
+          if (next.has(session.id)) {
+            next.delete(session.id);
+          } else {
+            next.add(session.id);
+          }
           return next;
         });
         return;
       }
-    }
 
-    if (e?.metaKey || e?.ctrlKey) {
-      // Cmd/Ctrl+click: toggle individual
-      setSelectedIds(prev => {
-        const next = new Set(prev);
-        if (next.has(session.id)) {
-          next.delete(session.id);
-        } else {
-          next.add(session.id);
-        }
-        return next;
-      });
-      return;
-    }
-
-    // Normal click: single select
-    setSelectedIds(new Set([session.id]));
-  }, [activeSessionId, filteredSessions]);
+      // Normal click: single select
+      setSelectedIds(new Set([session.id]));
+    },
+    [activeSessionId, filteredSessions],
+  );
 
   const handleSessionsClear = useCallback(() => {
     setSessions([]);
@@ -155,13 +193,16 @@ function App() {
     setActiveSessionId(null);
   }, []);
 
-  const handleMark = useCallback((color: string) => {
-    setMarks(prev => {
-      const next = new Map(prev);
-      for (const id of selectedIds) next.set(id, color);
-      return next;
-    });
-  }, [selectedIds]);
+  const handleMark = useCallback(
+    (color: string) => {
+      setMarks((prev) => {
+        const next = new Map(prev);
+        for (const id of selectedIds) next.set(id, color);
+        return next;
+      });
+    },
+    [selectedIds],
+  );
 
   const handleUnmarkAll = useCallback(() => {
     setMarks(new Map());
@@ -169,23 +210,35 @@ function App() {
 
   const handleDeleteSelected = useCallback(() => {
     if (selectedIds.size === 0) return;
-    setSessions(prev => prev.filter(s => !selectedIds.has(s.id)));
+    setSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)));
     setSelectedIds(new Set());
     setActiveSessionId(null);
   }, [selectedIds]);
 
   const handleToggleProxy = useCallback(async () => {
     try {
-      if (isRunning) { await StopProxy(); } else { await StartProxy(); }
+      if (isRunning) {
+        await StopProxy();
+      } else {
+        await StartProxy();
+      }
       setProxyState(await ProxyState());
-    } catch (e) { console.error('proxy toggle failed:', e); }
+    } catch (e) {
+      toast.error('프록시 토글 실패', { description: String(e) });
+    }
   }, [isRunning]);
 
   const handleToggleSysProxy = useCallback(async () => {
     try {
-      if (sysProxy) { await DisableSystemProxy(); } else { await EnableSystemProxy(); }
+      if (sysProxy) {
+        await DisableSystemProxy();
+      } else {
+        await EnableSystemProxy();
+      }
       setSysProxy(!sysProxy);
-    } catch (e) { console.error('sys proxy toggle failed:', e); }
+    } catch (e) {
+      toast.error('시스템 프록시 토글 실패', { description: String(e) });
+    }
   }, [sysProxy]);
 
   const handleClear = useCallback(async () => {
@@ -194,22 +247,25 @@ function App() {
   }, [handleSessionsClear]);
 
   const handleReplay = useCallback((session: model.Session) => {
-    ReplaySession(session.id).catch((e) => console.error('replay failed:', e));
+    ReplaySession(session.id).catch((e) => toast.error('Replay 실패', { description: String(e) }));
   }, []);
 
-  const handleDiff = useCallback((session: model.Session) => {
-    if (!diffSessionA) {
-      setDiffSessionA(session);
-    } else {
-      setDiffSessionB(session);
-    }
-  }, [diffSessionA]);
+  const handleDiff = useCallback(
+    (session: model.Session) => {
+      if (!diffSessionA) {
+        setDiffSessionA(session);
+      } else {
+        setDiffSessionB(session);
+      }
+    },
+    [diffSessionA],
+  );
 
   const handleCompareFromMenu = useCallback(() => {
     if (selectedIds.size !== 2) return;
     const ids = [...selectedIds];
-    const a = sessions.find(s => s.id === ids[0]);
-    const b = sessions.find(s => s.id === ids[1]);
+    const a = sessions.find((s) => s.id === ids[0]);
+    const b = sessions.find((s) => s.id === ids[1]);
     if (a && b) {
       setDiffSessionA(a);
       setDiffSessionB(b);
@@ -220,7 +276,9 @@ function App() {
     const req = session.request;
     if (!req) return;
     const headerLines = req.headers
-      ? Object.entries(req.headers).map(([k, vs]) => `${k}: ${Array.isArray(vs) ? vs.join(', ') : vs}`).join('\n')
+      ? Object.entries(req.headers)
+          .map(([k, vs]) => `${k}: ${Array.isArray(vs) ? vs.join(', ') : vs}`)
+          .join('\n')
       : '';
     setComposerPrefill({
       method: req.method || 'GET',
@@ -234,49 +292,87 @@ function App() {
   const showDiff = !!diffSessionA && !!diffSessionB;
 
   // Navigate session list with arrow keys
-  const navigateSession = useCallback((direction: 'up' | 'down') => {
-    if (filteredSessions.length === 0) return;
-    const currentIdx = activeSessionId ? filteredSessions.findIndex(s => s.id === activeSessionId) : -1;
-    const nextIdx = direction === 'down'
-      ? Math.min(currentIdx + 1, filteredSessions.length - 1)
-      : Math.max(currentIdx - 1, 0);
-    const nextSession = filteredSessions[nextIdx];
-    if (nextSession) {
-      setActiveSessionId(nextSession.id);
-      setSelectedIds(new Set([nextSession.id]));
-    }
-  }, [filteredSessions, activeSessionId]);
+  const navigateSession = useCallback(
+    (direction: 'up' | 'down') => {
+      if (filteredSessions.length === 0) return;
+      const currentIdx = activeSessionId
+        ? filteredSessions.findIndex((s) => s.id === activeSessionId)
+        : -1;
+      const nextIdx =
+        direction === 'down'
+          ? Math.min(currentIdx + 1, filteredSessions.length - 1)
+          : Math.max(currentIdx - 1, 0);
+      const nextSession = filteredSessions[nextIdx];
+      if (nextSession) {
+        setActiveSessionId(nextSession.id);
+        setSelectedIds(new Set([nextSession.id]));
+      }
+    },
+    [filteredSessions, activeSessionId],
+  );
 
   // Global keyboard shortcuts (Cmd/Ctrl cross-platform)
-  useHotkeys(useMemo(() => [
-    // File
-    { key: 'e', mod: true, handler: handleToggleProxy },
-    { key: ',', mod: true, handler: () => setShowSettings(true) },
-    // Edit
-    { key: 'x', mod: true, shift: true, handler: handleClear },
-    { key: 'c', mod: true, handler: () => activeSession && copyToClipboard(copyUrl(activeSession)) },
-    { key: 'f', mod: true, handler: () => document.querySelector<HTMLInputElement>('[placeholder*="filter" i]')?.focus() },
-    { key: 'a', mod: true, handler: () => setSelectedIds(new Set(filteredSessions.map(s => s.id))) },
-    // Rules
-    { key: 'r', mod: true, shift: true, handler: () => setShowRules(true) },
-    // Tools
-    { key: 'n', mod: true, shift: true, handler: () => setShowComposer(true) },
-    // Navigation
-    { key: 'ArrowDown', handler: () => navigateSession('down') },
-    { key: 'ArrowUp', handler: () => navigateSession('up') },
-    // Delete
-    { key: 'Delete', handler: handleDeleteSelected },
-    { key: 'Backspace', handler: handleDeleteSelected },
-    // Help
-    { key: '?', handler: () => setShowShortcuts(true) },
-    // General
-    { key: 'Escape', handler: () => {
-      setShowSettings(false);
-      setShowRules(false);
-      setShowComposer(false);
-      if (showDiff) { setDiffSessionA(null); setDiffSessionB(null); }
-    }},
-  ], [handleToggleProxy, handleClear, handleDeleteSelected, activeSession, filteredSessions, navigateSession, showDiff]));
+  useHotkeys(
+    useMemo(
+      () => [
+        // File
+        { key: 'e', mod: true, handler: handleToggleProxy },
+        { key: ',', mod: true, handler: () => setShowSettings(true) },
+        // Edit
+        { key: 'x', mod: true, shift: true, handler: handleClear },
+        {
+          key: 'c',
+          mod: true,
+          handler: () => activeSession && copyToClipboard(copyUrl(activeSession)),
+        },
+        {
+          key: 'f',
+          mod: true,
+          handler: () =>
+            document.querySelector<HTMLInputElement>('[placeholder*="filter" i]')?.focus(),
+        },
+        {
+          key: 'a',
+          mod: true,
+          handler: () => setSelectedIds(new Set(filteredSessions.map((s) => s.id))),
+        },
+        // Rules
+        { key: 'r', mod: true, shift: true, handler: () => setShowRules(true) },
+        // Tools
+        { key: 'n', mod: true, shift: true, handler: () => setShowComposer(true) },
+        // Navigation
+        { key: 'ArrowDown', handler: () => navigateSession('down') },
+        { key: 'ArrowUp', handler: () => navigateSession('up') },
+        // Delete
+        { key: 'Delete', handler: handleDeleteSelected },
+        { key: 'Backspace', handler: handleDeleteSelected },
+        // Help
+        { key: '?', handler: () => setShowShortcuts(true) },
+        // General
+        {
+          key: 'Escape',
+          handler: () => {
+            setShowSettings(false);
+            setShowRules(false);
+            setShowComposer(false);
+            if (showDiff) {
+              setDiffSessionA(null);
+              setDiffSessionB(null);
+            }
+          },
+        },
+      ],
+      [
+        handleToggleProxy,
+        handleClear,
+        handleDeleteSelected,
+        activeSession,
+        filteredSessions,
+        navigateSession,
+        showDiff,
+      ],
+    ),
+  );
 
   return (
     <TooltipProvider>
@@ -284,7 +380,11 @@ function App() {
         {/* ===== Left sidebar — session groups ===== */}
         <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border shrink-0 flex flex-col overflow-hidden">
           <SessionSidebar
-            groups={sessionTabs.map(t => ({ id: t.id, label: t.label, count: t.id === activeTabId ? filteredSessions.length : 0 }))}
+            groups={sessionTabs.map((t) => ({
+              id: t.id,
+              label: t.label,
+              count: t.id === activeTabId ? filteredSessions.length : 0,
+            }))}
             activeGroupId={activeTabId}
             onGroupChange={setActiveTabId}
             onGroupAdd={handleTabAdd}
@@ -301,21 +401,43 @@ function App() {
             onToggleProxy={handleToggleProxy}
             onToggleSysProxy={handleToggleSysProxy}
             onClear={handleClear}
-            onExportHAR={() => ExportSessionsHAR().catch(console.error)}
-            onExportJSON={() => ExportSessionsJSON().catch(console.error)}
-            onImportHAR={() => ImportSessionsHAR().catch(console.error)}
-            onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
+            onExportHAR={() =>
+              ExportSessionsHAR().catch((e) =>
+                toast.error('HAR export 실패', { description: String(e) }),
+              )
+            }
+            onExportJSON={() =>
+              ExportSessionsJSON().catch((e) =>
+                toast.error('JSON export 실패', { description: String(e) }),
+              )
+            }
+            onImportHAR={() =>
+              ImportSessionsHAR().catch((e) =>
+                toast.error('HAR import 실패', { description: String(e) }),
+              )
+            }
+            onImportSAZ={() =>
+              ImportSessionsSAZ().catch((e) =>
+                toast.error('SAZ import 실패', { description: String(e) }),
+              )
+            }
             onSettingsClick={() => setShowSettings(true)}
             onRulesClick={() => setShowRules(true)}
             onComposerClick={() => setShowComposer(true)}
             onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-            onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
-            onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
+            onCopyRequestHeaders={() =>
+              activeSession && copyToClipboard(copyRequestHeaders(activeSession))
+            }
+            onCopyResponseHeaders={() =>
+              activeSession && copyToClipboard(copyResponseHeaders(activeSession))
+            }
             onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-            onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
+            onCopyResponseBody={() =>
+              activeSession && copyToClipboard(copyResponseBody(activeSession))
+            }
             onAboutClick={() => setShowAbout(true)}
             onShortcutsClick={() => setShowShortcuts(true)}
-            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
+            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
             onDeleteSelected={handleDeleteSelected}
             onTextWizardClick={() => setShowTextWizard(true)}
             onCompareClick={handleCompareFromMenu}
@@ -323,15 +445,27 @@ function App() {
             onMark={handleMark}
             onUnmarkAll={handleUnmarkAll}
             hiddenTypes={hiddenTypes}
-            onSave={() => SaveSessions().catch(console.error)}
-            onLoad={() => LoadSessions().catch(console.error)}
+            onSave={() =>
+              SaveSessions().catch((e) => toast.error('세션 저장 실패', { description: String(e) }))
+            }
+            onLoad={() =>
+              LoadSessions().catch((e) =>
+                toast.error('세션 불러오기 실패', { description: String(e) }),
+              )
+            }
             throttlePreset={throttlePreset}
-            onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
-            onToggleHide={(type) => setHiddenTypes(prev => {
-              const next = new Set(prev);
-              if (next.has(type)) next.delete(type); else next.add(type);
-              return next;
-            })}
+            onThrottleChange={(preset) => {
+              SetThrottle(preset);
+              setThrottlePreset(preset);
+            }}
+            onToggleHide={(type) =>
+              setHiddenTypes((prev) => {
+                const next = new Set(prev);
+                if (next.has(type)) next.delete(type);
+                else next.add(type);
+                return next;
+              })
+            }
           />
           {/* Toolbar */}
           <Toolbar
@@ -377,7 +511,10 @@ function App() {
       {/* Modals — outside main flex layout */}
       <Composer
         open={showComposer}
-        onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
+        onClose={() => {
+          setShowComposer(false);
+          setComposerPrefill(null);
+        }}
         prefill={composerPrefill}
       />
       <Settings open={showSettings} onOpenChange={setShowSettings} />
@@ -387,13 +524,19 @@ function App() {
           sessionA={diffSessionA}
           sessionB={diffSessionB}
           open={showDiff}
-          onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDiffSessionA(null);
+              setDiffSessionB(null);
+            }
+          }}
         />
       )}
       <BreakpointPanel />
       <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
       <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
       <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
+      <Toaster />
     </TooltipProvider>
   );
 }

@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { StartProxy, StopProxy, ClearSessions, ProxyState } from '../../../wailsjs/go/app/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Play, Square, Trash2, Search, Filter, X, Regex, Globe, Shield, Wifi } from 'lucide-react';
+import { Play, Square, Trash2, Search, Filter, X, Regex } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SessionFilter } from '@/lib/filter';
 import { getActiveFilterCount } from '@/lib/filter';
@@ -35,7 +42,7 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
       }
       setProxyState(await ProxyState());
     } catch (err) {
-      console.error('proxy toggle failed:', err);
+      toast.error('프록시 토글 실패', { description: String(err) });
     } finally {
       setLoading(false);
     }
@@ -61,15 +68,29 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
             disabled={loading}
             className="h-7 px-3 text-xs gap-1.5 font-medium"
           >
-            {loading ? '...' : isRunning ? (
-              <><Square className="h-3 w-3" />Stop</>
+            {loading ? (
+              '...'
+            ) : isRunning ? (
+              <>
+                <Square className="h-3 w-3" />
+                Stop
+              </>
             ) : (
-              <><Play className="h-3 w-3" />Start</>
+              <>
+                <Play className="h-3 w-3" />
+                Start
+              </>
             )}
           </Button>
 
-          <Button size="sm" variant="ghost" onClick={handleClear} className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground">
-            <Trash2 className="h-3 w-3" />Clear
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleClear}
+            className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+          >
+            <Trash2 className="h-3 w-3" />
+            Clear
           </Button>
         </div>
 
@@ -78,9 +99,10 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
         {/* Protocol quick filters */}
         <div className="flex items-center gap-0.5 bg-muted/30 rounded-md p-0.5">
           {(['All', 'HTTP', 'HTTPS', 'WS'] as const).map((proto) => {
-            const isActive = proto === 'All'
-              ? filter.text === ''
-              : filter.text.toLowerCase() === proto.toLowerCase();
+            const isActive =
+              proto === 'All'
+                ? filter.text === ''
+                : filter.text.toLowerCase() === proto.toLowerCase();
             return (
               <button
                 key={proto}
@@ -88,7 +110,7 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
                   'px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
                   isActive
                     ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
                 )}
                 onClick={() => {
                   onFilterChange({ ...filter, text: proto === 'All' ? '' : proto.toLowerCase() });
@@ -108,7 +130,7 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder={filter.regex ? "Regex filter..." : "Filter (host, url, path...)"}
+              placeholder={filter.regex ? 'Regex filter...' : 'Filter (host, url, path...)'}
               value={filter.text}
               onChange={(e) => onFilterChange({ ...filter, text: e.target.value })}
               className="h-7 pl-7 pr-7 text-xs bg-background/50"
@@ -152,13 +174,17 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
         </Button>
 
         {/* Status indicator */}
-        <div className={cn(
-          'flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ml-1',
-          isRunning
-            ? 'text-status-success bg-status-success/10 border border-status-success/20'
-            : 'text-muted-foreground bg-muted/50'
-        )}>
-          {isRunning && <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse-dot" />}
+        <div
+          className={cn(
+            'flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ml-1',
+            isRunning
+              ? 'text-status-success bg-status-success/10 border border-status-success/20'
+              : 'text-muted-foreground bg-muted/50',
+          )}
+        >
+          {isRunning && (
+            <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse-dot" />
+          )}
           <span>{isRunning ? 'Capturing' : 'Stopped'}</span>
         </div>
       </div>
@@ -167,8 +193,13 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
       {showAdvanced && (
         <div className="flex items-center gap-2 px-3 py-1.5 bg-secondary/50 border-b border-border">
           <span className="text-[11px] text-muted-foreground shrink-0">Method:</span>
-          <Select value={filter.method || '__any__'} onValueChange={(v) => onFilterChange({ ...filter, method: v === '__any__' ? '' : v })}>
-            <SelectTrigger className="h-6 w-20 text-[11px]"><SelectValue /></SelectTrigger>
+          <Select
+            value={filter.method || '__any__'}
+            onValueChange={(v) => onFilterChange({ ...filter, method: v === '__any__' ? '' : v })}
+          >
+            <SelectTrigger className="h-6 w-20 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__any__">Any</SelectItem>
               <SelectItem value="GET">GET</SelectItem>
@@ -197,8 +228,15 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
           />
 
           <span className="text-[11px] text-muted-foreground shrink-0">Type:</span>
-          <Select value={filter.contentType || '__any__'} onValueChange={(v) => onFilterChange({ ...filter, contentType: v === '__any__' ? '' : v })}>
-            <SelectTrigger className="h-6 w-24 text-[11px]"><SelectValue /></SelectTrigger>
+          <Select
+            value={filter.contentType || '__any__'}
+            onValueChange={(v) =>
+              onFilterChange({ ...filter, contentType: v === '__any__' ? '' : v })
+            }
+          >
+            <SelectTrigger className="h-6 w-24 text-[11px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__any__">Any</SelectItem>
               <SelectItem value="json">JSON</SelectItem>
@@ -215,7 +253,16 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
               size="sm"
               variant="ghost"
               className="h-6 px-2 text-[11px] text-muted-foreground"
-              onClick={() => onFilterChange({ text: filter.text, method: '', statusMin: 0, statusMax: 0, contentType: '', regex: filter.regex })}
+              onClick={() =>
+                onFilterChange({
+                  text: filter.text,
+                  method: '',
+                  statusMin: 0,
+                  statusMax: 0,
+                  contentType: '',
+                  regex: filter.regex,
+                })
+              }
             >
               Clear filters
             </Button>
