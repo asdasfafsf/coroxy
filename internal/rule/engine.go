@@ -103,4 +103,3 @@ func (e *Engine) Rules() []*model.Rule {
 	copy(result, e.rules)
 	return result
 }
-

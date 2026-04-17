@@ -35,12 +35,12 @@ type HeaderModification struct {
 
 // Rule defines a traffic matching rule and its action.
 type Rule struct {
-	ID              string               `json:"id"`
-	Name            string               `json:"name"`
-	Enabled         bool                 `json:"enabled"`
-	Match           MatchCondition       `json:"match"`
-	Action          RuleAction           `json:"action"`
-	Priority        int                  `json:"priority"`
+	ID                string               `json:"id"`
+	Name              string               `json:"name"`
+	Enabled           bool                 `json:"enabled"`
+	Match             MatchCondition       `json:"match"`
+	Action            RuleAction           `json:"action"`
+	Priority          int                  `json:"priority"`
 	Modifications     []HeaderModification `json:"modifications,omitempty"`
 	BodyModifications []BodyModification   `json:"body_modifications,omitempty"`
 	AutoResponse      *AutoResponse        `json:"auto_response,omitempty"`

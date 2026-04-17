@@ -160,8 +160,8 @@ func TestAutoSaverShutdownFlush(t *testing.T) {
 		DefaultStoragePolicy(),
 		logger,
 		func() string { return archivePath },
-		WithInterval(time.Hour),    // no timer flush
-		WithDirtyThreshold(1000),   // no threshold flush
+		WithInterval(time.Hour),  // no timer flush
+		WithDirtyThreshold(1000), // no threshold flush
 	)
 	if err != nil {
 		t.Fatalf("new autosaver: %v", err)

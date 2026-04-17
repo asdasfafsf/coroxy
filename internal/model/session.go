@@ -20,7 +20,7 @@ type Timing struct {
 // Session represents a captured network session.
 type Session struct {
 	ID        string                `json:"id"`
-	Protocol  constant.Protocol    `json:"protocol"`
+	Protocol  constant.Protocol     `json:"protocol"`
 	Source    Endpoint              `json:"source"`
 	Target    Endpoint              `json:"target"`
 	Request   *HTTPMessage          `json:"request,omitempty"`
@@ -29,8 +29,8 @@ type Session struct {
 	State     constant.SessionState `json:"state"`
 	CreatedAt time.Time             `json:"created_at"`
 	Duration  time.Duration         `json:"duration"`
-	WSFrames  []WSFrame              `json:"ws_frames,omitempty"`
-	TCPFrames []TCPFrame             `json:"tcp_frames,omitempty"`
+	WSFrames  []WSFrame             `json:"ws_frames,omitempty"`
+	TCPFrames []TCPFrame            `json:"tcp_frames,omitempty"`
 	Tags      []string              `json:"tags,omitempty"`
 	Comment   string                `json:"comment,omitempty"`
 }

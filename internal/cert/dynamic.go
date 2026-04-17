@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	leafKeyBits    = 2048
-	leafValidDays  = 365
-	certCacheSize  = 256
+	leafKeyBits   = 2048
+	leafValidDays = 365
+	certCacheSize = 256
 )
 
 // certIssuer handles dynamic leaf certificate generation with caching.

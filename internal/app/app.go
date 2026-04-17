@@ -517,12 +517,12 @@ type ComposerRequest struct {
 
 // ComposerResponse is the result of a custom HTTP request.
 type ComposerResponse struct {
-	StatusCode  int               `json:"status_code"`
-	StatusText  string            `json:"status_text"`
-	Headers     map[string]string `json:"headers"`
-	Body        string            `json:"body"`
-	BodySize    int64             `json:"body_size"`
-	DurationMs  int64             `json:"duration_ms"`
+	StatusCode int               `json:"status_code"`
+	StatusText string            `json:"status_text"`
+	Headers    map[string]string `json:"headers"`
+	Body       string            `json:"body"`
+	BodySize   int64             `json:"body_size"`
+	DurationMs int64             `json:"duration_ms"`
 }
 
 // SendRequest sends a custom HTTP request and returns the response.

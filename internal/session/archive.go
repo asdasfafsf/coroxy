@@ -37,16 +37,16 @@ type indexEntry struct {
 
 // sessionMeta is a session without body bytes. Bodies are stored separately as raw files.
 type sessionMeta struct {
-	ID        string               `json:"id"`
-	Protocol  string               `json:"protocol"`
-	Source    model.Endpoint        `json:"source"`
-	Target    model.Endpoint        `json:"target"`
-	Request   *httpMessageMeta      `json:"request,omitempty"`
-	Response  *httpMessageMeta      `json:"response,omitempty"`
-	Timing    *model.Timing         `json:"timing,omitempty"`
-	State     string                `json:"state"`
-	CreatedAt time.Time             `json:"created_at"`
-	Duration  time.Duration         `json:"duration"`
+	ID        string           `json:"id"`
+	Protocol  string           `json:"protocol"`
+	Source    model.Endpoint   `json:"source"`
+	Target    model.Endpoint   `json:"target"`
+	Request   *httpMessageMeta `json:"request,omitempty"`
+	Response  *httpMessageMeta `json:"response,omitempty"`
+	Timing    *model.Timing    `json:"timing,omitempty"`
+	State     string           `json:"state"`
+	CreatedAt time.Time        `json:"created_at"`
+	Duration  time.Duration    `json:"duration"`
 }
 
 // httpMessageMeta is HTTPMessage without Body bytes.
