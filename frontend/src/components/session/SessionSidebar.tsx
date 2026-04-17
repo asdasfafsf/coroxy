@@ -25,7 +25,7 @@ export function SessionSidebar({
     <div className="flex flex-col h-full bg-sidebar min-w-[180px]">
       {/* macOS traffic lights area + drag region */}
       <div
-        className="h-9 shrink-0 border-b border-sidebar-border flex items-end px-3 pb-1.5"
+        className="h-9 shrink-0 border-b border-border flex items-center pl-[78px] pr-3"
         style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
       >
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
