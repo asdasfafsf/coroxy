@@ -68,59 +68,46 @@ function protoBadge(protocol: string): { bg: string; text: string } {
 
 const ROW_HEIGHT = 28;
 
-interface RowProps {
-  sessions: model.Session[];
-  selectedIds: Set<string>;
-  activeId: string | null;
-  onSelect: (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
-  onContextSession: (session: model.Session) => void;
-  marks: Map<string, string>;
+type ColKey = 'protocol' | 'host' | 'method' | 'path' | 'status' | 'type' | 'size' | 'duration' | 'time';
+
+interface ColDef {
+  key: ColKey;
+  label: string;
+  width: string;
+  cellClass?: string;
+  render: (session: model.Session) => React.ReactNode;
 }
 
-function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' } } & RowProps) {
-  const { index, style, sessions, selectedIds, activeId, onSelect, onContextSession, marks } = props;
-  const session = sessions[index];
-  const badge = protoBadge(session.protocol);
-  const markColor = marks.get(session.id);
-  const cellClass = 'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
+const cellBase = 'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
 
-  return (
-    <div
-      style={style}
-      className={cn(
-        'flex items-center hover:bg-muted/60 cursor-pointer border-b border-border/20 transition-colors',
-        selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
-        activeId === session.id && 'ring-1 ring-inset ring-primary/30'
-      )}
-      onClick={(e) => onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })}
-      onContextMenu={() => onContextSession(session)}
-    >
-      <div className={cn(cellClass, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
-        {markColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: markColor }} />}
-        {index + 1}
-      </div>
-      <div className={cn(cellClass, 'w-15 shrink-0')}>
-        <span className={cn('text-[11px] font-semibold px-1.5 py-0.5 rounded-sm', badge.bg, badge.text)}>
-          {session.protocol}
-        </span>
-      </div>
-      <div className={cn(cellClass, 'w-[180px] shrink-0 truncate')}>{session.target?.host || '-'}</div>
-      <div className={cn(cellClass, 'w-15 shrink-0')}>{session.request?.method || '-'}</div>
-      <div className={cn(cellClass, 'flex-1 min-w-0 truncate')} title={session.request?.url}>
-        {getPath(session.request?.url)}
-      </div>
-      <div className={cn(cellClass, 'w-14 text-center shrink-0', statusClass(session.response?.status_code))}>
-        {session.response?.status_code || '-'}
-      </div>
-      <div className={cn(cellClass, 'w-14 text-muted-foreground shrink-0')}>{shortContentType(session.response?.content_type)}</div>
-      <div className={cn(cellClass, 'w-16 text-right text-muted-foreground shrink-0')}>{formatBytes(session.response?.body_size)}</div>
-      <div className={cn(cellClass, 'w-16 text-right shrink-0')}>{formatDuration(session.duration)}</div>
-      <div className={cn(cellClass, 'w-16 text-muted-foreground shrink-0')}>{formatTime(session.created_at)}</div>
-    </div>
-  );
-}
+const COL_DEFS: ColDef[] = [
+  {
+    key: 'protocol',
+    label: 'Proto',
+    width: 'w-15',
+    render: (s) => {
+      const badge = protoBadge(s.protocol);
+      return <span className={cn('text-[11px] font-semibold px-1.5 py-0.5 rounded-sm', badge.bg, badge.text)}>{s.protocol}</span>;
+    },
+  },
+  { key: 'host',     label: 'Host',     width: 'w-[180px]', cellClass: 'truncate',               render: (s) => s.target?.host || '-' },
+  { key: 'method',   label: 'Method',   width: 'w-15',                                             render: (s) => s.request?.method || '-' },
+  { key: 'path',     label: 'Path',     width: 'flex-1 min-w-0', cellClass: 'truncate',           render: (s) => getPath(s.request?.url) },
+  {
+    key: 'status',
+    label: 'Status',
+    width: 'w-14 text-center',
+    render: (s) => <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>,
+  },
+  { key: 'type',     label: 'Type',     width: 'w-14',             cellClass: 'text-muted-foreground', render: (s) => shortContentType(s.response?.content_type) },
+  { key: 'size',     label: 'Size',     width: 'w-16 text-right',  cellClass: 'text-muted-foreground', render: (s) => formatBytes(s.response?.body_size) },
+  { key: 'duration', label: 'Duration', width: 'w-16 text-right',                                      render: (s) => formatDuration(s.duration) },
+  { key: 'time',     label: 'Time',     width: 'w-16',             cellClass: 'text-muted-foreground', render: (s) => formatTime(s.created_at) },
+];
 
-type SortKey = 'protocol' | 'host' | 'method' | 'path' | 'status' | 'type' | 'size' | 'duration' | 'time';
+const DEFAULT_ORDER: ColKey[] = COL_DEFS.map(c => c.key);
+
+type SortKey = ColKey;
 type SortDir = 'asc' | 'desc';
 
 function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): model.Session[] {
@@ -143,6 +130,49 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
   return sorted;
 }
 
+interface RowProps {
+  sessions: model.Session[];
+  selectedIds: Set<string>;
+  activeId: string | null;
+  onSelect: (session: model.Session, e?: { shiftKey: boolean; metaKey: boolean; ctrlKey: boolean }) => void;
+  onContextSession: (session: model.Session) => void;
+  marks: Map<string, string>;
+  orderedCols: ColDef[];
+}
+
+function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttributes: { 'aria-posinset': number; 'aria-setsize': number; role: 'listitem' } } & RowProps) {
+  const { index, style, sessions, selectedIds, activeId, onSelect, onContextSession, marks, orderedCols } = props;
+  const session = sessions[index];
+  const markColor = marks.get(session.id);
+
+  return (
+    <div
+      style={style}
+      className={cn(
+        'flex items-center hover:bg-muted/60 cursor-pointer border-b border-border/20 transition-colors',
+        selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
+        activeId === session.id && 'ring-1 ring-inset ring-primary/30'
+      )}
+      onClick={(e) => onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })}
+      onContextMenu={() => onContextSession(session)}
+    >
+      <div className={cn(cellBase, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
+        {markColor && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: markColor }} />}
+        {index + 1}
+      </div>
+      {orderedCols.map(col => (
+        <div
+          key={col.key}
+          className={cn(cellBase, col.width, col.key === 'path' ? '' : 'shrink-0', col.cellClass)}
+          title={col.key === 'path' ? session.request?.url : undefined}
+        >
+          {col.render(session)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function SessionList({ sessions, selectedIds, activeId, onSelect, onReplay, onComposerPrefill, onDiff, diffPending, marks = new Map() }: SessionListProps) {
   const [contextSession, setContextSession] = useState<SessionExt | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -155,7 +185,21 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+  const [colOrder, setColOrder] = useState<ColKey[]>(() => {
+    try {
+      const stored = localStorage.getItem('coroxy-col-order');
+      if (!stored) return DEFAULT_ORDER;
+      const parsed = JSON.parse(stored) as string[];
+      // Filter to known keys, then append any missing keys (forward compatibility)
+      const known = new Set(DEFAULT_ORDER);
+      const valid = parsed.filter((k): k is ColKey => known.has(k as ColKey));
+      const missing = DEFAULT_ORDER.filter(k => !valid.includes(k));
+      return [...valid, ...missing];
+    } catch { return DEFAULT_ORDER; }
+  });
   const [showColMenu, setShowColMenu] = useState(false);
+  const [dragKey, setDragKey] = useState<ColKey | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
 
   const toggleCol = (col: string) => {
     setHiddenCols(prev => {
@@ -166,19 +210,17 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
     });
   };
 
-  const allCols = [
-    { key: 'protocol', label: 'Proto', width: 'w-15' },
-    { key: 'host', label: 'Host', width: 'w-[180px]' },
-    { key: 'method', label: 'Method', width: 'w-15' },
-    { key: 'path', label: 'Path', width: 'flex-1' },
-    { key: 'status', label: 'Status', width: 'w-14 text-center' },
-    { key: 'type', label: 'Type', width: 'w-14' },
-    { key: 'size', label: 'Size', width: 'w-16 text-right' },
-    { key: 'duration', label: 'Duration', width: 'w-16 text-right' },
-    { key: 'time', label: 'Time', width: 'w-16' },
-  ];
+  const colMap = useMemo(() => {
+    const m = new Map<ColKey, ColDef>();
+    COL_DEFS.forEach(c => m.set(c.key, c));
+    return m;
+  }, []);
 
-  const visibleCols = allCols.filter(c => !hiddenCols.has(c.key));
+  const orderedCols = useMemo(() => {
+    return colOrder
+      .map(k => colMap.get(k))
+      .filter((c): c is ColDef => !!c && !hiddenCols.has(c.key));
+  }, [colOrder, hiddenCols, colMap]);
 
   const sortedSessions = useMemo(() => {
     if (!sortKey) return sessions;
@@ -192,6 +234,18 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
       setSortKey(key);
       setSortDir('asc');
     }
+  };
+
+  const moveCol = (from: ColKey, to: ColKey) => {
+    if (from === to) return;
+    setColOrder(prev => {
+      const next = prev.filter(k => k !== from);
+      const toIdx = next.indexOf(to);
+      if (toIdx < 0) return prev;
+      next.splice(toIdx, 0, from);
+      localStorage.setItem('coroxy-col-order', JSON.stringify(next));
+      return next;
+    });
   };
 
   const SortIcon = ({ col }: { col: SortKey }) => {
@@ -223,19 +277,55 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
             <DropdownMenuTrigger asChild>
               <div className="flex shrink-0" onContextMenu={(e) => { e.preventDefault(); setShowColMenu(true); }}>
                 <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-                {visibleCols.map(col => (
-                  <div
-                    key={col.key}
-                    className={cn(headerClass, col.width, 'shrink-0 cursor-pointer select-none')}
-                    onClick={() => handleSort(col.key as SortKey)}
-                  >
-                    {col.label} <SortIcon col={col.key as SortKey} />
-                  </div>
-                ))}
+                {orderedCols.map(col => {
+                  const isDragging = dragKey === col.key;
+                  const isDropTarget = dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
+                  return (
+                    <div
+                      key={col.key}
+                      draggable
+                      className={cn(
+                        headerClass,
+                        col.width,
+                        col.key === 'path' ? '' : 'shrink-0',
+                        'cursor-pointer select-none transition-colors',
+                        isDragging && 'opacity-40',
+                        isDropTarget && 'bg-primary/15 text-foreground'
+                      )}
+                      onClick={() => handleSort(col.key)}
+                      onDragStart={(e) => {
+                        setDragKey(col.key);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', col.key);
+                      }}
+                      onDragOver={(e) => {
+                        if (!dragKey || dragKey === col.key) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (dropTargetKey !== col.key) setDropTargetKey(col.key);
+                      }}
+                      onDragLeave={() => {
+                        if (dropTargetKey === col.key) setDropTargetKey(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragKey) moveCol(dragKey, col.key);
+                        setDragKey(null);
+                        setDropTargetKey(null);
+                      }}
+                      onDragEnd={() => {
+                        setDragKey(null);
+                        setDropTargetKey(null);
+                      }}
+                    >
+                      {col.label} <SortIcon col={col.key} />
+                    </div>
+                  );
+                })}
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {allCols.map(col => (
+              {COL_DEFS.map(col => (
                 <DropdownMenuCheckboxItem key={col.key} checked={!hiddenCols.has(col.key)} onCheckedChange={() => toggleCol(col.key)}>
                   {col.label}
                 </DropdownMenuCheckboxItem>
@@ -255,7 +345,7 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
               rowHeight={ROW_HEIGHT}
               rowCount={sortedSessions.length}
               rowComponent={SessionRow}
-              rowProps={{ sessions: sortedSessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession, marks }}
+              rowProps={{ sessions: sortedSessions, selectedIds, activeId, onSelect, onContextSession: handleContextSession, marks, orderedCols }}
               style={{ height: containerHeight, width: '100%' }}
             />
           )}
