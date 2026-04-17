@@ -278,14 +278,14 @@ func (h *HTTPProxy) captureHTTPSession(r *http.Request, resp *http.Response, req
 	targetHost, targetPort := splitHostPort(r.Host, 80)
 
 	session := &model.Session{
-		ID:       uuid.NewString(),
-		Protocol: constant.ProtocolHTTP,
-		Source:   endpointFromAddr(r.RemoteAddr),
-		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
-		Request:  buildRequestMessage(r, reqBody),
-		Response: buildResponseMessage(resp, respBody, bodySize),
-		Timing:   timing,
-		State:    constant.SessionStateCompleted,
+		ID:        uuid.NewString(),
+		Protocol:  constant.ProtocolHTTP,
+		Source:    endpointFromAddr(r.RemoteAddr),
+		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
+		Request:   buildRequestMessage(r, reqBody),
+		Response:  buildResponseMessage(resp, respBody, bodySize),
+		Timing:    timing,
+		State:     constant.SessionStateCompleted,
 		CreatedAt: start,
 		Duration:  time.Since(start),
 	}
@@ -401,10 +401,10 @@ func (h *HTTPProxy) captureTunnelSession(r *http.Request, host string, duration 
 	targetHost, targetPort := splitHostPort(host, 443)
 
 	session := &model.Session{
-		ID:       uuid.NewString(),
-		Protocol: constant.ProtocolTLS,
-		Source:   endpointFromAddr(r.RemoteAddr),
-		Target:   model.Endpoint{Host: targetHost, Port: targetPort},
+		ID:        uuid.NewString(),
+		Protocol:  constant.ProtocolTLS,
+		Source:    endpointFromAddr(r.RemoteAddr),
+		Target:    model.Endpoint{Host: targetHost, Port: targetPort},
 		State:     constant.SessionStateCompleted,
 		CreatedAt: time.Now().Add(-duration),
 		Duration:  duration,
@@ -463,14 +463,14 @@ func copyHeaders(dst, src http.Header) {
 
 // requestTiming collects timestamps from httptrace hooks.
 type requestTiming struct {
-	dnsStart      time.Time
-	dnsEnd        time.Time
-	connectStart  time.Time
-	connectEnd    time.Time
-	tlsStart      time.Time
-	tlsEnd        time.Time
-	gotFirstByte  time.Time
-	wroteRequest  time.Time
+	dnsStart     time.Time
+	dnsEnd       time.Time
+	connectStart time.Time
+	connectEnd   time.Time
+	tlsStart     time.Time
+	tlsEnd       time.Time
+	gotFirstByte time.Time
+	wroteRequest time.Time
 }
 
 // trace returns an httptrace.ClientTrace that populates timing fields.

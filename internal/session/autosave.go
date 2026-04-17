@@ -13,21 +13,21 @@ import (
 // AutoSaver periodically flushes dirty sessions to a .csaz archive.
 // It uses a dual trigger: flush after N dirty sessions OR after a time interval.
 type AutoSaver struct {
-	store    *MemoryStore
-	policy   StoragePolicy
-	logger   *slog.Logger
-	dirtyFn  func() string // returns archive path
+	store   *MemoryStore
+	policy  StoragePolicy
+	logger  *slog.Logger
+	dirtyFn func() string // returns archive path
 
-	interval      time.Duration
+	interval       time.Duration
 	dirtyThreshold int
 
-	mu       sync.Mutex
-	flushMu  sync.Mutex
-	dirty    atomic.Int64
-	flushCh  chan struct{} // non-blocking gate for threshold flush
-	stopCh   chan struct{}
-	stopped  bool
-	wg       sync.WaitGroup
+	mu      sync.Mutex
+	flushMu sync.Mutex
+	dirty   atomic.Int64
+	flushCh chan struct{} // non-blocking gate for threshold flush
+	stopCh  chan struct{}
+	stopped bool
+	wg      sync.WaitGroup
 }
 
 // AutoSaveOption configures an AutoSaver.

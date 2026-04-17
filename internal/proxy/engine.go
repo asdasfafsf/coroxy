@@ -74,7 +74,7 @@ func (e *Engine) Start(ctx context.Context) error {
 	}
 
 	e.httpServer = &http.Server{
-		Handler:  httpProxy,
+		Handler: httpProxy,
 		BaseContext: func(_ net.Listener) context.Context {
 			return engineCtx
 		},

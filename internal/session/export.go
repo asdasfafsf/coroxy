@@ -44,25 +44,25 @@ type HAREntry struct {
 
 // HARTimings represents the timing breakdown per HAR 1.2 spec.
 type HARTimings struct {
-	DNS      float64 `json:"dns"`
-	Connect  float64 `json:"connect"`
-	SSL      float64 `json:"ssl"`
-	Send     float64 `json:"send"`
-	Wait     float64 `json:"wait"`
-	Receive  float64 `json:"receive"`
+	DNS     float64 `json:"dns"`
+	Connect float64 `json:"connect"`
+	SSL     float64 `json:"ssl"`
+	Send    float64 `json:"send"`
+	Wait    float64 `json:"wait"`
+	Receive float64 `json:"receive"`
 }
 
 // HARRequest represents an HTTP request in HAR format.
 type HARRequest struct {
-	Method      string          `json:"method"`
-	URL         string          `json:"url"`
-	HTTPVersion string          `json:"httpVersion"`
-	Cookies     []HARCookie     `json:"cookies"`
-	Headers     []HARNameValue  `json:"headers"`
-	QueryString []HARNameValue  `json:"queryString"`
-	PostData    *HARPostData    `json:"postData,omitempty"`
-	HeadersSize int             `json:"headersSize"`
-	BodySize    int64           `json:"bodySize"`
+	Method      string         `json:"method"`
+	URL         string         `json:"url"`
+	HTTPVersion string         `json:"httpVersion"`
+	Cookies     []HARCookie    `json:"cookies"`
+	Headers     []HARNameValue `json:"headers"`
+	QueryString []HARNameValue `json:"queryString"`
+	PostData    *HARPostData   `json:"postData,omitempty"`
+	HeadersSize int            `json:"headersSize"`
+	BodySize    int64          `json:"bodySize"`
 }
 
 // HARResponse represents an HTTP response in HAR format.
@@ -255,7 +255,7 @@ func convertQueryParams(params []model.QueryParam) []HARNameValue {
 }
 
 func convertHeaders(headers map[string][]string) []HARNameValue {
-	if headers == nil || len(headers) == 0 {
+	if len(headers) == 0 {
 		return []HARNameValue{}
 	}
 

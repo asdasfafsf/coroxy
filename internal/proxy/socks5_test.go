@@ -116,7 +116,7 @@ func TestSOCKS5Connect(t *testing.T) {
 			return
 		}
 		defer conn.Close()
-		io.Copy(conn, conn) // echo
+		_, _ = io.Copy(conn, conn) // echo
 	}()
 
 	var mu sync.Mutex
@@ -175,7 +175,7 @@ func TestSOCKS5ConnectDomain(t *testing.T) {
 		conn, _ := target.Accept()
 		if conn != nil {
 			defer conn.Close()
-			conn.Write([]byte("domain response"))
+			_, _ = conn.Write([]byte("domain response"))
 		}
 	}()
 

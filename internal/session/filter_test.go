@@ -15,32 +15,32 @@ func seedStore(t *testing.T) *MemoryStore {
 
 	store.Add(&model.Session{
 		ID: "http-get", Protocol: constant.ProtocolHTTP,
-		Target:   model.Endpoint{Host: "api.example.com"},
-		Request:  &model.HTTPMessage{Method: "GET", URL: "http://api.example.com/users"},
-		Response: &model.HTTPMessage{StatusCode: 200},
-		State:    constant.SessionStateCompleted,
+		Target:    model.Endpoint{Host: "api.example.com"},
+		Request:   &model.HTTPMessage{Method: "GET", URL: "http://api.example.com/users"},
+		Response:  &model.HTTPMessage{StatusCode: 200},
+		State:     constant.SessionStateCompleted,
 		CreatedAt: time.Now().Add(-3 * time.Second),
 	})
 	store.Add(&model.Session{
 		ID: "http-post", Protocol: constant.ProtocolHTTP,
-		Target:   model.Endpoint{Host: "api.example.com"},
-		Request:  &model.HTTPMessage{Method: "POST", URL: "http://api.example.com/users"},
-		Response: &model.HTTPMessage{StatusCode: 201},
-		State:    constant.SessionStateCompleted,
+		Target:    model.Endpoint{Host: "api.example.com"},
+		Request:   &model.HTTPMessage{Method: "POST", URL: "http://api.example.com/users"},
+		Response:  &model.HTTPMessage{StatusCode: 201},
+		State:     constant.SessionStateCompleted,
 		CreatedAt: time.Now().Add(-2 * time.Second),
 	})
 	store.Add(&model.Session{
 		ID: "tls", Protocol: constant.ProtocolTLS,
-		Target:   model.Endpoint{Host: "secure.example.com"},
-		Request:  &model.HTTPMessage{Method: "GET", URL: "https://secure.example.com/secret"},
-		Response: &model.HTTPMessage{StatusCode: 200, Headers: http.Header{"Content-Type": {"application/json"}}},
-		State:    constant.SessionStateCompleted,
+		Target:    model.Endpoint{Host: "secure.example.com"},
+		Request:   &model.HTTPMessage{Method: "GET", URL: "https://secure.example.com/secret"},
+		Response:  &model.HTTPMessage{StatusCode: 200, Headers: http.Header{"Content-Type": {"application/json"}}},
+		State:     constant.SessionStateCompleted,
 		CreatedAt: time.Now().Add(-1 * time.Second),
 	})
 	store.Add(&model.Session{
 		ID: "tcp", Protocol: constant.ProtocolTCP,
-		Target: model.Endpoint{Host: "db.internal"},
-		State:  constant.SessionStateCompleted,
+		Target:    model.Endpoint{Host: "db.internal"},
+		State:     constant.SessionStateCompleted,
 		CreatedAt: time.Now(),
 	})
 

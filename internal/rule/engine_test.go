@@ -41,7 +41,7 @@ func TestMatchWildcardHost(t *testing.T) {
 	}{
 		{"api.example.com", true},
 		{"sub.api.example.com", true}, // *.example.com matches any subdomain depth
-		{"example.com", true},          // bare domain matches
+		{"example.com", true},         // bare domain matches
 		{"other.com", false},
 	}
 

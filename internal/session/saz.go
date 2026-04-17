@@ -35,13 +35,13 @@ type sazSession struct {
 }
 
 type sazTimers struct {
-	ClientConnected    string `xml:"ClientConnected,attr,omitempty"`
-	ClientBeginRequest string `xml:"ClientBeginRequest,attr,omitempty"`
-	ClientDoneRequest  string `xml:"ClientDoneRequest,attr,omitempty"`
-	ServerConnected    string `xml:"ServerConnected,attr,omitempty"`
+	ClientConnected     string `xml:"ClientConnected,attr,omitempty"`
+	ClientBeginRequest  string `xml:"ClientBeginRequest,attr,omitempty"`
+	ClientDoneRequest   string `xml:"ClientDoneRequest,attr,omitempty"`
+	ServerConnected     string `xml:"ServerConnected,attr,omitempty"`
 	ServerBeginResponse string `xml:"ServerBeginResponse,attr,omitempty"`
-	ServerDoneResponse string `xml:"ServerDoneResponse,attr,omitempty"`
-	ClientDoneResponse string `xml:"ClientDoneResponse,attr,omitempty"`
+	ServerDoneResponse  string `xml:"ServerDoneResponse,attr,omitempty"`
+	ClientDoneResponse  string `xml:"ClientDoneResponse,attr,omitempty"`
 }
 
 type sazSessionFlags struct {
@@ -413,13 +413,13 @@ func buildSAZMeta(sid int, s *model.Session) sazSession {
 	meta := sazSession{
 		SID: sid,
 		Timers: sazTimers{
-			ClientConnected:    ts,
-			ClientBeginRequest: ts,
-			ClientDoneRequest:  ts,
-			ServerConnected:    ts,
+			ClientConnected:     ts,
+			ClientBeginRequest:  ts,
+			ClientDoneRequest:   ts,
+			ServerConnected:     ts,
 			ServerBeginResponse: end,
-			ServerDoneResponse: end,
-			ClientDoneResponse: end,
+			ServerDoneResponse:  end,
+			ClientDoneResponse:  end,
 		},
 	}
 

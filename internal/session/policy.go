@@ -11,10 +11,10 @@ import (
 
 // StoragePolicy defines limits for session archive storage.
 type StoragePolicy struct {
-	MaxSessions   int           // max sessions per archive (default 5000)
-	MaxBytes      int64         // max archive file size in bytes (default 500MB)
-	MaxAge        time.Duration // max age of archive (default 7 days)
-	MaxArchives   int           // max rotated archives to keep (default 10)
+	MaxSessions int           // max sessions per archive (default 5000)
+	MaxBytes    int64         // max archive file size in bytes (default 500MB)
+	MaxAge      time.Duration // max age of archive (default 7 days)
+	MaxArchives int           // max rotated archives to keep (default 10)
 }
 
 // DefaultStoragePolicy returns the default storage policy.
