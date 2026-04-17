@@ -77,26 +77,27 @@ export function Toolbar({ onSessionsClear, filter, onFilterChange }: ToolbarProp
 
         {/* Protocol quick filters */}
         <div className="flex items-center gap-0.5 bg-muted/30 rounded-md p-0.5">
-          {(['All', 'HTTP', 'HTTPS', 'WS'] as const).map((proto) => (
-            <button
-              key={proto}
-              className={cn(
-                'px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
-                filter.text === '' && proto === 'All'
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-              onClick={() => {
-                if (proto === 'All') {
-                  onFilterChange({ ...filter, text: '' });
-                } else {
-                  onFilterChange({ ...filter, text: proto.toLowerCase() });
-                }
-              }}
-            >
-              {proto}
-            </button>
-          ))}
+          {(['All', 'HTTP', 'HTTPS', 'WS'] as const).map((proto) => {
+            const isActive = proto === 'All'
+              ? filter.text === ''
+              : filter.text.toLowerCase() === proto.toLowerCase();
+            return (
+              <button
+                key={proto}
+                className={cn(
+                  'px-2 py-0.5 text-[10px] font-medium rounded transition-colors',
+                  isActive
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+                onClick={() => {
+                  onFilterChange({ ...filter, text: proto === 'All' ? '' : proto.toLowerCase() });
+                }}
+              >
+                {proto}
+              </button>
+            );
+          })}
         </div>
 
         <Separator orientation="vertical" className="h-4 mx-1" />
