@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
+const TAB_TRIGGER_CLASS = 'text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]';
+const TAB_LIST_CLASS = 'bg-card border-b border-border rounded-none h-8 px-1';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -38,18 +41,18 @@ export function Inspector({ session }: InspectorProps) {
         <div className="flex flex-col h-full">
           <PaneHeader title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
-            <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-              <TabsTrigger value="headers" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Headers</TabsTrigger>
-              <TabsTrigger value="query" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
+            <TabsList className={TAB_LIST_CLASS}>
+              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>Headers</TabsTrigger>
+              <TabsTrigger value="query" className={TAB_TRIGGER_CLASS}>
                 Query{countBadge(session.request?.query_params)}
               </TabsTrigger>
-              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
+              <TabsTrigger value="cookies" className={TAB_TRIGGER_CLASS}>
                 Cookies{countBadge(session.request?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="webforms" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">WebForms</TabsTrigger>
-              <TabsTrigger value="body" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Body</TabsTrigger>
-              <TabsTrigger value="hex" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Hex</TabsTrigger>
-              <TabsTrigger value="raw" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Raw</TabsTrigger>
+              <TabsTrigger value="webforms" className={TAB_TRIGGER_CLASS}>WebForms</TabsTrigger>
+              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>Body</TabsTrigger>
+              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>Hex</TabsTrigger>
+              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>Raw</TabsTrigger>
             </TabsList>
             <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
               <TabsContent value="headers" className="mt-0"><RequestHeaders session={session} /></TabsContent>
@@ -71,17 +74,17 @@ export function Inspector({ session }: InspectorProps) {
         <div className="flex flex-col h-full">
           <PaneHeader title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
-            <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-              <TabsTrigger value="headers" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Headers</TabsTrigger>
-              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
+            <TabsList className={TAB_LIST_CLASS}>
+              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>Headers</TabsTrigger>
+              <TabsTrigger value="cookies" className={TAB_TRIGGER_CLASS}>
                 Cookies{countBadge(session.response?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="body" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Body</TabsTrigger>
-              <TabsTrigger value="hex" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Hex</TabsTrigger>
-              <TabsTrigger value="raw" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Raw</TabsTrigger>
-              <TabsTrigger value="timing" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Timing</TabsTrigger>
+              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>Body</TabsTrigger>
+              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>Hex</TabsTrigger>
+              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>Raw</TabsTrigger>
+              <TabsTrigger value="timing" className={TAB_TRIGGER_CLASS}>Timing</TabsTrigger>
               {(session as SessionWithWS).ws_frames && (session as SessionWithWS).ws_frames!.length > 0 && (
-                <TabsTrigger value="websocket" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
+                <TabsTrigger value="websocket" className={TAB_TRIGGER_CLASS}>
                   WS ({(session as SessionWithWS).ws_frames!.length})
                 </TabsTrigger>
               )}
