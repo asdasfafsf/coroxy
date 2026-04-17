@@ -21,6 +21,11 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/wails-sync-check.sh",
             "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/nested-git-check.sh",
+            "timeout": 5
           }
         ]
       }
