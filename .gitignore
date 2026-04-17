@@ -25,3 +25,6 @@ Thumbs.db
 *.dylib
 *.test
 *.out
+
+# Nested git repos are never intended in this monorepo
+frontend/.git/

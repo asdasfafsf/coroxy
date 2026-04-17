@@ -1,10 +1,15 @@
-import { Sun, Moon, Monitor, ArrowDown, ArrowUp } from 'lucide-react';
+import { Sun, Moon, Monitor, ArrowUp, ArrowDown, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatBytes } from '@/lib/format';
+import { cn } from '@/lib/utils';
 
 type Theme = 'system' | 'dark' | 'light';
+
+const THEME_CYCLE: Theme[] = ['dark', 'light', 'system'];
+const THEME_LABEL: Record<Theme, string> = { dark: 'Dark', light: 'Light', system: 'Auto' };
+const THEME_NEXT: Record<Theme, Theme> = { dark: 'light', light: 'system', system: 'dark' };
 
 interface StatusBarProps {
   sessionCount: number;
@@ -17,39 +22,56 @@ interface StatusBarProps {
 }
 
 export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThemeChange, totalRequestBytes, totalResponseBytes }: StatusBarProps) {
+  const nextTheme = THEME_NEXT[theme];
+
   return (
-    <div className="flex items-center px-3 py-1 bg-card border-t border-border text-xs text-muted-foreground gap-3">
+    <div className="flex items-center px-3 py-0.5 bg-sidebar border-t border-border text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
       {/* Proxy status */}
       <span className="flex items-center gap-1.5">
-        <span className={`w-1.5 h-1.5 rounded-full ${isRunning ? 'bg-status-success' : 'bg-muted-foreground'}`} />
-        {isRunning ? 'Listening on :8673' : 'Stopped'}
+        <span className={cn(
+          'w-2 h-2 rounded-full',
+          isRunning ? 'bg-status-success animate-pulse-dot' : 'bg-muted-foreground/50'
+        )} />
+        <span className={cn(isRunning && 'text-foreground font-medium')}>
+          {isRunning ? 'Listening :8673' : 'Stopped'}
+        </span>
       </span>
 
       <Separator orientation="vertical" className="h-3" />
 
       {/* Session count */}
-      <span>
-        {sessionCount} sessions{selectedCount > 1 && ` (${selectedCount} selected)`}
+      <span className="flex items-center gap-1">
+        <Activity className="h-3 w-3" />
+        <span className="text-foreground font-medium">{sessionCount}</span>
+        <span>sessions</span>
+        {selectedCount > 1 && <span className="text-primary">({selectedCount} sel)</span>}
       </span>
 
       <Separator orientation="vertical" className="h-3" />
 
       {/* Traffic stats */}
-      <span className="flex items-center gap-1">
-        <ArrowUp className="h-3 w-3 text-status-info" />
-        {formatBytes(totalRequestBytes)}
-      </span>
-      <span className="flex items-center gap-1">
-        <ArrowDown className="h-3 w-3 text-status-success" />
-        {formatBytes(totalResponseBytes)}
+      <span className="flex items-center gap-2.5">
+        <span className="flex items-center gap-1">
+          <ArrowUp className="h-3 w-3 text-status-info" />
+          <span>{formatBytes(totalRequestBytes)}</span>
+        </span>
+        <span className="flex items-center gap-1">
+          <ArrowDown className="h-3 w-3 text-status-success" />
+          <span>{formatBytes(totalResponseBytes)}</span>
+        </span>
       </span>
 
       <span className="flex-1" />
 
-      {/* Theme toggle */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
+      {/* Theme toggle — simple cycle button */}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-5 px-1.5 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+            onClick={() => onThemeChange(nextTheme)}
+          >
             {theme === 'light' ? (
               <Sun className="h-3 w-3" />
             ) : theme === 'dark' ? (
@@ -57,20 +79,13 @@ export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThe
             ) : (
               <Monitor className="h-3 w-3" />
             )}
+            <span>{THEME_LABEL[theme]}</span>
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" side="top">
-          <DropdownMenuItem onClick={() => onThemeChange('light')}>
-            <Sun className="h-3.5 w-3.5 mr-2" /> Light
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onThemeChange('dark')}>
-            <Moon className="h-3.5 w-3.5 mr-2" /> Dark
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onThemeChange('system')}>
-            <Monitor className="h-3.5 w-3.5 mr-2" /> System
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </TooltipTrigger>
+        <TooltipContent side="top">
+          Click to switch to {THEME_LABEL[nextTheme]}
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Play, PenLine, GitCompare, Copy, Tag, MessageSquare, Inbox } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Session may have runtime-added tags/comment fields from Go backend
@@ -149,7 +149,7 @@ function SessionRow(props: { index: number; style: React.CSSProperties; ariaAttr
     <div
       style={style}
       className={cn(
-        'flex items-center hover:bg-muted/50 cursor-pointer border-b border-border/30',
+        'flex items-center hover:bg-muted/60 cursor-pointer border-b border-border/20 transition-colors',
         selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
         activeId === session.id && 'ring-1 ring-inset ring-primary/30'
       )}
@@ -266,7 +266,7 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
     setContextSession(session as SessionExt);
   }, []);
 
-  const headerClass = 'px-2.5 py-1.5 text-left bg-card text-muted-foreground font-medium text-[11px] border-b border-border whitespace-nowrap';
+  const headerClass = 'px-2.5 py-1.5 text-left bg-card/90 text-muted-foreground font-semibold text-[10px] uppercase tracking-wider border-b border-border whitespace-nowrap';
 
   return (
     <ContextMenu>
@@ -335,7 +335,11 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
 
           {/* Virtualized rows */}
           {sortedSessions.length === 0 ? (
-            <div className="text-center text-muted-foreground py-10 text-sm">No sessions captured</div>
+            <div className="flex flex-col items-center justify-center flex-1 py-16 text-muted-foreground gap-3">
+              <Inbox className="h-10 w-10 opacity-30" />
+              <span className="text-sm">No sessions captured</span>
+              <span className="text-xs opacity-60">Start the proxy to begin capturing traffic</span>
+            </div>
           ) : (
             <List
               rowHeight={ROW_HEIGHT}
@@ -348,23 +352,29 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
         </div>
       </ContextMenuTrigger>
 
-      <ContextMenuContent className="w-48">
+      <ContextMenuContent className="w-52">
         {contextSession?.request && (
           <>
             <ContextMenuItem onClick={() => contextSession && onReplay?.(contextSession)}>
+              <Play className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
               Replay Request
             </ContextMenuItem>
             <ContextMenuItem onClick={() => contextSession && onComposerPrefill?.(contextSession)}>
+              <PenLine className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
               Edit in Composer
             </ContextMenuItem>
           </>
         )}
         <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
+          <GitCompare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
           {diffPending ? 'Compare with this' : 'Compare...'}
         </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Copy</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            Copy
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}>URL</ContextMenuItem>
             <ContextMenuItem onClick={() => contextSession && copyToClipboard(copyRequestHeaders(contextSession))}>Request Headers</ContextMenuItem>
@@ -375,7 +385,10 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
         </ContextMenuSub>
         <ContextMenuSeparator />
         <ContextMenuSub>
-          <ContextMenuSubTrigger>Tags</ContextMenuSubTrigger>
+          <ContextMenuSubTrigger>
+            <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            Tags
+          </ContextMenuSubTrigger>
           <ContextMenuSubContent>
             {['important', 'bug', 'review', 'done'].map((tag) => {
               const hasTag = contextSession?.tags?.includes(tag);
@@ -399,6 +412,7 @@ export function SessionList({ sessions, selectedIds, activeId, onSelect, onRepla
           const comment = prompt('Comment:', contextSession.comment || '');
           if (comment !== null) CommentSession(contextSession.id, comment);
         }}>
+          <MessageSquare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
           {contextSession?.comment ? 'Edit Comment' : 'Add Comment'}
         </ContextMenuItem>
       </ContextMenuContent>

@@ -5,7 +5,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
-import { ChevronRight, Copy, Check } from 'lucide-react';
+import { ChevronRight, Copy, Check, ArrowUpRight, ArrowDownLeft, MousePointerClick } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
@@ -19,8 +19,14 @@ interface InspectorProps {
 export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
-      <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-        Select a session to inspect
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center">
+          <MousePointerClick className="h-8 w-8 opacity-40" />
+        </div>
+        <div className="text-center">
+          <div className="text-sm font-medium text-foreground/60">Select a session</div>
+          <div className="text-xs mt-1 opacity-50">Click a request in the sidebar to inspect it</div>
+        </div>
       </div>
     );
   }
@@ -30,20 +36,20 @@ export function Inspector({ session }: InspectorProps) {
       {/* Request Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
         <div className="flex flex-col h-full">
-          <PaneHeader title="Request" />
+          <PaneHeader title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-              <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
-              <TabsTrigger value="query" className="text-[11px] h-6 px-2">
+              <TabsTrigger value="headers" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Headers</TabsTrigger>
+              <TabsTrigger value="query" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
                 Query{countBadge(session.request?.query_params)}
               </TabsTrigger>
-              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
+              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
                 Cookies{countBadge(session.request?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="webforms" className="text-[11px] h-6 px-2">WebForms</TabsTrigger>
-              <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
-              <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
-              <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
+              <TabsTrigger value="webforms" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">WebForms</TabsTrigger>
+              <TabsTrigger value="body" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Body</TabsTrigger>
+              <TabsTrigger value="hex" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Hex</TabsTrigger>
+              <TabsTrigger value="raw" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Raw</TabsTrigger>
             </TabsList>
             <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
               <TabsContent value="headers" className="mt-0"><RequestHeaders session={session} /></TabsContent>
@@ -63,19 +69,19 @@ export function Inspector({ session }: InspectorProps) {
       {/* Response Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
         <div className="flex flex-col h-full">
-          <PaneHeader title="Response" />
+          <PaneHeader title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className="bg-card border-b border-border rounded-none h-8 px-1">
-              <TabsTrigger value="headers" className="text-[11px] h-6 px-2">Headers</TabsTrigger>
-              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2">
+              <TabsTrigger value="headers" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Headers</TabsTrigger>
+              <TabsTrigger value="cookies" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
                 Cookies{countBadge(session.response?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="body" className="text-[11px] h-6 px-2">Body</TabsTrigger>
-              <TabsTrigger value="hex" className="text-[11px] h-6 px-2">Hex</TabsTrigger>
-              <TabsTrigger value="raw" className="text-[11px] h-6 px-2">Raw</TabsTrigger>
-              <TabsTrigger value="timing" className="text-[11px] h-6 px-2">Timing</TabsTrigger>
+              <TabsTrigger value="body" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Body</TabsTrigger>
+              <TabsTrigger value="hex" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Hex</TabsTrigger>
+              <TabsTrigger value="raw" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Raw</TabsTrigger>
+              <TabsTrigger value="timing" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">Timing</TabsTrigger>
               {(session as SessionWithWS).ws_frames && (session as SessionWithWS).ws_frames!.length > 0 && (
-                <TabsTrigger value="websocket" className="text-[11px] h-6 px-2">
+                <TabsTrigger value="websocket" className="text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]">
                   WS ({(session as SessionWithWS).ws_frames!.length})
                 </TabsTrigger>
               )}
@@ -98,9 +104,10 @@ export function Inspector({ session }: InspectorProps) {
   );
 }
 
-function PaneHeader({ title }: { title: string }) {
+function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="px-3 py-1 bg-secondary text-primary text-[11px] font-semibold border-b border-border">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 text-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border">
+      <span className="text-primary">{icon}</span>
       {title}
     </div>
   );
@@ -172,7 +179,7 @@ function RequestHeaders({ session }: { session: model.Session }) {
             <CopyableRow
               key={key}
               label={key}
-              value={(values as string[]).join(', ')}
+              value={(Array.isArray(values) ? values : [values]).join(', ')}
               highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
             />
           ))}
@@ -200,7 +207,7 @@ function ResponseHeaders({ session }: { session: model.Session }) {
             <CopyableRow
               key={key}
               label={key}
-              value={(values as string[]).join(', ')}
+              value={(Array.isArray(values) ? values : [values]).join(', ')}
               highlight={IMPORTANT_HEADERS.has(key.toLowerCase())}
             />
           ))}

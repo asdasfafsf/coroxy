@@ -7,6 +7,7 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
+import { SessionSidebar } from '@/components/session/SessionSidebar';
 import { Inspector } from '@/components/session/Inspector';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { Settings } from '@/components/tools/Settings';
@@ -19,6 +20,7 @@ import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl, copyRequestHeaders, copyResponseHeaders, copyCurl, copyResponseBody } from '@/lib/copy';
+import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { type SessionFilter, EMPTY_FILTER, filterSessions } from '@/lib/filter';
 
@@ -43,23 +45,46 @@ function App() {
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [throttlePreset, setThrottlePreset] = useState('off');
 
+  // Multi-session tabs
+  const [sessionTabs, setSessionTabs] = useState([
+    { id: 'default', label: 'All Traffic', filterId: 'default' },
+  ]);
+  const [activeTabId, setActiveTabId] = useState('default');
+
+  const handleTabAdd = useCallback(() => {
+    const id = `tab-${Date.now()}`;
+    setSessionTabs(prev => [...prev, { id, label: `Session ${prev.length + 1}`, filterId: id }]);
+    setActiveTabId(id);
+  }, []);
+
+  const handleTabClose = useCallback((tabId: string) => {
+    setSessionTabs(prev => {
+      const next = prev.filter(t => t.id !== tabId);
+      if (next.length === 0) return prev;
+      if (activeTabId === tabId) setActiveTabId(next[0].id);
+      return next;
+    });
+  }, [activeTabId]);
+
   useEffect(() => {
-    Sessions().then((s) => setSessions(s || []));
-    ProxyState().then(setProxyState);
-    IsSystemProxyActive().then(setSysProxy);
-    GetThrottle().then(cfg => setThrottlePreset(cfg.preset));
+    Sessions().then((s) => setSessions(s || [])).catch(() => {});
+    ProxyState().then(setProxyState).catch(() => {});
+    IsSystemProxyActive().then(setSysProxy).catch(() => {});
+    GetThrottle().then(cfg => setThrottlePreset(cfg.preset)).catch(() => {});
   }, []);
 
   useEffect(() => {
-    const cancel = EventsOn('coroxy:session:new', (session: model.Session) => {
-      setSessions((prev) => [session, ...prev]);
-    });
-    return cancel;
+    try {
+      const cancel = EventsOn('coroxy:session:new', (session: model.Session) => {
+        setSessions((prev) => [session, ...prev]);
+      });
+      return cancel;
+    } catch { /* not in Wails */ }
   }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      ProxyState().then(setProxyState);
+      ProxyState().then(setProxyState).catch(() => {});
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -201,7 +226,7 @@ function App() {
       method: req.method || 'GET',
       url: req.url || '',
       headers: headerLines,
-      body: req.body ? (typeof req.body === 'string' ? atob(req.body) : new TextDecoder().decode(new Uint8Array(req.body))) : '',
+      body: decodeBody(req.body) || '',
     });
     setShowComposer(true);
   }, []);
@@ -255,102 +280,120 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col h-screen bg-background text-foreground font-sans">
-        <AppMenubar
-          isRunning={isRunning}
-          sysProxy={sysProxy}
-          hasSelection={!!activeSession}
-          onToggleProxy={handleToggleProxy}
-          onToggleSysProxy={handleToggleSysProxy}
-          onClear={handleClear}
-          onExportHAR={() => ExportSessionsHAR().catch(console.error)}
-          onExportJSON={() => ExportSessionsJSON().catch(console.error)}
-          onImportHAR={() => ImportSessionsHAR().catch(console.error)}
-          onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
-          onSettingsClick={() => setShowSettings(true)}
-          onRulesClick={() => setShowRules(true)}
-          onComposerClick={() => setShowComposer(true)}
-          onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-          onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
-          onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
-          onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-          onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
-          onAboutClick={() => setShowAbout(true)}
-          onShortcutsClick={() => setShowShortcuts(true)}
-          onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
-          onDeleteSelected={handleDeleteSelected}
-          onTextWizardClick={() => setShowTextWizard(true)}
-          onCompareClick={handleCompareFromMenu}
-          selectedCount={selectedIds.size}
-          onMark={handleMark}
-          onUnmarkAll={handleUnmarkAll}
-          hiddenTypes={hiddenTypes}
-          onSave={() => SaveSessions().catch(console.error)}
-          onLoad={() => LoadSessions().catch(console.error)}
-          throttlePreset={throttlePreset}
-          onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
-          onToggleHide={(type) => setHiddenTypes(prev => {
-            const next = new Set(prev);
-            if (next.has(type)) next.delete(type); else next.add(type);
-            return next;
-          })}
-        />
-        <Toolbar
-          onSessionsClear={handleSessionsClear}
-          filter={filter}
-          onFilterChange={setFilter}
-        />
-        <ResizablePanelGroup orientation="horizontal" id="coroxy-main" className="flex-1">
-          <ResizablePanel defaultSize={65} minSize={30}>
-            <SessionList
-              sessions={filteredSessions}
-              selectedIds={selectedIds}
-              activeId={activeSessionId}
-              onSelect={handleSelect}
-              onReplay={handleReplay}
-              onComposerPrefill={handleComposerPrefill}
-              onDiff={handleDiff}
-              diffPending={!!diffSessionA && !diffSessionB}
-              marks={marks}
-            />
-          </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={35} minSize={20}>
-            <div className="h-full bg-card">
-              <Inspector session={activeSession} />
-            </div>
-          </ResizablePanel>
-        </ResizablePanelGroup>
-        <Composer
-          open={showComposer}
-          onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
-          prefill={composerPrefill}
-        />
-        <StatusBar
-          sessionCount={sessions.length}
-          selectedCount={selectedIds.size}
-          isRunning={isRunning}
-          theme={theme}
-          onThemeChange={setTheme}
-          totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
-          totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
-        />
-
-        <Settings open={showSettings} onOpenChange={setShowSettings} />
-        <RuleEditor open={showRules} onOpenChange={setShowRules} />
-        {showDiff && diffSessionA && diffSessionB && (
-          <SessionDiff
-            sessionA={diffSessionA}
-            sessionB={diffSessionB}
-            open={showDiff}
-            onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+      <div className="flex h-screen bg-background text-foreground font-sans">
+        {/* ===== Left sidebar — session groups ===== */}
+        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border/50 shrink-0 flex flex-col overflow-hidden">
+          <SessionSidebar
+            groups={sessionTabs.map(t => ({ id: t.id, label: t.label, count: t.id === activeTabId ? filteredSessions.length : 0 }))}
+            activeGroupId={activeTabId}
+            onGroupChange={setActiveTabId}
+            onGroupAdd={handleTabAdd}
           />
-        )}
-        <BreakpointPanel />
-        <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
-        <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
-        <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
+        </div>
+
+        {/* ===== Right main column ===== */}
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Menubar */}
+          <AppMenubar
+            isRunning={isRunning}
+            sysProxy={sysProxy}
+            hasSelection={!!activeSession}
+            onToggleProxy={handleToggleProxy}
+            onToggleSysProxy={handleToggleSysProxy}
+            onClear={handleClear}
+            onExportHAR={() => ExportSessionsHAR().catch(console.error)}
+            onExportJSON={() => ExportSessionsJSON().catch(console.error)}
+            onImportHAR={() => ImportSessionsHAR().catch(console.error)}
+            onImportSAZ={() => ImportSessionsSAZ().catch(console.error)}
+            onSettingsClick={() => setShowSettings(true)}
+            onRulesClick={() => setShowRules(true)}
+            onComposerClick={() => setShowComposer(true)}
+            onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
+            onCopyRequestHeaders={() => activeSession && copyToClipboard(copyRequestHeaders(activeSession))}
+            onCopyResponseHeaders={() => activeSession && copyToClipboard(copyResponseHeaders(activeSession))}
+            onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
+            onCopyResponseBody={() => activeSession && copyToClipboard(copyResponseBody(activeSession))}
+            onAboutClick={() => setShowAbout(true)}
+            onShortcutsClick={() => setShowShortcuts(true)}
+            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map(s => s.id)))}
+            onDeleteSelected={handleDeleteSelected}
+            onTextWizardClick={() => setShowTextWizard(true)}
+            onCompareClick={handleCompareFromMenu}
+            selectedCount={selectedIds.size}
+            onMark={handleMark}
+            onUnmarkAll={handleUnmarkAll}
+            hiddenTypes={hiddenTypes}
+            onSave={() => SaveSessions().catch(console.error)}
+            onLoad={() => LoadSessions().catch(console.error)}
+            throttlePreset={throttlePreset}
+            onThrottleChange={(preset) => { SetThrottle(preset); setThrottlePreset(preset); }}
+            onToggleHide={(type) => setHiddenTypes(prev => {
+              const next = new Set(prev);
+              if (next.has(type)) next.delete(type); else next.add(type);
+              return next;
+            })}
+          />
+          {/* Toolbar */}
+          <Toolbar
+            onSessionsClear={handleSessionsClear}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+          {/* Request table + Inspector — vertical split */}
+          <ResizablePanelGroup orientation="vertical" className="flex-1">
+            <ResizablePanel defaultSize={45} minSize={20}>
+              <SessionList
+                sessions={filteredSessions}
+                selectedIds={selectedIds}
+                activeId={activeSessionId}
+                onSelect={handleSelect}
+                onReplay={handleReplay}
+                onComposerPrefill={handleComposerPrefill}
+                onDiff={handleDiff}
+                diffPending={!!diffSessionA && !diffSessionB}
+                marks={marks}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={55} minSize={20}>
+              <div className="h-full bg-card overflow-hidden">
+                <Inspector session={activeSession} />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+          {/* StatusBar inside main column */}
+          <StatusBar
+            sessionCount={sessions.length}
+            selectedCount={selectedIds.size}
+            isRunning={isRunning}
+            theme={theme}
+            onThemeChange={setTheme}
+            totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
+            totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
+          />
+        </div>
       </div>
+
+      {/* Modals — outside main flex layout */}
+      <Composer
+        open={showComposer}
+        onClose={() => { setShowComposer(false); setComposerPrefill(null); }}
+        prefill={composerPrefill}
+      />
+      <Settings open={showSettings} onOpenChange={setShowSettings} />
+      <RuleEditor open={showRules} onOpenChange={setShowRules} />
+      {showDiff && diffSessionA && diffSessionB && (
+        <SessionDiff
+          sessionA={diffSessionA}
+          sessionB={diffSessionB}
+          open={showDiff}
+          onOpenChange={(open) => { if (!open) { setDiffSessionA(null); setDiffSessionB(null); } }}
+        />
+      )}
+      <BreakpointPanel />
+      <AboutDialog open={showAbout} onOpenChange={setShowAbout} />
+      <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
+      <TextWizard open={showTextWizard} onOpenChange={setShowTextWizard} />
     </TooltipProvider>
   );
 }

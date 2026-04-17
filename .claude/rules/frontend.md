@@ -2,6 +2,19 @@
 
 Effective TypeScript + React 프론트엔드 원칙. 모든 프론트엔드 코드는 이 규칙을 따른다.
 
+## Wails 바인딩 동기화
+
+Go 백엔드(`internal/app/`)에 메서드·타입을 추가하거나 시그니처를 변경했다면, 동일 커밋에 재생성된 바인딩을 반드시 포함한다.
+
+```bash
+wails generate module
+git add frontend/wailsjs/
+```
+
+`frontend/wailsjs/` 는 자동 생성물이지만 repo에 커밋한다. Go 변경과 바인딩 재생성을 한 커밋에 묶어 `main`/`dev`가 언제나 빌드 가능한 상태를 유지한다.
+
+실수 방지로 `.claude/hooks/wails-sync-check.sh` 가 PreToolUse(Bash)에서 `git commit` 명령을 가로채어, `internal/app/` 만 staged 이고 `frontend/wailsjs/` 는 staged 되지 않았으면 차단한다.
+
 ## UI 프레임워크
 
 - **shadcn/ui** 컴포넌트 우선 사용. 직접 `<button>`, `<input>`, `<select>` 등을 스타일링하지 않는다
