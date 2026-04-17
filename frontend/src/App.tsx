@@ -282,7 +282,7 @@ function App() {
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground font-sans">
         {/* ===== Left sidebar — session groups ===== */}
-        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border/50 shrink-0 flex flex-col overflow-hidden">
+        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border shrink-0 flex flex-col overflow-hidden">
           <SessionSidebar
             groups={sessionTabs.map(t => ({ id: t.id, label: t.label, count: t.id === activeTabId ? filteredSessions.length : 0 }))}
             activeGroupId={activeTabId}
