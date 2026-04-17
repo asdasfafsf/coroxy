@@ -10,20 +10,28 @@ export function BreakpointDrop(arg1) {
   return window['go']['app']['App']['BreakpointDrop'](arg1);
 }
 
+export function BreakpointResume(arg1) {
+  return window['go']['app']['App']['BreakpointResume'](arg1);
+}
+
 export function BreakpointResumeWithEdit(arg1, arg2) {
   return window['go']['app']['App']['BreakpointResumeWithEdit'](arg1, arg2);
 }
 
-export function BreakpointResume(arg1) {
-  return window['go']['app']['App']['BreakpointResume'](arg1);
+export function CAInfo() {
+  return window['go']['app']['App']['CAInfo']();
+}
+
+export function ClearSessions() {
+  return window['go']['app']['App']['ClearSessions']();
 }
 
 export function CommentSession(arg1, arg2) {
   return window['go']['app']['App']['CommentSession'](arg1, arg2);
 }
 
-export function ClearSessions() {
-  return window['go']['app']['App']['ClearSessions']();
+export function Context() {
+  return window['go']['app']['App']['Context']();
 }
 
 export function DisableSystemProxy() {
@@ -50,28 +58,8 @@ export function ExportSessionsSAZ() {
   return window['go']['app']['App']['ExportSessionsSAZ']();
 }
 
-export function CAInfo() {
-  return window['go']['app']['App']['CAInfo']();
-}
-
-export function Context() {
-  return window['go']['app']['App']['Context']();
-}
-
-export function PendingBreakpoints() {
-  return window['go']['app']['App']['PendingBreakpoints']();
-}
-
-export function ProxyState() {
-  return window['go']['app']['App']['ProxyState']();
-}
-
-export function Sessions() {
-  return window['go']['app']['App']['Sessions']();
-}
-
-export function SessionsFiltered(arg1) {
-  return window['go']['app']['App']['SessionsFiltered'](arg1);
+export function GetThrottle() {
+  return window['go']['app']['App']['GetThrottle']();
 }
 
 export function HandleNewSession(arg1) {
@@ -98,6 +86,18 @@ export function ListRules() {
   return window['go']['app']['App']['ListRules']();
 }
 
+export function LoadSessions() {
+  return window['go']['app']['App']['LoadSessions']();
+}
+
+export function PendingBreakpoints() {
+  return window['go']['app']['App']['PendingBreakpoints']();
+}
+
+export function ProxyState() {
+  return window['go']['app']['App']['ProxyState']();
+}
+
 export function RemoveRule(arg1) {
   return window['go']['app']['App']['RemoveRule'](arg1);
 }
@@ -106,8 +106,20 @@ export function ReplaySession(arg1) {
   return window['go']['app']['App']['ReplaySession'](arg1);
 }
 
+export function SaveSessions() {
+  return window['go']['app']['App']['SaveSessions']();
+}
+
 export function SendRequest(arg1) {
   return window['go']['app']['App']['SendRequest'](arg1);
+}
+
+export function Sessions() {
+  return window['go']['app']['App']['Sessions']();
+}
+
+export function SessionsFiltered(arg1) {
+  return window['go']['app']['App']['SessionsFiltered'](arg1);
 }
 
 export function SetAutoSaver(arg1) {
@@ -122,16 +134,24 @@ export function SetEngine(arg1) {
   return window['go']['app']['App']['SetEngine'](arg1);
 }
 
+export function SetThrottle(arg1) {
+  return window['go']['app']['App']['SetThrottle'](arg1);
+}
+
 export function StartProxy() {
   return window['go']['app']['App']['StartProxy']();
+}
+
+export function StopProxy() {
+  return window['go']['app']['App']['StopProxy']();
 }
 
 export function TagSession(arg1, arg2, arg3) {
   return window['go']['app']['App']['TagSession'](arg1, arg2, arg3);
 }
 
-export function StopProxy() {
-  return window['go']['app']['App']['StopProxy']();
+export function Throttler() {
+  return window['go']['app']['App']['Throttler']();
 }
 
 export function ToggleRule(arg1) {
@@ -140,20 +160,4 @@ export function ToggleRule(arg1) {
 
 export function UninstallCA() {
   return window['go']['app']['App']['UninstallCA']();
-}
-
-export function SaveSessions() {
-  return window['go']['app']['App']['SaveSessions']();
-}
-
-export function LoadSessions() {
-  return window['go']['app']['App']['LoadSessions']();
-}
-
-export function SetThrottle(arg1) {
-  return window['go']['app']['App']['SetThrottle'](arg1);
-}
-
-export function GetThrottle() {
-  return window['go']['app']['App']['GetThrottle']();
 }
