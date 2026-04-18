@@ -9,20 +9,34 @@ import (
 	"coroxy/internal/session"
 )
 
-// ExportSessionsHAR exports all sessions as HAR to a user-selected file.
-func (a *App) ExportSessionsHAR() error {
-	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Export HAR",
-		DefaultFilename: "coroxy.har",
+// selectSaveFile shows the OS Save dialog and returns the selected path.
+// Empty path means the user cancelled.
+func (a *App) selectSaveFile(title, defaultName, displayName, pattern string) (string, error) {
+	return runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+		Title:           title,
+		DefaultFilename: defaultName,
 		Filters: []runtime.FileFilter{
-			{DisplayName: "HAR Files", Pattern: "*.har"},
+			{DisplayName: displayName, Pattern: pattern},
 		},
 	})
-	if err != nil {
+}
+
+// selectOpenFile shows the OS Open dialog and returns the selected path.
+// Empty path means the user cancelled.
+func (a *App) selectOpenFile(title, displayName, pattern string) (string, error) {
+	return runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: title,
+		Filters: []runtime.FileFilter{
+			{DisplayName: displayName, Pattern: pattern},
+		},
+	})
+}
+
+// ExportSessionsHAR exports all sessions as HAR to a user-selected file.
+func (a *App) ExportSessionsHAR() error {
+	path, err := a.selectSaveFile("Export HAR", "coroxy.har", "HAR Files", "*.har")
+	if err != nil || path == "" {
 		return err
-	}
-	if path == "" {
-		return nil // user cancelled
 	}
 
 	sessions := a.store.List()
@@ -35,18 +49,9 @@ func (a *App) ExportSessionsHAR() error {
 
 // ExportSessionsJSON exports all sessions as JSON to a user-selected file.
 func (a *App) ExportSessionsJSON() error {
-	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Export JSON",
-		DefaultFilename: "coroxy-sessions.json",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "JSON Files", Pattern: "*.json"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectSaveFile("Export JSON", "coroxy-sessions.json", "JSON Files", "*.json")
+	if err != nil || path == "" {
 		return err
-	}
-	if path == "" {
-		return nil
 	}
 
 	sessions := a.store.List()
@@ -59,18 +64,9 @@ func (a *App) ExportSessionsJSON() error {
 
 // ExportSessionsSAZ exports all HTTP sessions as SAZ to a user-selected file.
 func (a *App) ExportSessionsSAZ() error {
-	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Export SAZ",
-		DefaultFilename: "coroxy.saz",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "SAZ Files", Pattern: "*.saz"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectSaveFile("Export SAZ", "coroxy.saz", "SAZ Files", "*.saz")
+	if err != nil || path == "" {
 		return err
-	}
-	if path == "" {
-		return nil
 	}
 
 	sessions := a.store.List()
@@ -79,18 +75,9 @@ func (a *App) ExportSessionsSAZ() error {
 
 // SaveSessions saves all sessions to a user-selected .csaz file.
 func (a *App) SaveSessions() error {
-	path, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
-		Title:           "Save Sessions",
-		DefaultFilename: "coroxy-sessions.csaz",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectSaveFile("Save Sessions", "coroxy-sessions.csaz", "Coroxy Archive", "*.csaz")
+	if err != nil || path == "" {
 		return err
-	}
-	if path == "" {
-		return nil
 	}
 
 	sessions := a.store.List()
@@ -99,17 +86,9 @@ func (a *App) SaveSessions() error {
 
 // LoadSessions loads sessions from a user-selected .csaz file and adds them to the store.
 func (a *App) LoadSessions() (int, error) {
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Load Sessions",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "Coroxy Archive", Pattern: "*.csaz"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectOpenFile("Load Sessions", "Coroxy Archive", "*.csaz")
+	if err != nil || path == "" {
 		return 0, err
-	}
-	if path == "" {
-		return 0, nil
 	}
 
 	sessions, err := session.ReadArchive(path)
@@ -126,17 +105,9 @@ func (a *App) LoadSessions() (int, error) {
 
 // ImportSessionsSAZ imports sessions from a user-selected SAZ file.
 func (a *App) ImportSessionsSAZ() (int, error) {
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Import SAZ",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "SAZ Files", Pattern: "*.saz"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectOpenFile("Import SAZ", "SAZ Files", "*.saz")
+	if err != nil || path == "" {
 		return 0, err
-	}
-	if path == "" {
-		return 0, nil
 	}
 
 	sessions, err := session.ImportSAZ(path)
@@ -157,17 +128,9 @@ func (a *App) ImportSessionsSAZ() (int, error) {
 
 // ImportSessionsHAR imports sessions from a user-selected HAR file.
 func (a *App) ImportSessionsHAR() (int, error) {
-	path, err := runtime.OpenFileDialog(a.ctx, runtime.OpenDialogOptions{
-		Title: "Import HAR",
-		Filters: []runtime.FileFilter{
-			{DisplayName: "HAR Files", Pattern: "*.har"},
-		},
-	})
-	if err != nil {
+	path, err := a.selectOpenFile("Import HAR", "HAR Files", "*.har")
+	if err != nil || path == "" {
 		return 0, err
-	}
-	if path == "" {
-		return 0, nil
 	}
 
 	sessions, err := session.ImportHAR(path)
