@@ -243,11 +243,7 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				h.logger.Error("connect tunnel client→target panic", slog.Any("panic", r))
-			}
-		}()
+		defer recoverGoroutine(h.logger, "connect tunnel client→target")
 		_, _ = io.Copy(targetConn, clientConn)
 		if tc, ok := targetConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
@@ -256,11 +252,7 @@ func (h *HTTPProxy) handleConnect(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		defer wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				h.logger.Error("connect tunnel target→client panic", slog.Any("panic", r))
-			}
-		}()
+		defer recoverGoroutine(h.logger, "connect tunnel target→client")
 		_, _ = io.Copy(clientConn, targetConn)
 		if tc, ok := clientConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()

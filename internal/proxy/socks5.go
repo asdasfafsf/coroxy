@@ -90,11 +90,7 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				s.logger.Error("socks5 client→target relay panic", slog.Any("panic", r))
-			}
-		}()
+		defer recoverGoroutine(s.logger, "socks5 client→target relay")
 		_, _ = io.Copy(io.MultiWriter(targetConn, clientCapture), clientConn)
 		if tc, ok := targetConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
@@ -102,11 +98,7 @@ func (s *SOCKS5Proxy) HandleConn(clientConn net.Conn) {
 	}()
 	go func() {
 		defer wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				s.logger.Error("socks5 target→client relay panic", slog.Any("panic", r))
-			}
-		}()
+		defer recoverGoroutine(s.logger, "socks5 target→client relay")
 		_, _ = io.Copy(io.MultiWriter(clientConn, serverCapture), targetConn)
 		if tc, ok := clientConn.(*net.TCPConn); ok {
 			_ = tc.CloseWrite()
