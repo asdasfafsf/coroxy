@@ -28,7 +28,11 @@ export function SessionDiff({ sessionA, sessionB, open, onOpenChange }: SessionD
             <DiffRow label="URL" a={reqA?.url} b={reqB?.url} />
             <DiffRow label="Protocol" a={sessionA.protocol} b={sessionB.protocol} />
             <DiffRow label="Host" a={sessionA.target?.host} b={sessionB.target?.host} />
-            <DiffRow label="Status" a={String(respA?.status_code || '-')} b={String(respB?.status_code || '-')} />
+            <DiffRow
+              label="Status"
+              a={String(respA?.status_code || '-')}
+              b={String(respB?.status_code || '-')}
+            />
           </Section>
 
           <Section title="Request Headers">
@@ -70,14 +74,34 @@ function DiffRow({ label, a, b }: { label: string; a?: string; b?: string }) {
   return (
     <div className="flex text-xs py-0.5">
       <span className="w-20 text-muted-foreground shrink-0">{label}</span>
-      <span className={cn('flex-1 px-1 rounded-sm', same ? 'text-foreground' : 'text-destructive bg-destructive/[0.06]')}>{a || '-'}</span>
+      <span
+        className={cn(
+          'flex-1 px-1 rounded-sm',
+          same ? 'text-foreground' : 'text-destructive bg-destructive/[0.06]',
+        )}
+      >
+        {a || '-'}
+      </span>
       <span className="w-4 text-center text-muted-foreground">{same ? '=' : '\u2260'}</span>
-      <span className={cn('flex-1 px-1 rounded-sm', same ? 'text-foreground' : 'text-status-success bg-status-success/[0.06]')}>{b || '-'}</span>
+      <span
+        className={cn(
+          'flex-1 px-1 rounded-sm',
+          same ? 'text-foreground' : 'text-status-success bg-status-success/[0.06]',
+        )}
+      >
+        {b || '-'}
+      </span>
     </div>
   );
 }
 
-function HeadersDiff({ headersA, headersB }: { headersA?: Record<string, string[]>; headersB?: Record<string, string[]> }) {
+function HeadersDiff({
+  headersA,
+  headersB,
+}: {
+  headersA?: Record<string, string[]>;
+  headersB?: Record<string, string[]>;
+}) {
   const allKeys = new Set([...Object.keys(headersA || {}), ...Object.keys(headersB || {})]);
   if (allKeys.size === 0) return <div className="text-xs text-muted-foreground">No headers</div>;
   return (
@@ -93,12 +117,20 @@ function HeadersDiff({ headersA, headersB }: { headersA?: Record<string, string[
 
 function BodyDiff({ a, b }: { a: string; b: string }) {
   if (a === b) {
-    return <pre className="text-xs text-muted-foreground bg-secondary p-2 rounded-md max-h-[200px] overflow-auto">{a || '(empty)'}</pre>;
+    return (
+      <pre className="text-xs text-muted-foreground bg-secondary p-2 rounded-md max-h-[200px] overflow-auto">
+        {a || '(empty)'}
+      </pre>
+    );
   }
   return (
     <div className="flex gap-2">
-      <pre className="flex-1 text-xs text-destructive bg-destructive/[0.04] p-2 rounded-md max-h-[200px] overflow-auto whitespace-pre-wrap break-all">{a || '(empty)'}</pre>
-      <pre className="flex-1 text-xs text-status-success bg-status-success/[0.04] p-2 rounded-md max-h-[200px] overflow-auto whitespace-pre-wrap break-all">{b || '(empty)'}</pre>
+      <pre className="flex-1 text-xs text-destructive bg-destructive/[0.04] p-2 rounded-md max-h-[200px] overflow-auto whitespace-pre-wrap break-all">
+        {a || '(empty)'}
+      </pre>
+      <pre className="flex-1 text-xs text-status-success bg-status-success/[0.04] p-2 rounded-md max-h-[200px] overflow-auto whitespace-pre-wrap break-all">
+        {b || '(empty)'}
+      </pre>
     </div>
   );
 }
@@ -106,7 +138,11 @@ function BodyDiff({ a, b }: { a: string; b: string }) {
 function decodeBody(body: string | number[] | undefined): string {
   if (!body) return '';
   if (typeof body === 'string') {
-    try { return atob(body); } catch { return body; }
+    try {
+      return atob(body);
+    } catch {
+      return body;
+    }
   }
   return '';
 }

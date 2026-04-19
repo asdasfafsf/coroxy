@@ -37,7 +37,9 @@ function interpretBytes(bytes: Uint8Array): string[] {
   try {
     const str = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
     if (str.length <= 100) results.push(`string: "${str}"`);
-  } catch { /* not valid UTF-8 */ }
+  } catch {
+    /* not valid UTF-8 */
+  }
 
   return results;
 }
@@ -65,7 +67,10 @@ export function HexViewer({ data, maxRows = 512 }: HexViewerProps) {
     for (let i = 0; i <= data.length - bytes.length; i++) {
       let found = true;
       for (let j = 0; j < bytes.length; j++) {
-        if (data[i + j] !== bytes[j]) { found = false; break; }
+        if (data[i + j] !== bytes[j]) {
+          found = false;
+          break;
+        }
       }
       if (found) {
         for (let j = 0; j < bytes.length; j++) matches.add(i + j);
@@ -130,7 +135,7 @@ export function HexViewer({ data, maxRows = 512 }: HexViewerProps) {
                 {Array.from({ length: BYTES_PER_ROW }, (_, i) => {
                   const byteOffset = rowOffset + i;
                   const sep = i === 8 ? '  ' : ' ';
-                  if (i >= chunk.length) return <span key={i}>{sep}  </span>;
+                  if (i >= chunk.length) return <span key={i}>{sep} </span>;
                   const byte = chunk[i];
                   const sel = isSelected(byteOffset);
                   const match = searchMatches.has(byteOffset);
@@ -142,7 +147,7 @@ export function HexViewer({ data, maxRows = 512 }: HexViewerProps) {
                           'cursor-pointer rounded-sm px-[1px]',
                           sel && 'bg-primary/30 text-primary',
                           match && !sel && 'bg-status-warning/30',
-                          !sel && !match && 'hover:bg-muted'
+                          !sel && !match && 'hover:bg-muted',
                         )}
                         onClick={(e) => handleByteClick(byteOffset, e)}
                       >
@@ -174,7 +179,9 @@ export function HexViewer({ data, maxRows = 512 }: HexViewerProps) {
           );
         })}
         {totalRows > maxRows && (
-          <div className="text-muted-foreground mt-1">... ({data.length - maxRows * BYTES_PER_ROW} more bytes)</div>
+          <div className="text-muted-foreground mt-1">
+            ... ({data.length - maxRows * BYTES_PER_ROW} more bytes)
+          </div>
         )}
       </div>
 
@@ -182,10 +189,13 @@ export function HexViewer({ data, maxRows = 512 }: HexViewerProps) {
       {selectedBytes && selectedBytes.length > 0 && (
         <div className="bg-secondary rounded-md p-2 text-[11px] space-y-0.5">
           <div className="text-muted-foreground font-medium">
-            Selected: {selectedBytes.length} byte(s) at offset 0x{(Math.min(selectedStart!, selectedEnd ?? selectedStart!)).toString(16)}
+            Selected: {selectedBytes.length} byte(s) at offset 0x
+            {Math.min(selectedStart!, selectedEnd ?? selectedStart!).toString(16)}
           </div>
           {interpretBytes(selectedBytes).map((line, i) => (
-            <div key={i} className="text-foreground font-mono">{line}</div>
+            <div key={i} className="text-foreground font-mono">
+              {line}
+            </div>
           ))}
         </div>
       )}

@@ -1,7 +1,13 @@
 import { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { ArrowDownUp, Copy, Check } from 'lucide-react';
 
@@ -10,7 +16,17 @@ interface TextWizardProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Transform = 'base64_encode' | 'base64_decode' | 'url_encode' | 'url_decode' | 'html_encode' | 'html_decode' | 'json_pretty' | 'json_minify' | 'md5' | 'sha256';
+type Transform =
+  | 'base64_encode'
+  | 'base64_decode'
+  | 'url_encode'
+  | 'url_decode'
+  | 'html_encode'
+  | 'html_decode'
+  | 'json_pretty'
+  | 'json_minify'
+  | 'md5'
+  | 'sha256';
 
 const TRANSFORMS: { value: Transform; label: string; category: string }[] = [
   { value: 'base64_encode', label: 'Base64 Encode', category: 'Base64' },
@@ -28,21 +44,36 @@ const TRANSFORMS: { value: Transform; label: string; category: string }[] = [
 function applyTransform(input: string, transform: Transform): string {
   try {
     switch (transform) {
-      case 'base64_encode': return btoa(unescape(encodeURIComponent(input)));
-      case 'base64_decode': return decodeURIComponent(escape(atob(input)));
-      case 'url_encode': return encodeURIComponent(input);
-      case 'url_decode': return decodeURIComponent(input);
-      case 'html_encode': return input.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      case 'base64_encode':
+        return btoa(unescape(encodeURIComponent(input)));
+      case 'base64_decode':
+        return decodeURIComponent(escape(atob(input)));
+      case 'url_encode':
+        return encodeURIComponent(input);
+      case 'url_decode':
+        return decodeURIComponent(input);
+      case 'html_encode':
+        return input
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
       case 'html_decode': {
         const el = document.createElement('textarea');
         el.innerHTML = input;
         return el.value;
       }
-      case 'json_pretty': return JSON.stringify(JSON.parse(input), null, 2);
-      case 'json_minify': return JSON.stringify(JSON.parse(input));
-      case 'md5': return hashHex(input, 'md5');
-      case 'sha256': return hashHex(input, 'sha256');
-      default: return input;
+      case 'json_pretty':
+        return JSON.stringify(JSON.parse(input), null, 2);
+      case 'json_minify':
+        return JSON.stringify(JSON.parse(input));
+      case 'md5':
+        return hashHex(input, 'md5');
+      case 'sha256':
+        return hashHex(input, 'sha256');
+      default:
+        return input;
     }
   } catch (e) {
     return `Error: ${e instanceof Error ? e.message : String(e)}`;
@@ -55,7 +86,7 @@ function hashHex(input: string, _algo: string): string {
   let hash = 0;
   for (let i = 0; i < input.length; i++) {
     const chr = input.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
+    hash = (hash << 5) - hash + chr;
     hash |= 0;
   }
   // Return a placeholder — real hash needs async
@@ -94,14 +125,24 @@ export function TextWizard({ open, onOpenChange }: TextWizardProps) {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Select value={transform} onValueChange={(v) => setTransform(v as Transform)}>
-              <SelectTrigger className="h-8 text-xs w-48"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-xs w-48">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {TRANSFORMS.map(t => (
-                  <SelectItem key={t.value} value={t.value} className="text-xs">{t.label}</SelectItem>
+                {TRANSFORMS.map((t) => (
+                  <SelectItem key={t.value} value={t.value} className="text-xs">
+                    {t.label}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Button size="sm" variant="ghost" onClick={handleSwap} className="h-8 px-2" title="Swap output to input">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleSwap}
+              className="h-8 px-2"
+              title="Swap output to input"
+            >
               <ArrowDownUp className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -120,8 +161,15 @@ export function TextWizard({ open, onOpenChange }: TextWizardProps) {
             <div className="flex items-center justify-between mb-1">
               <span className="text-muted-foreground text-[11px] font-medium">Output</span>
               {output && (
-                <button onClick={handleCopy} className="text-muted-foreground hover:text-foreground">
-                  {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3" />}
+                <button
+                  onClick={handleCopy}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {copied ? (
+                    <Check className="h-3 w-3 text-status-success" />
+                  ) : (
+                    <Copy className="h-3 w-3" />
+                  )}
                 </button>
               )}
             </div>

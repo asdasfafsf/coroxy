@@ -35,11 +35,13 @@ export function WebSocketViewer({ frames }: WebSocketViewerProps) {
   const filteredFrames = useMemo(() => {
     let result = frames;
     if (filterDir !== 'all') {
-      result = result.filter(f => filterDir === 'send' ? f.direction === 'send' : f.direction === 'recv');
+      result = result.filter((f) =>
+        filterDir === 'send' ? f.direction === 'send' : f.direction === 'recv',
+      );
     }
     if (searchText.trim()) {
       const q = searchText.toLowerCase();
-      result = result.filter(f => {
+      result = result.filter((f) => {
         const text = decodePayload(f.payload).toLowerCase();
         return text.includes(q);
       });
@@ -56,7 +58,7 @@ export function WebSocketViewer({ frames }: WebSocketViewerProps) {
       {/* Toolbar */}
       <div className="flex items-center gap-1.5 px-2 py-1 border-b border-border shrink-0">
         <div className="flex gap-0.5">
-          {(['all', 'send', 'recv'] as const).map(dir => (
+          {(['all', 'send', 'recv'] as const).map((dir) => (
             <Button
               key={dir}
               size="sm"
@@ -85,7 +87,9 @@ export function WebSocketViewer({ frames }: WebSocketViewerProps) {
         {/* Frame list */}
         <div className="w-1/2 overflow-auto border-r border-border">
           {filteredFrames.length === 0 ? (
-            <div className="text-center text-muted-foreground py-4 text-xs">No WebSocket frames</div>
+            <div className="text-center text-muted-foreground py-4 text-xs">
+              No WebSocket frames
+            </div>
           ) : (
             filteredFrames.map((frame, idx) => {
               const isSend = frame.direction === 'send';
@@ -98,7 +102,7 @@ export function WebSocketViewer({ frames }: WebSocketViewerProps) {
                   key={idx}
                   className={cn(
                     'flex items-start gap-1.5 px-2 py-1 border-b border-border/30 cursor-pointer text-[11px]',
-                    selectedIdx === idx ? 'bg-primary/[0.08]' : 'hover:bg-muted/50'
+                    selectedIdx === idx ? 'bg-primary/[0.08]' : 'hover:bg-muted/50',
                   )}
                   onClick={() => setSelectedIdx(idx)}
                 >
@@ -128,19 +132,27 @@ export function WebSocketViewer({ frames }: WebSocketViewerProps) {
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-[11px]">
                 {selectedFrame.direction === 'send' ? (
-                  <span className="text-status-info flex items-center gap-1"><ArrowUp className="h-3 w-3" /> Sent</span>
+                  <span className="text-status-info flex items-center gap-1">
+                    <ArrowUp className="h-3 w-3" /> Sent
+                  </span>
                 ) : (
-                  <span className="text-status-success flex items-center gap-1"><ArrowDown className="h-3 w-3" /> Received</span>
+                  <span className="text-status-success flex items-center gap-1">
+                    <ArrowDown className="h-3 w-3" /> Received
+                  </span>
                 )}
                 <span className="text-muted-foreground">opcode: {selectedFrame.opcode}</span>
-                <span className="text-muted-foreground">{selectedFrame.payload?.length || 0} bytes</span>
+                <span className="text-muted-foreground">
+                  {selectedFrame.payload?.length || 0} bytes
+                </span>
               </div>
               <pre className="whitespace-pre-wrap text-foreground text-[11px] leading-4 bg-secondary p-2 rounded-md max-h-[300px] overflow-auto font-mono">
                 {isJson ? tryFormatJson(selectedText) : selectedText || '[empty]'}
               </pre>
             </div>
           ) : (
-            <div className="text-center text-muted-foreground py-4 text-xs">Select a frame to preview</div>
+            <div className="text-center text-muted-foreground py-4 text-xs">
+              Select a frame to preview
+            </div>
           )}
         </div>
       </div>

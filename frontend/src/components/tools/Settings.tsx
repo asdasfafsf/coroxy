@@ -62,7 +62,9 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
               </div>
               <div className="flex">
                 <span className="text-muted-foreground w-24">Fingerprint</span>
-                <span className="text-foreground font-mono truncate">{caInfo.fingerprint?.slice(0, 32)}...</span>
+                <span className="text-foreground font-mono truncate">
+                  {caInfo.fingerprint?.slice(0, 32)}...
+                </span>
               </div>
               <div className="flex">
                 <span className="text-muted-foreground w-24">Status</span>
@@ -94,8 +96,8 @@ export function Settings({ open, onOpenChange }: SettingsProps) {
           </div>
 
           <p className="text-[11px] text-muted-foreground">
-            Installing the CA certificate enables HTTPS traffic inspection.
-            A system password prompt will appear.
+            Installing the CA certificate enables HTTPS traffic inspection. A system password prompt
+            will appear.
           </p>
         </div>
       </DialogContent>

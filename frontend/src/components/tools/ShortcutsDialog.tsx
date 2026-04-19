@@ -56,7 +56,10 @@ export function ShortcutsDialog({ open, onOpenChange }: ShortcutsDialogProps) {
               <h3 className="text-xs font-semibold text-muted-foreground mb-2">{section.title}</h3>
               <div className="space-y-1.5">
                 {section.entries.map((entry) => (
-                  <div key={entry.description} className="flex items-center justify-between text-xs">
+                  <div
+                    key={entry.description}
+                    className="flex items-center justify-between text-xs"
+                  >
                     <span className="text-foreground">{entry.description}</span>
                     <kbd className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-mono text-[11px] border border-border">
                       {entry.keys}
