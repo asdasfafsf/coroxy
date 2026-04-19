@@ -2,13 +2,21 @@ import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-const TAB_TRIGGER_CLASS = 'text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]';
+const TAB_TRIGGER_CLASS =
+  'text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]';
 const TAB_LIST_CLASS = 'bg-card border-b border-border rounded-none h-8 px-1';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
-import { ChevronRight, Copy, Check, ArrowUpRight, ArrowDownLeft, MousePointerClick } from 'lucide-react';
+import {
+  ChevronRight,
+  Copy,
+  Check,
+  ArrowUpRight,
+  ArrowDownLeft,
+  MousePointerClick,
+} from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
@@ -28,7 +36,9 @@ export function Inspector({ session }: InspectorProps) {
         </div>
         <div className="text-center">
           <div className="text-sm font-medium text-foreground/60">Select a session</div>
-          <div className="text-xs mt-1 opacity-50">Click a request in the sidebar to inspect it</div>
+          <div className="text-xs mt-1 opacity-50">
+            Click a request in the sidebar to inspect it
+          </div>
         </div>
       </div>
     );
@@ -42,26 +52,57 @@ export function Inspector({ session }: InspectorProps) {
           <PaneHeader title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
-              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>Headers</TabsTrigger>
+              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>
+                Headers
+              </TabsTrigger>
               <TabsTrigger value="query" className={TAB_TRIGGER_CLASS}>
                 Query{countBadge(session.request?.query_params)}
               </TabsTrigger>
               <TabsTrigger value="cookies" className={TAB_TRIGGER_CLASS}>
                 Cookies{countBadge(session.request?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="webforms" className={TAB_TRIGGER_CLASS}>WebForms</TabsTrigger>
-              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>Body</TabsTrigger>
-              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>Hex</TabsTrigger>
-              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>Raw</TabsTrigger>
+              <TabsTrigger value="webforms" className={TAB_TRIGGER_CLASS}>
+                WebForms
+              </TabsTrigger>
+              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>
+                Body
+              </TabsTrigger>
+              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>
+                Hex
+              </TabsTrigger>
+              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>
+                Raw
+              </TabsTrigger>
             </TabsList>
             <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
-              <TabsContent value="headers" className="mt-0"><RequestHeaders session={session} /></TabsContent>
-              <TabsContent value="query" className="mt-0"><QueryView params={session.request?.query_params} /></TabsContent>
-              <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.request?.cookies} /></TabsContent>
-              <TabsContent value="webforms" className="mt-0"><WebFormsView body={session.request?.body} contentType={session.request?.content_type} /></TabsContent>
-              <TabsContent value="body" className="mt-0"><BodyContent body={session.request?.body} contentType={session.request?.content_type} size={session.request?.body_size} /></TabsContent>
-              <TabsContent value="hex" className="mt-0"><HexView body={session.request?.body} /></TabsContent>
-              <TabsContent value="raw" className="mt-0"><RawRequest session={session} /></TabsContent>
+              <TabsContent value="headers" className="mt-0">
+                <RequestHeaders session={session} />
+              </TabsContent>
+              <TabsContent value="query" className="mt-0">
+                <QueryView params={session.request?.query_params} />
+              </TabsContent>
+              <TabsContent value="cookies" className="mt-0">
+                <CookieTable cookies={session.request?.cookies} />
+              </TabsContent>
+              <TabsContent value="webforms" className="mt-0">
+                <WebFormsView
+                  body={session.request?.body}
+                  contentType={session.request?.content_type}
+                />
+              </TabsContent>
+              <TabsContent value="body" className="mt-0">
+                <BodyContent
+                  body={session.request?.body}
+                  contentType={session.request?.content_type}
+                  size={session.request?.body_size}
+                />
+              </TabsContent>
+              <TabsContent value="hex" className="mt-0">
+                <HexView body={session.request?.body} />
+              </TabsContent>
+              <TabsContent value="raw" className="mt-0">
+                <RawRequest session={session} />
+              </TabsContent>
             </div>
           </Tabs>
         </div>
@@ -75,29 +116,58 @@ export function Inspector({ session }: InspectorProps) {
           <PaneHeader title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
-              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>Headers</TabsTrigger>
+              <TabsTrigger value="headers" className={TAB_TRIGGER_CLASS}>
+                Headers
+              </TabsTrigger>
               <TabsTrigger value="cookies" className={TAB_TRIGGER_CLASS}>
                 Cookies{countBadge(session.response?.cookies)}
               </TabsTrigger>
-              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>Body</TabsTrigger>
-              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>Hex</TabsTrigger>
-              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>Raw</TabsTrigger>
-              <TabsTrigger value="timing" className={TAB_TRIGGER_CLASS}>Timing</TabsTrigger>
-              {(session as SessionWithWS).ws_frames && (session as SessionWithWS).ws_frames!.length > 0 && (
-                <TabsTrigger value="websocket" className={TAB_TRIGGER_CLASS}>
-                  WS ({(session as SessionWithWS).ws_frames!.length})
-                </TabsTrigger>
-              )}
+              <TabsTrigger value="body" className={TAB_TRIGGER_CLASS}>
+                Body
+              </TabsTrigger>
+              <TabsTrigger value="hex" className={TAB_TRIGGER_CLASS}>
+                Hex
+              </TabsTrigger>
+              <TabsTrigger value="raw" className={TAB_TRIGGER_CLASS}>
+                Raw
+              </TabsTrigger>
+              <TabsTrigger value="timing" className={TAB_TRIGGER_CLASS}>
+                Timing
+              </TabsTrigger>
+              {(session as SessionWithWS).ws_frames &&
+                (session as SessionWithWS).ws_frames!.length > 0 && (
+                  <TabsTrigger value="websocket" className={TAB_TRIGGER_CLASS}>
+                    WS ({(session as SessionWithWS).ws_frames!.length})
+                  </TabsTrigger>
+                )}
             </TabsList>
             <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
-              <TabsContent value="headers" className="mt-0"><ResponseHeaders session={session} /></TabsContent>
-              <TabsContent value="cookies" className="mt-0"><CookieTable cookies={session.response?.cookies} /></TabsContent>
-              <TabsContent value="body" className="mt-0"><BodyContent body={session.response?.body} contentType={session.response?.content_type} size={session.response?.body_size} /></TabsContent>
-              <TabsContent value="hex" className="mt-0"><HexView body={session.response?.body} /></TabsContent>
-              <TabsContent value="raw" className="mt-0"><RawResponse session={session} /></TabsContent>
-              <TabsContent value="timing" className="mt-0"><TimingView session={session} /></TabsContent>
+              <TabsContent value="headers" className="mt-0">
+                <ResponseHeaders session={session} />
+              </TabsContent>
+              <TabsContent value="cookies" className="mt-0">
+                <CookieTable cookies={session.response?.cookies} />
+              </TabsContent>
+              <TabsContent value="body" className="mt-0">
+                <BodyContent
+                  body={session.response?.body}
+                  contentType={session.response?.content_type}
+                  size={session.response?.body_size}
+                />
+              </TabsContent>
+              <TabsContent value="hex" className="mt-0">
+                <HexView body={session.response?.body} />
+              </TabsContent>
+              <TabsContent value="raw" className="mt-0">
+                <RawResponse session={session} />
+              </TabsContent>
+              <TabsContent value="timing" className="mt-0">
+                <TimingView session={session} />
+              </TabsContent>
               {(session as SessionWithWS).ws_frames && (
-                <TabsContent value="websocket" className="mt-0 -m-3"><WebSocketViewer frames={(session as SessionWithWS).ws_frames!} /></TabsContent>
+                <TabsContent value="websocket" className="mt-0 -m-3">
+                  <WebSocketViewer frames={(session as SessionWithWS).ws_frames!} />
+                </TabsContent>
               )}
             </div>
           </Tabs>
@@ -122,12 +192,28 @@ function countBadge(items: unknown[] | undefined | null): string {
 }
 
 const IMPORTANT_HEADERS = new Set([
-  'authorization', 'content-type', 'set-cookie', 'cookie',
-  'cache-control', 'location', 'x-forwarded-for', 'origin',
-  'access-control-allow-origin', 'content-encoding', 'transfer-encoding',
+  'authorization',
+  'content-type',
+  'set-cookie',
+  'cookie',
+  'cache-control',
+  'location',
+  'x-forwarded-for',
+  'origin',
+  'access-control-allow-origin',
+  'content-encoding',
+  'transfer-encoding',
 ]);
 
-function CollapsibleSection({ title, children, defaultOpen = true }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = true,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -142,7 +228,15 @@ function CollapsibleSection({ title, children, defaultOpen = true }: { title: st
   );
 }
 
-function CopyableRow({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
+function CopyableRow({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -153,12 +247,29 @@ function CopyableRow({ label, value, highlight = false }: { label: string; value
 
   return (
     <div className="flex text-xs group items-start">
-      <span className={cn('w-40 shrink-0 truncate', highlight ? 'text-status-warning font-medium' : 'text-primary')}>{label}</span>
-      <span className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1" onClick={handleCopy}>
+      <span
+        className={cn(
+          'w-40 shrink-0 truncate',
+          highlight ? 'text-status-warning font-medium' : 'text-primary',
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
+        onClick={handleCopy}
+      >
         {value}
       </span>
-      <button onClick={handleCopy} className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0">
-        {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+      <button
+        onClick={handleCopy}
+        className="opacity-0 group-hover:opacity-100 transition-opacity ml-1 shrink-0"
+      >
+        {copied ? (
+          <Check className="h-3 w-3 text-status-success" />
+        ) : (
+          <Copy className="h-3 w-3 text-muted-foreground" />
+        )}
       </button>
     </div>
   );
@@ -221,7 +332,8 @@ function ResponseHeaders({ session }: { session: model.Session }) {
 }
 
 function QueryView({ params }: { params: { name: string; value: string }[] | undefined | null }) {
-  if (!params || params.length === 0) return <div className="text-muted-foreground text-xs">No query parameters</div>;
+  if (!params || params.length === 0)
+    return <div className="text-muted-foreground text-xs">No query parameters</div>;
   return (
     <table className="w-full text-xs">
       <thead>
@@ -243,8 +355,11 @@ function QueryView({ params }: { params: { name: string; value: string }[] | und
 }
 
 function CookieTable({ cookies }: { cookies: model.HTTPCookie[] | undefined | null }) {
-  if (!cookies || cookies.length === 0) return <div className="text-muted-foreground text-xs">No cookies</div>;
-  const hasAttributes = cookies.some(c => c.domain || c.path || c.expires || c.secure || c.http_only || c.same_site);
+  if (!cookies || cookies.length === 0)
+    return <div className="text-muted-foreground text-xs">No cookies</div>;
+  const hasAttributes = cookies.some(
+    (c) => c.domain || c.path || c.expires || c.secure || c.http_only || c.same_site,
+  );
   return (
     <table className="w-full text-xs">
       <thead>
@@ -265,14 +380,23 @@ function CookieTable({ cookies }: { cookies: model.HTTPCookie[] | undefined | nu
         {cookies.map((c, i) => (
           <tr key={i} className="border-b border-border/50">
             <td className="py-1 px-2 text-primary">{c.name}</td>
-            <td className="py-1 px-2 text-foreground break-all max-w-[200px] truncate" title={c.value}>{c.value}</td>
+            <td
+              className="py-1 px-2 text-foreground break-all max-w-[200px] truncate"
+              title={c.value}
+            >
+              {c.value}
+            </td>
             {hasAttributes && (
               <>
                 <td className="py-1 px-2 text-muted-foreground">{c.domain || '-'}</td>
                 <td className="py-1 px-2 text-muted-foreground">{c.path || '-'}</td>
-                <td className="py-1 px-2 text-muted-foreground">{c.expires || (c.max_age ? `${c.max_age}s` : '-')}</td>
+                <td className="py-1 px-2 text-muted-foreground">
+                  {c.expires || (c.max_age ? `${c.max_age}s` : '-')}
+                </td>
                 <td className="py-1 px-2 text-center text-muted-foreground">
-                  {[c.secure && 'Secure', c.http_only && 'HttpOnly', c.same_site].filter(Boolean).join(', ') || '-'}
+                  {[c.secure && 'Secure', c.http_only && 'HttpOnly', c.same_site]
+                    .filter(Boolean)
+                    .join(', ') || '-'}
                 </td>
               </>
             )}
@@ -283,18 +407,30 @@ function CookieTable({ cookies }: { cookies: model.HTTPCookie[] | undefined | nu
   );
 }
 
-function WebFormsView({ body, contentType }: { body: number[] | Uint8Array | string | undefined | null; contentType?: string }) {
+function WebFormsView({
+  body,
+  contentType,
+}: {
+  body: number[] | Uint8Array | string | undefined | null;
+  contentType?: string;
+}) {
   const decoded = decodeBody(body);
   if (!decoded) return <div className="text-muted-foreground text-xs">No form data</div>;
   if (!contentType?.includes('x-www-form-urlencoded')) {
-    return <div className="text-muted-foreground text-xs">Content-Type is not application/x-www-form-urlencoded</div>;
+    return (
+      <div className="text-muted-foreground text-xs">
+        Content-Type is not application/x-www-form-urlencoded
+      </div>
+    );
   }
   const params: { name: string; value: string }[] = [];
   for (const pair of decoded.split('&')) {
     const [name, ...rest] = pair.split('=');
-    if (name) params.push({ name: decodeURIComponent(name), value: decodeURIComponent(rest.join('=')) });
+    if (name)
+      params.push({ name: decodeURIComponent(name), value: decodeURIComponent(rest.join('=')) });
   }
-  if (params.length === 0) return <div className="text-muted-foreground text-xs">Empty form data</div>;
+  if (params.length === 0)
+    return <div className="text-muted-foreground text-xs">Empty form data</div>;
   return (
     <table className="w-full text-xs">
       <thead>
@@ -315,7 +451,15 @@ function WebFormsView({ body, contentType }: { body: number[] | Uint8Array | str
   );
 }
 
-function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array | string | undefined | null; contentType?: string; size?: number }) {
+function BodyContent({
+  body,
+  contentType,
+  size,
+}: {
+  body: number[] | Uint8Array | string | undefined | null;
+  contentType?: string;
+  size?: number;
+}) {
   const [viewMode, setViewMode] = useState<'tree' | 'raw'>('tree');
 
   if (contentType?.startsWith('image/') && body) {
@@ -327,7 +471,11 @@ function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array 
   const isJson = contentType?.includes('json');
   let parsedJson: unknown = null;
   if (isJson) {
-    try { parsedJson = JSON.parse(decoded); } catch { /* not valid json */ }
+    try {
+      parsedJson = JSON.parse(decoded);
+    } catch {
+      /* not valid json */
+    }
   }
 
   return (
@@ -339,13 +487,23 @@ function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array 
         {parsedJson !== null && (
           <div className="flex gap-1">
             <button
-              className={cn('text-[10px] px-1.5 py-0.5 rounded', viewMode === 'tree' ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground')}
+              className={cn(
+                'text-[10px] px-1.5 py-0.5 rounded',
+                viewMode === 'tree'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
               onClick={() => setViewMode('tree')}
             >
               Tree
             </button>
             <button
-              className={cn('text-[10px] px-1.5 py-0.5 rounded', viewMode === 'raw' ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground')}
+              className={cn(
+                'text-[10px] px-1.5 py-0.5 rounded',
+                viewMode === 'raw'
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:text-foreground',
+              )}
               onClick={() => setViewMode('raw')}
             >
               Raw
@@ -366,10 +524,21 @@ function BodyContent({ body, contentType, size }: { body: number[] | Uint8Array 
   );
 }
 
-function ImagePreview({ body, contentType, size }: { body: number[] | Uint8Array | string; contentType: string; size?: number }) {
-  const bytes = typeof body === 'string'
-    ? new TextEncoder().encode(body)
-    : body instanceof Uint8Array ? body : new Uint8Array(body);
+function ImagePreview({
+  body,
+  contentType,
+  size,
+}: {
+  body: number[] | Uint8Array | string;
+  contentType: string;
+  size?: number;
+}) {
+  const bytes =
+    typeof body === 'string'
+      ? new TextEncoder().encode(body)
+      : body instanceof Uint8Array
+        ? body
+        : new Uint8Array(body);
   const mime = contentType.split(';')[0].trim();
   const chunkSize = 8192;
   const parts: string[] = [];
@@ -380,9 +549,15 @@ function ImagePreview({ body, contentType, size }: { body: number[] | Uint8Array
   const dataUrl = `data:${mime};base64,${base64}`;
   return (
     <div>
-      <div className="text-muted-foreground text-xs mb-2">{formatBytes(size)} · {contentType}</div>
+      <div className="text-muted-foreground text-xs mb-2">
+        {formatBytes(size)} · {contentType}
+      </div>
       <div className="bg-secondary p-4 rounded-md flex items-center justify-center">
-        <img src={dataUrl} alt="Response body" className="max-w-full max-h-[400px] object-contain" />
+        <img
+          src={dataUrl}
+          alt="Response body"
+          className="max-w-full max-h-[400px] object-contain"
+        />
       </div>
     </div>
   );
@@ -432,9 +607,13 @@ function TimingView({ session }: { session: model.Session }) {
         <tbody>
           {phases.map((p) => (
             <tr key={p.label} className="border-b border-border/50">
-              <td className="py-1 px-2"><div className={cn('w-3 h-3 rounded-sm', p.colorClass)} /></td>
+              <td className="py-1 px-2">
+                <div className={cn('w-3 h-3 rounded-sm', p.colorClass)} />
+              </td>
               <td className="py-1 px-2 text-foreground">{p.label}</td>
-              <td className="py-1 px-2 text-right text-foreground">{p.value >= 0 ? `${p.value.toFixed(1)}ms` : 'N/A'}</td>
+              <td className="py-1 px-2 text-right text-foreground">
+                {p.value >= 0 ? `${p.value.toFixed(1)}ms` : 'N/A'}
+              </td>
               <td className="py-1 px-2 text-right text-muted-foreground">
                 {p.value > 0 && total > 0 ? `${((p.value / total) * 100).toFixed(0)}%` : '-'}
               </td>
@@ -448,9 +627,12 @@ function TimingView({ session }: { session: model.Session }) {
 
 function HexView({ body }: { body: number[] | Uint8Array | string | undefined | null }) {
   if (!body) return <div className="text-muted-foreground text-xs">No data</div>;
-  const bytes = typeof body === 'string'
-    ? new TextEncoder().encode(body)
-    : body instanceof Uint8Array ? body : new Uint8Array(body);
+  const bytes =
+    typeof body === 'string'
+      ? new TextEncoder().encode(body)
+      : body instanceof Uint8Array
+        ? body
+        : new Uint8Array(body);
   if (bytes.length === 0) return <div className="text-muted-foreground text-xs">Empty body</div>;
   return <HexViewer data={bytes} />;
 }
@@ -459,7 +641,13 @@ function RawRequest({ session }: { session: model.Session }) {
   const req = session.request;
   if (!req) return <Empty />;
   const lines: string[] = [];
-  const urlPath = (() => { try { return new URL(req.url || '').pathname + new URL(req.url || '').search; } catch { return req.url || '/'; } })();
+  const urlPath = (() => {
+    try {
+      return new URL(req.url || '').pathname + new URL(req.url || '').search;
+    } catch {
+      return req.url || '/';
+    }
+  })();
   lines.push(`${req.method} ${urlPath} ${req.http_version || 'HTTP/1.1'}`);
   lines.push(`Host: ${session.target?.host || '-'}`);
   if (req.headers) {
@@ -471,7 +659,11 @@ function RawRequest({ session }: { session: model.Session }) {
   lines.push('');
   const bodyText = decodeBody(req.body);
   if (bodyText) lines.push(bodyText);
-  return <pre className="whitespace-pre-wrap text-foreground text-xs leading-5">{lines.join('\r\n')}</pre>;
+  return (
+    <pre className="whitespace-pre-wrap text-foreground text-xs leading-5">
+      {lines.join('\r\n')}
+    </pre>
+  );
 }
 
 function RawResponse({ session }: { session: model.Session }) {
@@ -487,7 +679,11 @@ function RawResponse({ session }: { session: model.Session }) {
   lines.push('');
   const bodyText = decodeBody(resp.body);
   if (bodyText) lines.push(bodyText);
-  return <pre className="whitespace-pre-wrap text-foreground text-xs leading-5">{lines.join('\r\n')}</pre>;
+  return (
+    <pre className="whitespace-pre-wrap text-foreground text-xs leading-5">
+      {lines.join('\r\n')}
+    </pre>
+  );
 }
 
 function Empty() {
@@ -496,7 +692,11 @@ function Empty() {
 
 function formatBody(text: string, contentType?: string): React.ReactNode {
   if (contentType?.includes('json')) {
-    try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
+    try {
+      return JSON.stringify(JSON.parse(text), null, 2);
+    } catch {
+      return text;
+    }
   }
   if (contentType?.includes('xml') || contentType?.includes('html')) {
     return highlightMarkup(text);
@@ -517,7 +717,7 @@ function highlightMarkup(text: string): React.ReactNode {
         <span className="text-status-error">{tagName}</span>
         <span className="text-status-success">{attrs}</span>
         <span className="text-status-error">{close}</span>
-      </span>
+      </span>,
     );
     lastIndex = match.index + match[0].length;
   }

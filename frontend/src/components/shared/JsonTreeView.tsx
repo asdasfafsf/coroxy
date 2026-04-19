@@ -15,7 +15,17 @@ export function JsonTreeView({ data, rootPath = '$' }: JsonTreeViewProps) {
   );
 }
 
-function JsonNode({ value, path, depth, keyName }: { value: unknown; path: string; depth: number; keyName?: string }) {
+function JsonNode({
+  value,
+  path,
+  depth,
+  keyName,
+}: {
+  value: unknown;
+  path: string;
+  depth: number;
+  keyName?: string;
+}) {
   const [open, setOpen] = useState(depth < 2);
   const [copied, setCopied] = useState(false);
 
@@ -27,20 +37,36 @@ function JsonNode({ value, path, depth, keyName }: { value: unknown; path: strin
   };
 
   if (value === null) {
-    return <Leaf keyName={keyName} path={path}><span className="text-muted-foreground">null</span></Leaf>;
+    return (
+      <Leaf keyName={keyName} path={path}>
+        <span className="text-muted-foreground">null</span>
+      </Leaf>
+    );
   }
 
   if (typeof value === 'boolean') {
-    return <Leaf keyName={keyName} path={path}><span className="text-status-purple">{String(value)}</span></Leaf>;
+    return (
+      <Leaf keyName={keyName} path={path}>
+        <span className="text-status-purple">{String(value)}</span>
+      </Leaf>
+    );
   }
 
   if (typeof value === 'number') {
-    return <Leaf keyName={keyName} path={path}><span className="text-status-info">{value}</span></Leaf>;
+    return (
+      <Leaf keyName={keyName} path={path}>
+        <span className="text-status-info">{value}</span>
+      </Leaf>
+    );
   }
 
   if (typeof value === 'string') {
     const truncated = value.length > 200 ? value.slice(0, 200) + '...' : value;
-    return <Leaf keyName={keyName} path={path}><span className="text-status-success">"{truncated}"</span></Leaf>;
+    return (
+      <Leaf keyName={keyName} path={path}>
+        <span className="text-status-success">"{truncated}"</span>
+      </Leaf>
+    );
   }
 
   if (Array.isArray(value)) {
@@ -51,17 +77,32 @@ function JsonNode({ value, path, depth, keyName }: { value: unknown; path: strin
           className="flex items-center gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 group"
           onClick={() => setOpen(!open)}
         >
-          <ChevronRight className={cn('h-3 w-3 text-muted-foreground transition-transform shrink-0', open && 'rotate-90')} />
+          <ChevronRight
+            className={cn(
+              'h-3 w-3 text-muted-foreground transition-transform shrink-0',
+              open && 'rotate-90',
+            )}
+          />
           {keyName !== undefined && <span className="text-primary">{keyName}: </span>}
           <span className="text-muted-foreground">[{count}]</span>
           <button onClick={handleCopyPath} className="opacity-0 group-hover:opacity-100 ml-1">
-            {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+            {copied ? (
+              <Check className="h-3 w-3 text-status-success" />
+            ) : (
+              <Copy className="h-3 w-3 text-muted-foreground" />
+            )}
           </button>
         </div>
         {open && (
           <div>
             {value.map((item, i) => (
-              <JsonNode key={i} value={item} path={`${path}[${i}]`} depth={depth + 1} keyName={String(i)} />
+              <JsonNode
+                key={i}
+                value={item}
+                path={`${path}[${i}]`}
+                depth={depth + 1}
+                keyName={String(i)}
+              />
             ))}
           </div>
         )}
@@ -78,11 +119,20 @@ function JsonNode({ value, path, depth, keyName }: { value: unknown; path: strin
           className="flex items-center gap-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1 group"
           onClick={() => setOpen(!open)}
         >
-          <ChevronRight className={cn('h-3 w-3 text-muted-foreground transition-transform shrink-0', open && 'rotate-90')} />
+          <ChevronRight
+            className={cn(
+              'h-3 w-3 text-muted-foreground transition-transform shrink-0',
+              open && 'rotate-90',
+            )}
+          />
           {keyName !== undefined && <span className="text-primary">{keyName}: </span>}
           <span className="text-muted-foreground">{'{' + count + '}'}</span>
           <button onClick={handleCopyPath} className="opacity-0 group-hover:opacity-100 ml-1">
-            {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+            {copied ? (
+              <Check className="h-3 w-3 text-status-success" />
+            ) : (
+              <Copy className="h-3 w-3 text-muted-foreground" />
+            )}
           </button>
         </div>
         {open && (
@@ -96,10 +146,22 @@ function JsonNode({ value, path, depth, keyName }: { value: unknown; path: strin
     );
   }
 
-  return <Leaf keyName={keyName} path={path}><span className="text-foreground">{String(value)}</span></Leaf>;
+  return (
+    <Leaf keyName={keyName} path={path}>
+      <span className="text-foreground">{String(value)}</span>
+    </Leaf>
+  );
 }
 
-function Leaf({ keyName, path, children }: { keyName?: string; path: string; children: React.ReactNode }) {
+function Leaf({
+  keyName,
+  path,
+  children,
+}: {
+  keyName?: string;
+  path: string;
+  children: React.ReactNode;
+}) {
   const [copied, setCopied] = useState(false);
 
   const handleCopyPath = (e: React.MouseEvent) => {
@@ -110,11 +172,18 @@ function Leaf({ keyName, path, children }: { keyName?: string; path: string; chi
   };
 
   return (
-    <div className="flex items-center gap-1 hover:bg-muted/50 rounded px-1 -mx-1 group" style={{ paddingLeft: 20 }}>
+    <div
+      className="flex items-center gap-1 hover:bg-muted/50 rounded px-1 -mx-1 group"
+      style={{ paddingLeft: 20 }}
+    >
       {keyName !== undefined && <span className="text-primary">{keyName}: </span>}
       {children}
       <button onClick={handleCopyPath} className="opacity-0 group-hover:opacity-100 ml-1 shrink-0">
-        {copied ? <Check className="h-3 w-3 text-status-success" /> : <Copy className="h-3 w-3 text-muted-foreground" />}
+        {copied ? (
+          <Check className="h-3 w-3 text-status-success" />
+        ) : (
+          <Copy className="h-3 w-3 text-muted-foreground" />
+        )}
       </button>
     </div>
   );

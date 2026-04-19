@@ -19,7 +19,13 @@ export const EMPTY_FILTER: SessionFilter = {
 };
 
 export function isFilterActive(filter: SessionFilter): boolean {
-  return filter.text !== '' || filter.method !== '' || filter.statusMin > 0 || filter.statusMax > 0 || filter.contentType !== '';
+  return (
+    filter.text !== '' ||
+    filter.method !== '' ||
+    filter.statusMin > 0 ||
+    filter.statusMax > 0 ||
+    filter.contentType !== ''
+  );
 }
 
 export function filterSessions(sessions: model.Session[], filter: SessionFilter): model.Session[] {

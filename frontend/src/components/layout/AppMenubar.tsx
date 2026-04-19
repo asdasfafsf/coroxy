@@ -12,7 +12,30 @@ import {
   MenubarCheckboxItem,
 } from '@/components/ui/menubar';
 import { shortcut } from '@/lib/platform';
-import { Play, Square, Save, FolderOpen, Download, Upload, Settings, Scissors, Clipboard, Search, Paintbrush, CheckSquare, Trash2, Shield, Pause, EyeOff, Gauge, Send, Wand2, GitCompare, Keyboard, Info } from 'lucide-react';
+import {
+  Play,
+  Square,
+  Save,
+  FolderOpen,
+  Download,
+  Upload,
+  Settings,
+  Scissors,
+  Clipboard,
+  Search,
+  Paintbrush,
+  CheckSquare,
+  Trash2,
+  Shield,
+  Pause,
+  EyeOff,
+  Gauge,
+  Send,
+  Wand2,
+  GitCompare,
+  Keyboard,
+  Info,
+} from 'lucide-react';
 
 interface AppMenubarProps {
   isRunning: boolean;
@@ -86,13 +109,20 @@ export function AppMenubar({
   onThrottleChange,
 }: AppMenubarProps) {
   return (
-    <Menubar className="rounded-none border-b border-border border-t-0 border-x-0 py-0 px-2 h-9 bg-card shrink-0" style={{ '--wails-draggable': 'drag' } as React.CSSProperties}>
+    <Menubar
+      className="rounded-none border-b border-border border-t-0 border-x-0 py-0 px-2 h-9 bg-card shrink-0"
+      style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
+    >
       {/* File */}
       <MenubarMenu>
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">File</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onToggleProxy}>
-            {isRunning ? <Square className="h-3.5 w-3.5 mr-2" /> : <Play className="h-3.5 w-3.5 mr-2" />}
+            {isRunning ? (
+              <Square className="h-3.5 w-3.5 mr-2" />
+            ) : (
+              <Play className="h-3.5 w-3.5 mr-2" />
+            )}
             {isRunning ? 'Stop Capture' : 'Start Capture'}
             <MenubarShortcut>{shortcut('E')}</MenubarShortcut>
           </MenubarItem>
@@ -109,14 +139,20 @@ export function AppMenubar({
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger><Download className="h-3.5 w-3.5 mr-2" />Export</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <Download className="h-3.5 w-3.5 mr-2" />
+              Export
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onClick={onExportHAR}>HAR (.har)</MenubarItem>
               <MenubarItem onClick={onExportJSON}>JSON (.json)</MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSub>
-            <MenubarSubTrigger><Upload className="h-3.5 w-3.5 mr-2" />Import</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <Upload className="h-3.5 w-3.5 mr-2" />
+              Import
+            </MenubarSubTrigger>
             <MenubarSubContent>
               <MenubarItem onClick={onImportHAR}>HAR (.har)</MenubarItem>
               <MenubarItem onClick={onImportSAZ}>SAZ (.saz)</MenubarItem>
@@ -124,7 +160,8 @@ export function AppMenubar({
           </MenubarSub>
           <MenubarSeparator />
           <MenubarItem onClick={onSettingsClick}>
-            <Settings className="h-3.5 w-3.5 mr-2" />Settings
+            <Settings className="h-3.5 w-3.5 mr-2" />
+            Settings
             <MenubarShortcut>{shortcut(',')}</MenubarShortcut>
           </MenubarItem>
         </MenubarContent>
@@ -135,27 +172,45 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Edit</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onClear}>
-            <Scissors className="h-3.5 w-3.5 mr-2" />Clear All Sessions
+            <Scissors className="h-3.5 w-3.5 mr-2" />
+            Clear All Sessions
             <MenubarShortcut>{shortcut('X', true)}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger><Clipboard className="h-3.5 w-3.5 mr-2" />Copy</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <Clipboard className="h-3.5 w-3.5 mr-2" />
+              Copy
+            </MenubarSubTrigger>
             <MenubarSubContent>
-              <MenubarItem disabled={!hasSelection} onClick={onCopyUrl}>URL <MenubarShortcut>{shortcut('C')}</MenubarShortcut></MenubarItem>
-              <MenubarItem disabled={!hasSelection} onClick={onCopyRequestHeaders}>Request Headers</MenubarItem>
-              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseHeaders}>Response Headers</MenubarItem>
-              <MenubarItem disabled={!hasSelection} onClick={onCopyCurl}>cURL Command</MenubarItem>
-              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseBody}>Response Body</MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyUrl}>
+                URL <MenubarShortcut>{shortcut('C')}</MenubarShortcut>
+              </MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyRequestHeaders}>
+                Request Headers
+              </MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseHeaders}>
+                Response Headers
+              </MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyCurl}>
+                cURL Command
+              </MenubarItem>
+              <MenubarItem disabled={!hasSelection} onClick={onCopyResponseBody}>
+                Response Body
+              </MenubarItem>
             </MenubarSubContent>
           </MenubarSub>
           <MenubarItem disabled>
-            <Search className="h-3.5 w-3.5 mr-2" />Find...
+            <Search className="h-3.5 w-3.5 mr-2" />
+            Find...
             <MenubarShortcut>{shortcut('F')}</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger><Paintbrush className="h-3.5 w-3.5 mr-2" />Mark</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <Paintbrush className="h-3.5 w-3.5 mr-2" />
+              Mark
+            </MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { color: '#ef4444', label: 'Red' },
@@ -165,7 +220,10 @@ export function AppMenubar({
                 { color: '#a855f7', label: 'Purple' },
               ].map(({ color, label }) => (
                 <MenubarItem key={label} disabled={!hasSelection} onClick={() => onMark(color)}>
-                  <span className="w-3 h-3 rounded-full mr-2 shrink-0" style={{ backgroundColor: color }} />
+                  <span
+                    className="w-3 h-3 rounded-full mr-2 shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
                   {label}
                 </MenubarItem>
               ))}
@@ -174,8 +232,14 @@ export function AppMenubar({
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSeparator />
-          <MenubarItem onClick={onSelectAll}><CheckSquare className="h-3.5 w-3.5 mr-2" />Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut></MenubarItem>
-          <MenubarItem onClick={onDeleteSelected}><Trash2 className="h-3.5 w-3.5 mr-2" />Delete Selected <MenubarShortcut>Del</MenubarShortcut></MenubarItem>
+          <MenubarItem onClick={onSelectAll}>
+            <CheckSquare className="h-3.5 w-3.5 mr-2" />
+            Select All <MenubarShortcut>{shortcut('A')}</MenubarShortcut>
+          </MenubarItem>
+          <MenubarItem onClick={onDeleteSelected}>
+            <Trash2 className="h-3.5 w-3.5 mr-2" />
+            Delete Selected <MenubarShortcut>Del</MenubarShortcut>
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -184,17 +248,24 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Rules</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onRulesClick}>
-            <Shield className="h-3.5 w-3.5 mr-2" />AutoResponder...
+            <Shield className="h-3.5 w-3.5 mr-2" />
+            AutoResponder...
             <MenubarShortcut>{shortcut('R', true)}</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem disabled><Pause className="h-3.5 w-3.5 mr-2" />Breakpoints...</MenubarItem>
+          <MenubarItem disabled>
+            <Pause className="h-3.5 w-3.5 mr-2" />
+            Breakpoints...
+          </MenubarItem>
           <MenubarSeparator />
           <MenubarCheckboxItem checked={sysProxy} onClick={onToggleSysProxy}>
             System Proxy
           </MenubarCheckboxItem>
           <MenubarSeparator />
           <MenubarSub>
-            <MenubarSubTrigger><EyeOff className="h-3.5 w-3.5 mr-2" />Hide</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <EyeOff className="h-3.5 w-3.5 mr-2" />
+              Hide
+            </MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { key: 'image', label: 'Images' },
@@ -204,14 +275,21 @@ export function AppMenubar({
                 { key: 'json', label: 'JSON' },
                 { key: 'xml', label: 'XML' },
               ].map(({ key, label }) => (
-                <MenubarCheckboxItem key={key} checked={hiddenTypes.has(key)} onClick={() => onToggleHide(key)}>
+                <MenubarCheckboxItem
+                  key={key}
+                  checked={hiddenTypes.has(key)}
+                  onClick={() => onToggleHide(key)}
+                >
                   {label}
                 </MenubarCheckboxItem>
               ))}
             </MenubarSubContent>
           </MenubarSub>
           <MenubarSub>
-            <MenubarSubTrigger><Gauge className="h-3.5 w-3.5 mr-2" />Network Throttling</MenubarSubTrigger>
+            <MenubarSubTrigger>
+              <Gauge className="h-3.5 w-3.5 mr-2" />
+              Network Throttling
+            </MenubarSubTrigger>
             <MenubarSubContent>
               {[
                 { key: 'off', label: 'No Throttling' },
@@ -219,7 +297,11 @@ export function AppMenubar({
                 { key: '4g', label: '4G (4 Mbps)' },
                 { key: 'wifi', label: 'WiFi (30 Mbps)' },
               ].map(({ key, label }) => (
-                <MenubarCheckboxItem key={key} checked={throttlePreset === key} onClick={() => onThrottleChange(key)}>
+                <MenubarCheckboxItem
+                  key={key}
+                  checked={throttlePreset === key}
+                  onClick={() => onThrottleChange(key)}
+                >
                   {label}
                 </MenubarCheckboxItem>
               ))}
@@ -233,11 +315,18 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Tools</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onComposerClick}>
-            <Send className="h-3.5 w-3.5 mr-2" />Composer
+            <Send className="h-3.5 w-3.5 mr-2" />
+            Composer
             <MenubarShortcut>{shortcut('N', true)}</MenubarShortcut>
           </MenubarItem>
-          <MenubarItem onClick={onTextWizardClick}><Wand2 className="h-3.5 w-3.5 mr-2" />TextWizard...</MenubarItem>
-          <MenubarItem disabled={selectedCount !== 2} onClick={onCompareClick}><GitCompare className="h-3.5 w-3.5 mr-2" />Compare Sessions...</MenubarItem>
+          <MenubarItem onClick={onTextWizardClick}>
+            <Wand2 className="h-3.5 w-3.5 mr-2" />
+            TextWizard...
+          </MenubarItem>
+          <MenubarItem disabled={selectedCount !== 2} onClick={onCompareClick}>
+            <GitCompare className="h-3.5 w-3.5 mr-2" />
+            Compare Sessions...
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
 
@@ -246,11 +335,15 @@ export function AppMenubar({
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Help</MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onShortcutsClick}>
-            <Keyboard className="h-3.5 w-3.5 mr-2" />Keyboard Shortcuts
+            <Keyboard className="h-3.5 w-3.5 mr-2" />
+            Keyboard Shortcuts
             <MenubarShortcut>?</MenubarShortcut>
           </MenubarItem>
           <MenubarSeparator />
-          <MenubarItem onClick={onAboutClick}><Info className="h-3.5 w-3.5 mr-2" />About Coroxy</MenubarItem>
+          <MenubarItem onClick={onAboutClick}>
+            <Info className="h-3.5 w-3.5 mr-2" />
+            About Coroxy
+          </MenubarItem>
         </MenubarContent>
       </MenubarMenu>
     </Menubar>

@@ -21,17 +21,27 @@ interface StatusBarProps {
   totalResponseBytes: number;
 }
 
-export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThemeChange, totalRequestBytes, totalResponseBytes }: StatusBarProps) {
+export function StatusBar({
+  sessionCount,
+  selectedCount,
+  isRunning,
+  theme,
+  onThemeChange,
+  totalRequestBytes,
+  totalResponseBytes,
+}: StatusBarProps) {
   const nextTheme = THEME_NEXT[theme];
 
   return (
     <div className="flex items-center px-3 py-0.5 bg-sidebar border-t border-border text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
       {/* Proxy status */}
       <span className="flex items-center gap-1.5">
-        <span className={cn(
-          'w-2 h-2 rounded-full',
-          isRunning ? 'bg-status-success animate-pulse-dot' : 'bg-muted-foreground/50'
-        )} />
+        <span
+          className={cn(
+            'w-2 h-2 rounded-full',
+            isRunning ? 'bg-status-success animate-pulse-dot' : 'bg-muted-foreground/50',
+          )}
+        />
         <span className={cn(isRunning && 'text-foreground font-medium')}>
           {isRunning ? 'Listening :8673' : 'Stopped'}
         </span>
@@ -82,9 +92,7 @@ export function StatusBar({ sessionCount, selectedCount, isRunning, theme, onThe
             <span>{THEME_LABEL[theme]}</span>
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">
-          Click to switch to {THEME_LABEL[nextTheme]}
-        </TooltipContent>
+        <TooltipContent side="top">Click to switch to {THEME_LABEL[nextTheme]}</TooltipContent>
       </Tooltip>
     </div>
   );

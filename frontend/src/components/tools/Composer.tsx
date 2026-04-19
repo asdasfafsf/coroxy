@@ -3,7 +3,13 @@ import { SendRequest } from '../../../wailsjs/go/app/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatBytes, tryFormatJson } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -62,9 +68,16 @@ export function Composer({ open, onClose, prefill }: ComposerProps) {
       }
       const resp = await SendRequest({ method, url, headers: headerMap, body });
       setResponse(resp);
-      setHistory(prev => [{
-        method, url, status: resp.status_code, duration: resp.duration_ms, timestamp: new Date()
-      }, ...prev.slice(0, 49)]);
+      setHistory((prev) => [
+        {
+          method,
+          url,
+          status: resp.status_code,
+          duration: resp.duration_ms,
+          timestamp: new Date(),
+        },
+        ...prev.slice(0, 49),
+      ]);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -117,7 +130,14 @@ export function Composer({ open, onClose, prefill }: ComposerProps) {
                 >
                   <span className="flex items-center gap-1">
                     <span className="text-primary font-medium">{entry.method}</span>
-                    <span className={cn('text-[10px]', entry.status < 400 ? 'text-status-success' : 'text-destructive')}>{entry.status}</span>
+                    <span
+                      className={cn(
+                        'text-[10px]',
+                        entry.status < 400 ? 'text-status-success' : 'text-destructive',
+                      )}
+                    >
+                      {entry.status}
+                    </span>
                     <span className="text-muted-foreground text-[10px]">{entry.duration}ms</span>
                   </span>
                   <span className="text-muted-foreground truncate">{entry.url}</span>
@@ -131,14 +151,23 @@ export function Composer({ open, onClose, prefill }: ComposerProps) {
         <div className="flex-1 p-3 space-y-2 max-h-48 overflow-auto">
           <div className="flex gap-2">
             <Select value={method} onValueChange={setMethod}>
-              <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-24 h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(m => (
-                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            <Input className="flex-1 h-7 text-xs font-mono" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://api.example.com/endpoint" />
+            <Input
+              className="flex-1 h-7 text-xs font-mono"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://api.example.com/endpoint"
+            />
             <Button size="sm" onClick={handleSend} disabled={loading} className="h-7">
               {loading ? '...' : 'Send'}
             </Button>
@@ -147,12 +176,22 @@ export function Composer({ open, onClose, prefill }: ComposerProps) {
           <div className="flex gap-2">
             <div className="flex-1">
               <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Headers</div>
-              <Textarea className="h-12 resize-none font-mono text-[11px]" value={headers} onChange={(e) => setHeaders(e.target.value)} placeholder={'Content-Type: application/json'} />
+              <Textarea
+                className="h-12 resize-none font-mono text-[11px]"
+                value={headers}
+                onChange={(e) => setHeaders(e.target.value)}
+                placeholder={'Content-Type: application/json'}
+              />
             </div>
             {['POST', 'PUT', 'PATCH'].includes(method) && (
               <div className="flex-1">
                 <div className="text-muted-foreground text-[10px] font-medium mb-0.5">Body</div>
-                <Textarea className="h-12 resize-none font-mono text-[11px]" value={body} onChange={(e) => setBody(e.target.value)} placeholder='{"key": "value"}' />
+                <Textarea
+                  className="h-12 resize-none font-mono text-[11px]"
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder='{"key": "value"}'
+                />
               </div>
             )}
           </div>
@@ -162,11 +201,21 @@ export function Composer({ open, onClose, prefill }: ComposerProps) {
           {response && (
             <div className="bg-secondary rounded-md p-2 space-y-1">
               <div className="flex items-center gap-2">
-                <span className={cn('text-xs font-semibold', response.status_code < 400 ? 'text-status-success' : 'text-destructive')}>
+                <span
+                  className={cn(
+                    'text-xs font-semibold',
+                    response.status_code < 400 ? 'text-status-success' : 'text-destructive',
+                  )}
+                >
                   {response.status_text}
                 </span>
-                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5"><Clock className="h-3 w-3" />{response.duration_ms}ms</span>
-                <span className="text-[10px] text-muted-foreground">{formatBytes(response.body_size)}</span>
+                <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                  <Clock className="h-3 w-3" />
+                  {response.duration_ms}ms
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  {formatBytes(response.body_size)}
+                </span>
               </div>
               <pre className="whitespace-pre-wrap text-foreground text-[11px] leading-4 max-h-20 overflow-auto">
                 {tryFormatJson(response.body)}

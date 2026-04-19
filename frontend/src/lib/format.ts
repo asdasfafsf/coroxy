@@ -30,7 +30,11 @@ export function shortContentType(ct: string | undefined): string {
 
 export function getPath(url: string | undefined): string {
   if (!url) return '-';
-  try { return new URL(url).pathname; } catch { return url; }
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url;
+  }
 }
 
 export function decodeBody(body: number[] | Uint8Array | string | undefined | null): string | null {
@@ -46,5 +50,9 @@ export function decodeBody(body: number[] | Uint8Array | string | undefined | nu
 }
 
 export function tryFormatJson(text: string): string {
-  try { return JSON.stringify(JSON.parse(text), null, 2); } catch { return text; }
+  try {
+    return JSON.stringify(JSON.parse(text), null, 2);
+  } catch {
+    return text;
+  }
 }

@@ -21,7 +21,10 @@ function applyTheme(theme: Theme) {
   // 2. Wails native window — optional, may fail in browser
   if (typeof window !== 'undefined' && 'runtime' in window) {
     try {
-      const rt = (window as Record<string, unknown>).runtime as Record<string, (...args: unknown[]) => void>;
+      const rt = (window as Record<string, unknown>).runtime as Record<
+        string,
+        (...args: unknown[]) => void
+      >;
       if (theme === 'system') {
         rt.WindowSetSystemDefaultTheme();
       } else if (resolved === 'dark') {
@@ -42,13 +45,19 @@ export function useTheme() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored === 'light' || stored === 'dark' || stored === 'system') return stored;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     return 'dark';
   });
 
   const setTheme = useCallback((t: Theme) => {
     setThemeState(t);
-    try { localStorage.setItem(STORAGE_KEY, t); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, t);
+    } catch {
+      /* ignore */
+    }
     applyTheme(t);
   }, []);
 

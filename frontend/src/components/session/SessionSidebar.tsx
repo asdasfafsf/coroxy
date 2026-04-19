@@ -28,9 +28,7 @@ export function SessionSidebar({
         className="h-9 shrink-0 border-b border-border bg-card flex items-center pl-[78px] pr-3"
         style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
       >
-        <span className="text-xs font-medium text-muted-foreground">
-          Sessions
-        </span>
+        <span className="text-xs font-medium text-muted-foreground">Sessions</span>
       </div>
 
       {/* Session group list */}
@@ -43,7 +41,7 @@ export function SessionSidebar({
                 'w-full flex items-center gap-2 px-3 py-2 text-[12px] text-left transition-colors',
                 activeGroupId === group.id
                   ? 'bg-sidebar-accent text-foreground font-medium'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-foreground'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-foreground',
               )}
               onClick={() => onGroupChange(group.id)}
             >
@@ -54,12 +52,14 @@ export function SessionSidebar({
               )}
               <span className="truncate flex-1">{group.label}</span>
               {group.count > 0 && (
-                <span className={cn(
-                  'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded-full',
-                  activeGroupId === group.id
-                    ? 'bg-primary/15 text-primary font-semibold'
-                    : 'text-muted-foreground'
-                )}>
+                <span
+                  className={cn(
+                    'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded-full',
+                    activeGroupId === group.id
+                      ? 'bg-primary/15 text-primary font-semibold'
+                      : 'text-muted-foreground',
+                  )}
+                >
                   {group.count}
                 </span>
               )}

@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
-import { PendingBreakpoints, BreakpointResume, BreakpointDrop, BreakpointResumeWithEdit } from '../../../wailsjs/go/app/App';
+import {
+  PendingBreakpoints,
+  BreakpointResume,
+  BreakpointDrop,
+  BreakpointResumeWithEdit,
+} from '../../../wailsjs/go/app/App';
 import { EventsOn } from '../../../wailsjs/runtime/runtime';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertCircle, Play, X, Pencil } from 'lucide-react';
 
@@ -75,7 +86,10 @@ export function BreakpointPanel() {
           size="sm"
           variant="ghost"
           className="h-6 text-[11px] text-muted-foreground"
-          onClick={async () => { for (const p of pending) await BreakpointResume(p.id); refresh(); }}
+          onClick={async () => {
+            for (const p of pending) await BreakpointResume(p.id);
+            refresh();
+          }}
         >
           Resume All
         </Button>
@@ -94,13 +108,33 @@ export function BreakpointPanel() {
                 </span>
                 <div className="text-[10px] text-muted-foreground">{p.host}</div>
               </div>
-              <Button size="sm" variant="ghost" className="h-6 px-1.5 gap-1 text-[11px]" onClick={() => startEdit(p)}>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-1.5 gap-1 text-[11px]"
+                onClick={() => startEdit(p)}
+              >
                 <Pencil className="h-3 w-3" /> Edit
               </Button>
-              <Button size="sm" className="h-6 px-2 gap-1 text-[11px]" onClick={async () => { await BreakpointResume(p.id); refresh(); }}>
+              <Button
+                size="sm"
+                className="h-6 px-2 gap-1 text-[11px]"
+                onClick={async () => {
+                  await BreakpointResume(p.id);
+                  refresh();
+                }}
+              >
                 <Play className="h-3 w-3" /> Resume
               </Button>
-              <Button size="sm" variant="destructive" className="h-6 px-2 gap-1 text-[11px]" onClick={async () => { await BreakpointDrop(p.id); refresh(); }}>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-6 px-2 gap-1 text-[11px]"
+                onClick={async () => {
+                  await BreakpointDrop(p.id);
+                  refresh();
+                }}
+              >
                 <X className="h-3 w-3" /> Drop
               </Button>
             </div>
@@ -110,33 +144,66 @@ export function BreakpointPanel() {
               <div className="p-3 space-y-2 border-t border-border">
                 <Tabs defaultValue="request">
                   <TabsList className="h-7">
-                    <TabsTrigger value="request" className="text-[11px] h-5 px-2">Request</TabsTrigger>
-                    <TabsTrigger value="headers" className="text-[11px] h-5 px-2">Headers</TabsTrigger>
-                    <TabsTrigger value="body" className="text-[11px] h-5 px-2">Body</TabsTrigger>
+                    <TabsTrigger value="request" className="text-[11px] h-5 px-2">
+                      Request
+                    </TabsTrigger>
+                    <TabsTrigger value="headers" className="text-[11px] h-5 px-2">
+                      Headers
+                    </TabsTrigger>
+                    <TabsTrigger value="body" className="text-[11px] h-5 px-2">
+                      Body
+                    </TabsTrigger>
                   </TabsList>
                   <TabsContent value="request" className="mt-2">
                     <div className="flex gap-2">
                       <Select value={editMethod} onValueChange={setEditMethod}>
-                        <SelectTrigger className="w-24 h-7 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-24 h-7 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
-                          {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((m) => (
+                            <SelectItem key={m} value={m}>
+                              {m}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <Input className="flex-1 h-7 text-xs font-mono" value={editUrl} onChange={(e) => setEditUrl(e.target.value)} />
+                      <Input
+                        className="flex-1 h-7 text-xs font-mono"
+                        value={editUrl}
+                        onChange={(e) => setEditUrl(e.target.value)}
+                      />
                     </div>
                   </TabsContent>
                   <TabsContent value="headers" className="mt-2">
-                    <Textarea className="h-20 resize-none font-mono text-[11px]" value={editHeaders} onChange={(e) => setEditHeaders(e.target.value)} placeholder="Header: Value (one per line)" />
+                    <Textarea
+                      className="h-20 resize-none font-mono text-[11px]"
+                      value={editHeaders}
+                      onChange={(e) => setEditHeaders(e.target.value)}
+                      placeholder="Header: Value (one per line)"
+                    />
                   </TabsContent>
                   <TabsContent value="body" className="mt-2">
-                    <Textarea className="h-20 resize-none font-mono text-[11px]" value={editBody} onChange={(e) => setEditBody(e.target.value)} placeholder="Request body" />
+                    <Textarea
+                      className="h-20 resize-none font-mono text-[11px]"
+                      value={editBody}
+                      onChange={(e) => setEditBody(e.target.value)}
+                      placeholder="Request body"
+                    />
                   </TabsContent>
                 </Tabs>
                 <div className="flex gap-2 justify-end">
-                  <Button size="sm" variant="secondary" className="h-6 text-[11px]" onClick={() => setEditingId(null)}>Cancel</Button>
-                  <Button size="sm" className="h-6 text-[11px]" onClick={submitEdit}>Send Edited</Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="h-6 text-[11px]"
+                    onClick={() => setEditingId(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button size="sm" className="h-6 text-[11px]" onClick={submitEdit}>
+                    Send Edited
+                  </Button>
                 </div>
               </div>
             )}

@@ -3,7 +3,7 @@ import { isMac } from '@/lib/platform';
 
 interface HotkeyBinding {
   key: string;
-  mod?: boolean;      // Cmd (Mac) / Ctrl (Win)
+  mod?: boolean; // Cmd (Mac) / Ctrl (Win)
   shift?: boolean;
   handler: () => void;
 }
