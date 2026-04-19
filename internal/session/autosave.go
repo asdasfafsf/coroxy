@@ -79,11 +79,7 @@ func (a *AutoSaver) Start() {
 	a.wg.Add(1)
 	go func() {
 		defer a.wg.Done()
-		defer func() {
-			if r := recover(); r != nil {
-				a.logger.Error("autosave run panic", slog.Any("panic", r))
-			}
-		}()
+		defer recoverGoroutine(a.logger, "autosave run")
 		a.run()
 	}()
 }
@@ -109,11 +105,7 @@ func (a *AutoSaver) MarkDirtyN(count int) {
 			a.wg.Add(1)
 			go func() {
 				defer a.wg.Done()
-				defer func() {
-					if r := recover(); r != nil {
-						a.logger.Error("autosave threshold flush panic", slog.Any("panic", r))
-					}
-				}()
+				defer recoverGoroutine(a.logger, "autosave threshold flush")
 				a.flush("threshold")
 				<-a.flushCh
 			}()
