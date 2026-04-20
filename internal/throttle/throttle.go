@@ -47,7 +47,7 @@ func (t *Throttler) SetConfig(cfg Config) {
 }
 
 // Config returns the current throttling configuration.
-func (t *Throttler) GetConfig() Config {
+func (t *Throttler) Config() Config {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 	return t.config
@@ -63,7 +63,7 @@ func (t *Throttler) Enabled() bool {
 // WrapReader wraps r with bandwidth throttling based on the current config.
 // If throttling is disabled, returns r unchanged.
 func (t *Throttler) WrapReader(r io.Reader) io.Reader {
-	cfg := t.GetConfig()
+	cfg := t.Config()
 	if cfg.BytesPerSec <= 0 {
 		return r
 	}
@@ -73,7 +73,7 @@ func (t *Throttler) WrapReader(r io.Reader) io.Reader {
 // WrapWriter wraps w with bandwidth throttling based on the current config.
 // If throttling is disabled, returns w unchanged.
 func (t *Throttler) WrapWriter(w io.Writer) io.Writer {
-	cfg := t.GetConfig()
+	cfg := t.Config()
 	if cfg.BytesPerSec <= 0 {
 		return w
 	}

@@ -16,7 +16,7 @@ import {
   SaveSessions,
   LoadSessions,
   SetThrottle,
-  GetThrottle,
+  ThrottleState,
 } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
@@ -99,7 +99,7 @@ function App() {
     IsSystemProxyActive()
       .then(setSysProxy)
       .catch(() => {});
-    GetThrottle()
+    ThrottleState()
       .then((cfg) => setThrottlePreset(cfg.preset))
       .catch(() => {});
   }, []);

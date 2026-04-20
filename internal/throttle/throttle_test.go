@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-func TestThrottler_SetGetConfig(t *testing.T) {
+func TestThrottler_SetConfig(t *testing.T) {
 	tr := New()
-	if got := tr.GetConfig(); got != (Config{}) {
+	if got := tr.Config(); got != (Config{}) {
 		t.Errorf("got %+v, want zero Config", got)
 	}
 
 	cfg := Config{BytesPerSec: 1000, Latency: 50 * time.Millisecond}
 	tr.SetConfig(cfg)
-	if got := tr.GetConfig(); got != cfg {
+	if got := tr.Config(); got != cfg {
 		t.Errorf("got %+v, want %+v", got, cfg)
 	}
 }
@@ -164,7 +164,7 @@ func TestThrottler_ConcurrentSetGet(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < iterations; j++ {
-				_ = tr.GetConfig()
+				_ = tr.Config()
 				_ = tr.Enabled()
 			}
 		}()
