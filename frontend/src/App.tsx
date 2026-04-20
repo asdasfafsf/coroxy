@@ -49,7 +49,7 @@ import {
 } from '@/lib/copy';
 import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
-import { type SessionFilter, EMPTY_FILTER, filterSessions } from '@/lib/filter';
+import { evaluate, loadSavedFilters, saveSavedFilters, type SavedFilter } from '@/lib/filter';
 
 function App() {
   const { theme, setTheme } = useTheme();
@@ -66,7 +66,12 @@ function App() {
     headers: string;
     body: string;
   } | null>(null);
-  const [filter, setFilter] = useState<SessionFilter>(EMPTY_FILTER);
+  // WON-189에서 FilterPanel/Editor가 setSavedFilters를 사용. 현재는 read-only + persist.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => loadSavedFilters());
+  useEffect(() => {
+    saveSavedFilters(savedFilters);
+  }, [savedFilters]);
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
   const [sysProxy, setSysProxy] = useState(false);
@@ -74,7 +79,6 @@ function App() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTextWizard, setShowTextWizard] = useState(false);
   const [marks, setMarks] = useState<Map<string, string>>(new Map());
-  const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [throttlePreset, setThrottlePreset] = useState('off');
 
   // ===== Sidebar width (manual drag resize) =====
@@ -170,19 +174,16 @@ function App() {
 
   const isRunning = proxyState === 'running';
 
+  const activeFilter = useMemo<SavedFilter | null>(() => {
+    const tab = sessionTabs.find((t) => t.id === activeTabId);
+    if (!tab || !tab.filterId || tab.filterId === 'default') return null;
+    return savedFilters.find((f) => f.id === tab.filterId) ?? null;
+  }, [sessionTabs, activeTabId, savedFilters]);
+
   const filteredSessions = useMemo(() => {
-    let result = filterSessions(sessions, filter);
-    if (hiddenTypes.size > 0) {
-      result = result.filter((s) => {
-        const ct = s.response?.content_type?.toLowerCase() || '';
-        for (const hidden of hiddenTypes) {
-          if (ct.includes(hidden)) return false;
-        }
-        return true;
-      });
-    }
-    return result;
-  }, [sessions, filter, hiddenTypes]);
+    if (!activeFilter) return sessions;
+    return sessions.filter((s) => evaluate(activeFilter, s));
+  }, [sessions, activeFilter]);
 
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
@@ -498,7 +499,6 @@ function App() {
             selectedCount={selectedIds.size}
             onMark={handleMark}
             onUnmarkAll={handleUnmarkAll}
-            hiddenTypes={hiddenTypes}
             onSave={() =>
               SaveSessions().catch((e) => toast.error('세션 저장 실패', { description: String(e) }))
             }
@@ -512,20 +512,11 @@ function App() {
               SetThrottle(preset);
               setThrottlePreset(preset);
             }}
-            onToggleHide={(type) =>
-              setHiddenTypes((prev) => {
-                const next = new Set(prev);
-                if (next.has(type)) next.delete(type);
-                else next.add(type);
-                return next;
-              })
-            }
           />
           {/* Toolbar */}
           <Toolbar
             onSessionsClear={handleSessionsClear}
-            filter={filter}
-            onFilterChange={setFilter}
+            activeFilterName={activeFilter?.name ?? null}
           />
           {/* Request table + Inspector — vertical split */}
           <ResizablePanelGroup orientation="vertical" className="flex-1">
