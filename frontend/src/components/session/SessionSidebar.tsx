@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Globe, Plus, Wifi, FolderOpen } from 'lucide-react';
+import { Plus, Wifi, FolderOpen } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SessionGroup {
@@ -22,7 +22,7 @@ export function SessionSidebar({
   onGroupAdd,
 }: SessionSidebarProps) {
   return (
-    <div className="flex flex-col h-full bg-sidebar min-w-[180px]">
+    <div className="flex flex-col h-full bg-sidebar min-w-0">
       {/* macOS traffic lights area + drag region */}
       <div
         className="h-9 shrink-0 border-b border-border bg-card flex items-center pl-[78px] pr-3"
@@ -38,10 +38,10 @@ export function SessionSidebar({
             <button
               key={group.id}
               className={cn(
-                'w-full flex items-center gap-2 px-3 py-2 text-[12px] text-left transition-colors',
+                'relative w-full flex items-center gap-2 pl-[10px] pr-3 py-2 text-[12px] text-left transition-colors border-l-2',
                 activeGroupId === group.id
-                  ? 'bg-sidebar-accent text-foreground font-medium'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-foreground',
+                  ? 'bg-primary/15 text-foreground font-medium border-primary'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-foreground border-transparent',
               )}
               onClick={() => onGroupChange(group.id)}
             >
