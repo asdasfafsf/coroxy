@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Sessions,
   ProxyState,
@@ -76,6 +76,50 @@ function App() {
   const [marks, setMarks] = useState<Map<string, string>>(new Map());
   const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set());
   const [throttlePreset, setThrottlePreset] = useState('off');
+
+  // ===== Sidebar width (manual drag resize) =====
+  const SIDEBAR_MIN = 160;
+  const SIDEBAR_MAX = 400;
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('coroxy-sidebar-width');
+      const n = stored ? parseInt(stored, 10) : 200;
+      return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : 200;
+    } catch {
+      return 200;
+    }
+  });
+  const sidebarResizing = useRef(false);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!sidebarResizing.current) return;
+      const next = Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, e.clientX));
+      setSidebarWidth(next);
+    };
+    const onUp = () => {
+      if (!sidebarResizing.current) return;
+      sidebarResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem('coroxy-sidebar-width', String(sidebarWidth));
+      } catch {
+        // ignore quota/storage errors
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [sidebarWidth]);
+  const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    sidebarResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
 
   // Multi-session tabs
   const [sessionTabs, setSessionTabs] = useState([
@@ -377,8 +421,11 @@ function App() {
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground font-sans">
-        {/* ===== Left sidebar — session groups ===== */}
-        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border shrink-0 flex flex-col overflow-hidden">
+        {/* ===== Left sidebar — session groups (draggable width) ===== */}
+        <div
+          className="relative border-r border-border shrink-0 flex flex-col overflow-hidden"
+          style={{ width: sidebarWidth }}
+        >
           <SessionSidebar
             groups={sessionTabs.map((t) => ({
               id: t.id,
@@ -388,6 +435,13 @@ function App() {
             activeGroupId={activeTabId}
             onGroupChange={setActiveTabId}
             onGroupAdd={handleTabAdd}
+          />
+          {/* Drag handle — overlaps right edge border */}
+          <div
+            onMouseDown={handleSidebarResizeStart}
+            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary transition-colors z-10"
+            role="separator"
+            aria-orientation="vertical"
           />
         </div>
 
