@@ -28,7 +28,6 @@ import {
   Trash2,
   Shield,
   Pause,
-  EyeOff,
   Gauge,
   Send,
   Wand2,
@@ -65,8 +64,6 @@ interface AppMenubarProps {
   selectedCount: number;
   onMark: (color: string) => void;
   onUnmarkAll: () => void;
-  hiddenTypes: Set<string>;
-  onToggleHide: (type: string) => void;
   onSave: () => void;
   onLoad: () => void;
   throttlePreset: string;
@@ -101,8 +98,6 @@ export function AppMenubar({
   selectedCount,
   onMark,
   onUnmarkAll,
-  hiddenTypes,
-  onToggleHide,
   onSave,
   onLoad,
   throttlePreset,
@@ -261,30 +256,6 @@ export function AppMenubar({
             System Proxy
           </MenubarCheckboxItem>
           <MenubarSeparator />
-          <MenubarSub>
-            <MenubarSubTrigger>
-              <EyeOff className="h-3.5 w-3.5 mr-2" />
-              Hide
-            </MenubarSubTrigger>
-            <MenubarSubContent>
-              {[
-                { key: 'image', label: 'Images' },
-                { key: 'css', label: 'CSS' },
-                { key: 'javascript', label: 'JavaScript' },
-                { key: 'font', label: 'Fonts' },
-                { key: 'json', label: 'JSON' },
-                { key: 'xml', label: 'XML' },
-              ].map(({ key, label }) => (
-                <MenubarCheckboxItem
-                  key={key}
-                  checked={hiddenTypes.has(key)}
-                  onClick={() => onToggleHide(key)}
-                >
-                  {label}
-                </MenubarCheckboxItem>
-              ))}
-            </MenubarSubContent>
-          </MenubarSub>
           <MenubarSub>
             <MenubarSubTrigger>
               <Gauge className="h-3.5 w-3.5 mr-2" />
