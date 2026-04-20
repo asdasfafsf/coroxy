@@ -376,150 +376,137 @@ function App() {
 
   return (
     <TooltipProvider>
-      <ResizablePanelGroup
-        orientation="horizontal"
-        className="h-screen bg-background text-foreground font-sans"
-      >
+      <div className="flex h-screen bg-background text-foreground font-sans">
         {/* ===== Left sidebar — session groups ===== */}
-        <ResizablePanel defaultSize={15} minSize={8} maxSize={30}>
-          <div className="h-full border-r border-border flex flex-col overflow-hidden">
-            <SessionSidebar
-              groups={sessionTabs.map((t) => ({
-                id: t.id,
-                label: t.label,
-                count: t.id === activeTabId ? filteredSessions.length : 0,
-              }))}
-              activeGroupId={activeTabId}
-              onGroupChange={setActiveTabId}
-              onGroupAdd={handleTabAdd}
-            />
-          </div>
-        </ResizablePanel>
-        <ResizableHandle />
+        <div className="w-[200px] min-w-[160px] max-w-[280px] border-r border-border shrink-0 flex flex-col overflow-hidden">
+          <SessionSidebar
+            groups={sessionTabs.map((t) => ({
+              id: t.id,
+              label: t.label,
+              count: t.id === activeTabId ? filteredSessions.length : 0,
+            }))}
+            activeGroupId={activeTabId}
+            onGroupChange={setActiveTabId}
+            onGroupAdd={handleTabAdd}
+          />
+        </div>
 
         {/* ===== Right main column ===== */}
-        <ResizablePanel defaultSize={85} minSize={40}>
-          <div className="flex flex-col h-full min-w-0">
-            {/* Menubar */}
-            <AppMenubar
-              isRunning={isRunning}
-              sysProxy={sysProxy}
-              hasSelection={!!activeSession}
-              onToggleProxy={handleToggleProxy}
-              onToggleSysProxy={handleToggleSysProxy}
-              onClear={handleClear}
-              onExportHAR={() =>
-                ExportSessionsHAR().catch((e) =>
-                  toast.error('HAR export 실패', { description: String(e) }),
-                )
-              }
-              onExportJSON={() =>
-                ExportSessionsJSON().catch((e) =>
-                  toast.error('JSON export 실패', { description: String(e) }),
-                )
-              }
-              onImportHAR={() =>
-                ImportSessionsHAR().catch((e) =>
-                  toast.error('HAR import 실패', { description: String(e) }),
-                )
-              }
-              onImportSAZ={() =>
-                ImportSessionsSAZ().catch((e) =>
-                  toast.error('SAZ import 실패', { description: String(e) }),
-                )
-              }
-              onSettingsClick={() => setShowSettings(true)}
-              onRulesClick={() => setShowRules(true)}
-              onComposerClick={() => setShowComposer(true)}
-              onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-              onCopyRequestHeaders={() =>
-                activeSession && copyToClipboard(copyRequestHeaders(activeSession))
-              }
-              onCopyResponseHeaders={() =>
-                activeSession && copyToClipboard(copyResponseHeaders(activeSession))
-              }
-              onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-              onCopyResponseBody={() =>
-                activeSession && copyToClipboard(copyResponseBody(activeSession))
-              }
-              onAboutClick={() => setShowAbout(true)}
-              onShortcutsClick={() => setShowShortcuts(true)}
-              onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
-              onDeleteSelected={handleDeleteSelected}
-              onTextWizardClick={() => setShowTextWizard(true)}
-              onCompareClick={handleCompareFromMenu}
-              selectedCount={selectedIds.size}
-              onMark={handleMark}
-              onUnmarkAll={handleUnmarkAll}
-              hiddenTypes={hiddenTypes}
-              onSave={() =>
-                SaveSessions().catch((e) =>
-                  toast.error('세션 저장 실패', { description: String(e) }),
-                )
-              }
-              onLoad={() =>
-                LoadSessions().catch((e) =>
-                  toast.error('세션 불러오기 실패', { description: String(e) }),
-                )
-              }
-              throttlePreset={throttlePreset}
-              onThrottleChange={(preset) => {
-                SetThrottle(preset);
-                setThrottlePreset(preset);
-              }}
-              onToggleHide={(type) =>
-                setHiddenTypes((prev) => {
-                  const next = new Set(prev);
-                  if (next.has(type)) next.delete(type);
-                  else next.add(type);
-                  return next;
-                })
-              }
-            />
-            {/* Toolbar */}
-            <Toolbar
-              onSessionsClear={handleSessionsClear}
-              filter={filter}
-              onFilterChange={setFilter}
-            />
-            {/* Request table + Inspector — vertical split */}
-            <ResizablePanelGroup orientation="vertical" className="flex-1">
-              <ResizablePanel defaultSize={45} minSize={20}>
-                <SessionList
-                  sessions={filteredSessions}
-                  selectedIds={selectedIds}
-                  activeId={activeSessionId}
-                  onSelect={handleSelect}
-                  onReplay={handleReplay}
-                  onComposerPrefill={handleComposerPrefill}
-                  onDiff={handleDiff}
-                  diffPending={!!diffSessionA && !diffSessionB}
-                  marks={marks}
-                />
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={55} minSize={20}>
-                <div className="h-full bg-card overflow-hidden">
-                  <Inspector session={activeSession} />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-            {/* StatusBar inside main column */}
-            <StatusBar
-              sessionCount={sessions.length}
-              selectedCount={selectedIds.size}
-              isRunning={isRunning}
-              theme={theme}
-              onThemeChange={setTheme}
-              totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
-              totalResponseBytes={sessions.reduce(
-                (sum, s) => sum + (s.response?.body_size || 0),
-                0,
-              )}
-            />
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Menubar */}
+          <AppMenubar
+            isRunning={isRunning}
+            sysProxy={sysProxy}
+            hasSelection={!!activeSession}
+            onToggleProxy={handleToggleProxy}
+            onToggleSysProxy={handleToggleSysProxy}
+            onClear={handleClear}
+            onExportHAR={() =>
+              ExportSessionsHAR().catch((e) =>
+                toast.error('HAR export 실패', { description: String(e) }),
+              )
+            }
+            onExportJSON={() =>
+              ExportSessionsJSON().catch((e) =>
+                toast.error('JSON export 실패', { description: String(e) }),
+              )
+            }
+            onImportHAR={() =>
+              ImportSessionsHAR().catch((e) =>
+                toast.error('HAR import 실패', { description: String(e) }),
+              )
+            }
+            onImportSAZ={() =>
+              ImportSessionsSAZ().catch((e) =>
+                toast.error('SAZ import 실패', { description: String(e) }),
+              )
+            }
+            onSettingsClick={() => setShowSettings(true)}
+            onRulesClick={() => setShowRules(true)}
+            onComposerClick={() => setShowComposer(true)}
+            onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
+            onCopyRequestHeaders={() =>
+              activeSession && copyToClipboard(copyRequestHeaders(activeSession))
+            }
+            onCopyResponseHeaders={() =>
+              activeSession && copyToClipboard(copyResponseHeaders(activeSession))
+            }
+            onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
+            onCopyResponseBody={() =>
+              activeSession && copyToClipboard(copyResponseBody(activeSession))
+            }
+            onAboutClick={() => setShowAbout(true)}
+            onShortcutsClick={() => setShowShortcuts(true)}
+            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
+            onDeleteSelected={handleDeleteSelected}
+            onTextWizardClick={() => setShowTextWizard(true)}
+            onCompareClick={handleCompareFromMenu}
+            selectedCount={selectedIds.size}
+            onMark={handleMark}
+            onUnmarkAll={handleUnmarkAll}
+            hiddenTypes={hiddenTypes}
+            onSave={() =>
+              SaveSessions().catch((e) => toast.error('세션 저장 실패', { description: String(e) }))
+            }
+            onLoad={() =>
+              LoadSessions().catch((e) =>
+                toast.error('세션 불러오기 실패', { description: String(e) }),
+              )
+            }
+            throttlePreset={throttlePreset}
+            onThrottleChange={(preset) => {
+              SetThrottle(preset);
+              setThrottlePreset(preset);
+            }}
+            onToggleHide={(type) =>
+              setHiddenTypes((prev) => {
+                const next = new Set(prev);
+                if (next.has(type)) next.delete(type);
+                else next.add(type);
+                return next;
+              })
+            }
+          />
+          {/* Toolbar */}
+          <Toolbar
+            onSessionsClear={handleSessionsClear}
+            filter={filter}
+            onFilterChange={setFilter}
+          />
+          {/* Request table + Inspector — vertical split */}
+          <ResizablePanelGroup orientation="vertical" className="flex-1">
+            <ResizablePanel defaultSize={45} minSize={20}>
+              <SessionList
+                sessions={filteredSessions}
+                selectedIds={selectedIds}
+                activeId={activeSessionId}
+                onSelect={handleSelect}
+                onReplay={handleReplay}
+                onComposerPrefill={handleComposerPrefill}
+                onDiff={handleDiff}
+                diffPending={!!diffSessionA && !diffSessionB}
+                marks={marks}
+              />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={55} minSize={20}>
+              <div className="h-full bg-card overflow-hidden">
+                <Inspector session={activeSession} />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+          {/* StatusBar inside main column */}
+          <StatusBar
+            sessionCount={sessions.length}
+            selectedCount={selectedIds.size}
+            isRunning={isRunning}
+            theme={theme}
+            onThemeChange={setTheme}
+            totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
+            totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
+          />
+        </div>
+      </div>
 
       {/* Modals — outside main flex layout */}
       <Composer

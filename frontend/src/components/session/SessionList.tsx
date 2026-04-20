@@ -6,7 +6,6 @@ import { cn } from '@/lib/utils';
 import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
 import {
   ContextMenu,
-  ContextMenuCheckboxItem,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
@@ -34,6 +33,12 @@ import {
   MessageSquare,
   Inbox,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 // Session may have runtime-added tags/comment fields from Go backend
 type SessionExt = model.Session & { tags?: string[]; comment?: string };
@@ -261,26 +266,19 @@ function SessionRow(
   const session = sessions[index];
   const markColor = marks.get(session.id);
 
-  const isSelected = selectedIds.has(session.id);
-  const isActive = activeId === session.id;
   return (
     <div
       style={style}
       className={cn(
-        'relative flex items-center cursor-pointer border-b border-border/20 transition-colors',
-        !isSelected && !isActive && 'hover:bg-muted/60',
-        !isSelected && !isActive && rowTintClass(session),
-        isSelected && !isActive && 'bg-primary/20 hover:bg-primary/25',
-        isActive && 'bg-primary/30 hover:bg-primary/35 text-foreground',
+        'flex items-center hover:bg-muted/60 cursor-pointer border-b border-border/20 transition-colors',
+        selectedIds.has(session.id) ? 'bg-primary/[0.08]' : rowTintClass(session),
+        activeId === session.id && 'ring-1 ring-inset ring-primary/30',
       )}
       onClick={(e) =>
         onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })
       }
       onContextMenu={() => onContextSession(session)}
     >
-      {isActive && (
-        <span className="absolute inset-y-0 left-0 w-[3px] bg-primary pointer-events-none" />
-      )}
       <div className={cn(cellBase, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
         {markColor && (
           <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: markColor }} />
@@ -338,6 +336,7 @@ export function SessionList({
       return DEFAULT_ORDER;
     }
   });
+  const [showColMenu, setShowColMenu] = useState(false);
   const [dragKey, setDragKey] = useState<ColKey | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
 
@@ -415,206 +414,196 @@ export function SessionList({
     'px-2.5 py-1.5 text-left bg-card/90 text-muted-foreground font-semibold text-[10px] uppercase tracking-wider border-b border-border whitespace-nowrap';
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden bg-background flex flex-col">
-      {/* Header — own ContextMenu for column visibility, does not block HTML5 drag */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="flex shrink-0">
-            <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-            {orderedCols.map((col) => {
-              const isDragging = dragKey === col.key;
-              const isDropTarget =
-                dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
-              const isSorted = sortKey === col.key;
-              return (
-                <div
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div ref={containerRef} className="flex-1 overflow-hidden bg-background flex flex-col">
+          {/* Header */}
+          <DropdownMenu open={showColMenu} onOpenChange={setShowColMenu}>
+            <DropdownMenuTrigger asChild>
+              <div
+                className="flex shrink-0"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setShowColMenu(true);
+                }}
+              >
+                <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
+                {orderedCols.map((col) => {
+                  const isDragging = dragKey === col.key;
+                  const isDropTarget =
+                    dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
+                  return (
+                    <div
+                      key={col.key}
+                      draggable
+                      className={cn(
+                        headerClass,
+                        col.width,
+                        col.key === 'path' ? '' : 'shrink-0',
+                        'cursor-pointer select-none transition-colors',
+                        isDragging && 'opacity-40',
+                        isDropTarget && 'bg-primary/15 text-foreground',
+                      )}
+                      onClick={() => handleSort(col.key)}
+                      onDragStart={(e) => {
+                        setDragKey(col.key);
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', col.key);
+                      }}
+                      onDragOver={(e) => {
+                        if (!dragKey || dragKey === col.key) return;
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        if (dropTargetKey !== col.key) setDropTargetKey(col.key);
+                      }}
+                      onDragLeave={() => {
+                        if (dropTargetKey === col.key) setDropTargetKey(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (dragKey) moveCol(dragKey, col.key);
+                        setDragKey(null);
+                        setDropTargetKey(null);
+                      }}
+                      onDragEnd={() => {
+                        setDragKey(null);
+                        setDropTargetKey(null);
+                      }}
+                    >
+                      {col.label} <SortIcon col={col.key} />
+                    </div>
+                  );
+                })}
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {COL_DEFS.map((col) => (
+                <DropdownMenuCheckboxItem
                   key={col.key}
-                  draggable
-                  className={cn(
-                    headerClass,
-                    col.width,
-                    col.key === 'path' ? '' : 'shrink-0',
-                    'cursor-pointer select-none transition-colors',
-                    isSorted && 'text-foreground bg-accent/60',
-                    isDragging && 'opacity-40',
-                    isDropTarget && 'bg-primary/25 text-foreground ring-1 ring-inset ring-primary',
-                  )}
-                  onClick={() => handleSort(col.key)}
-                  onDragStart={(e) => {
-                    setDragKey(col.key);
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', col.key);
-                  }}
-                  onDragOver={(e) => {
-                    if (!dragKey || dragKey === col.key) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (dropTargetKey !== col.key) setDropTargetKey(col.key);
-                  }}
-                  onDragLeave={() => {
-                    if (dropTargetKey === col.key) setDropTargetKey(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragKey) moveCol(dragKey, col.key);
-                    setDragKey(null);
-                    setDropTargetKey(null);
-                  }}
-                  onDragEnd={() => {
-                    setDragKey(null);
-                    setDropTargetKey(null);
-                  }}
+                  checked={!hiddenCols.has(col.key)}
+                  onCheckedChange={() => toggleCol(col.key)}
                 >
-                  {col.label} <SortIcon col={col.key} />
-                </div>
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Virtualized rows */}
+          {sortedSessions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center flex-1 py-16 text-muted-foreground gap-3">
+              <Inbox className="h-10 w-10 opacity-30" />
+              <span className="text-sm">No sessions captured</span>
+              <span className="text-xs opacity-60">Start the proxy to begin capturing traffic</span>
+            </div>
+          ) : (
+            <List
+              rowHeight={ROW_HEIGHT}
+              rowCount={sortedSessions.length}
+              rowComponent={SessionRow}
+              rowProps={{
+                sessions: sortedSessions,
+                selectedIds,
+                activeId,
+                onSelect,
+                onContextSession: handleContextSession,
+                marks,
+                orderedCols,
+              }}
+              style={{ height: containerHeight, width: '100%' }}
+            />
+          )}
+        </div>
+      </ContextMenuTrigger>
+
+      <ContextMenuContent className="w-52">
+        {contextSession?.request && (
+          <>
+            <ContextMenuItem onClick={() => contextSession && onReplay?.(contextSession)}>
+              <Play className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              Replay Request
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => contextSession && onComposerPrefill?.(contextSession)}>
+              <PenLine className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              Edit in Composer
+            </ContextMenuItem>
+          </>
+        )}
+        <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
+          <GitCompare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+          {diffPending ? 'Compare with this' : 'Compare...'}
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            Copy
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            <ContextMenuItem
+              onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}
+            >
+              URL
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => contextSession && copyToClipboard(copyRequestHeaders(contextSession))}
+            >
+              Request Headers
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => contextSession && copyToClipboard(copyResponseHeaders(contextSession))}
+            >
+              Response Headers
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => contextSession && copyToClipboard(copyCurl(contextSession))}
+            >
+              cURL Command
+            </ContextMenuItem>
+            <ContextMenuItem
+              onClick={() => contextSession && copyToClipboard(copyResponseBody(contextSession))}
+            >
+              Response Body
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+            Tags
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent>
+            {['important', 'bug', 'review', 'done'].map((tag) => {
+              const hasTag = contextSession?.tags?.includes(tag);
+              return (
+                <ContextMenuItem
+                  key={tag}
+                  onClick={() => contextSession && TagSession(contextSession.id, tag, !!hasTag)}
+                >
+                  <span
+                    className={cn('mr-2', hasTag ? 'text-status-success' : 'text-muted-foreground')}
+                  >
+                    {hasTag ? '\u2713' : '\u25CB'}
+                  </span>
+                  {tag}
+                </ContextMenuItem>
               );
             })}
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          {COL_DEFS.map((col) => (
-            <ContextMenuCheckboxItem
-              key={col.key}
-              checked={!hiddenCols.has(col.key)}
-              onSelect={(e) => e.preventDefault()}
-              onCheckedChange={() => toggleCol(col.key)}
-            >
-              {col.label}
-            </ContextMenuCheckboxItem>
-          ))}
-        </ContextMenuContent>
-      </ContextMenu>
-
-      {/* Rows — own ContextMenu for per-row actions */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="flex-1 min-h-0">
-            {sortedSessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-3">
-                <Inbox className="h-10 w-10 opacity-30" />
-                <span className="text-sm">No sessions captured</span>
-                <span className="text-xs opacity-60">
-                  Start the proxy to begin capturing traffic
-                </span>
-              </div>
-            ) : (
-              <List
-                rowHeight={ROW_HEIGHT}
-                rowCount={sortedSessions.length}
-                rowComponent={SessionRow}
-                rowProps={{
-                  sessions: sortedSessions,
-                  selectedIds,
-                  activeId,
-                  onSelect,
-                  onContextSession: handleContextSession,
-                  marks,
-                  orderedCols,
-                }}
-                style={{ height: containerHeight, width: '100%' }}
-              />
-            )}
-          </div>
-        </ContextMenuTrigger>
-
-        <ContextMenuContent className="w-52">
-          {contextSession?.request && (
-            <>
-              <ContextMenuItem onClick={() => contextSession && onReplay?.(contextSession)}>
-                <Play className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                Replay Request
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && onComposerPrefill?.(contextSession)}
-              >
-                <PenLine className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                Edit in Composer
-              </ContextMenuItem>
-            </>
-          )}
-          <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
-            <GitCompare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-            {diffPending ? 'Compare with this' : 'Compare...'}
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-              Copy
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}
-              >
-                URL
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() =>
-                  contextSession && copyToClipboard(copyRequestHeaders(contextSession))
-                }
-              >
-                Request Headers
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() =>
-                  contextSession && copyToClipboard(copyResponseHeaders(contextSession))
-                }
-              >
-                Response Headers
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyCurl(contextSession))}
-              >
-                cURL Command
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyResponseBody(contextSession))}
-              >
-                Response Body
-              </ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-              Tags
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              {['important', 'bug', 'review', 'done'].map((tag) => {
-                const hasTag = contextSession?.tags?.includes(tag);
-                return (
-                  <ContextMenuItem
-                    key={tag}
-                    onClick={() => contextSession && TagSession(contextSession.id, tag, !!hasTag)}
-                  >
-                    <span
-                      className={cn(
-                        'mr-2',
-                        hasTag ? 'text-status-success' : 'text-muted-foreground',
-                      )}
-                    >
-                      {hasTag ? '\u2713' : '\u25CB'}
-                    </span>
-                    {tag}
-                  </ContextMenuItem>
-                );
-              })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onClick={() => {
-              if (!contextSession) return;
-              const comment = prompt('Comment:', contextSession.comment || '');
-              if (comment !== null) CommentSession(contextSession.id, comment);
-            }}
-          >
-            <MessageSquare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-            {contextSession?.comment ? 'Edit Comment' : 'Add Comment'}
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
-    </div>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuSeparator />
+        <ContextMenuItem
+          onClick={() => {
+            if (!contextSession) return;
+            const comment = prompt('Comment:', contextSession.comment || '');
+            if (comment !== null) CommentSession(contextSession.id, comment);
+          }}
+        >
+          <MessageSquare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+          {contextSession?.comment ? 'Edit Comment' : 'Add Comment'}
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
