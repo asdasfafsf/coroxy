@@ -32,6 +32,7 @@ import { Inspector } from '@/components/session/Inspector';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { Settings } from '@/components/tools/Settings';
 import { RuleEditor } from '@/components/tools/RuleEditor';
+import { FilterPanel } from '@/components/tools/FilterPanel';
 import { BreakpointPanel } from '@/components/tools/BreakpointPanel';
 import { Composer } from '@/components/tools/Composer';
 import { SessionDiff } from '@/components/tools/SessionDiff';
@@ -66,9 +67,9 @@ function App() {
     headers: string;
     body: string;
   } | null>(null);
-  // WON-189에서 FilterPanel/Editor가 setSavedFilters를 사용. 현재는 read-only + persist.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => loadSavedFilters());
+  const [showFilters, setShowFilters] = useState(false);
+  const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
   useEffect(() => {
     saveSavedFilters(savedFilters);
   }, [savedFilters]);
@@ -478,6 +479,10 @@ function App() {
             }
             onSettingsClick={() => setShowSettings(true)}
             onRulesClick={() => setShowRules(true)}
+            onFiltersClick={() => {
+              setEditingFilterId(null);
+              setShowFilters(true);
+            }}
             onComposerClick={() => setShowComposer(true)}
             onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
             onCopyRequestHeaders={() =>
@@ -564,6 +569,24 @@ function App() {
       />
       <Settings open={showSettings} onOpenChange={setShowSettings} />
       <RuleEditor open={showRules} onOpenChange={setShowRules} />
+      <FilterPanel
+        open={showFilters}
+        onOpenChange={setShowFilters}
+        initial={savedFilters.find((f) => f.id === editingFilterId) ?? null}
+        onSave={(filter) => {
+          setSavedFilters((prev) => {
+            const idx = prev.findIndex((f) => f.id === filter.id);
+            if (idx >= 0) {
+              const next = [...prev];
+              next[idx] = filter;
+              return next;
+            }
+            return [...prev, filter];
+          });
+          setEditingFilterId(filter.id);
+        }}
+        onDelete={(id) => setSavedFilters((prev) => prev.filter((f) => f.id !== id))}
+      />
       {showDiff && diffSessionA && diffSessionB && (
         <SessionDiff
           sessionA={diffSessionA}

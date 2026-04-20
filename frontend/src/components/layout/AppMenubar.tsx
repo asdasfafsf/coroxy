@@ -49,6 +49,7 @@ interface AppMenubarProps {
   onImportSAZ: () => void;
   onSettingsClick: () => void;
   onRulesClick: () => void;
+  onFiltersClick: () => void;
   onComposerClick: () => void;
   onCopyUrl: () => void;
   onCopyRequestHeaders: () => void;
@@ -83,6 +84,7 @@ export function AppMenubar({
   onImportSAZ,
   onSettingsClick,
   onRulesClick,
+  onFiltersClick,
   onComposerClick,
   onCopyUrl,
   onCopyRequestHeaders,
@@ -242,6 +244,10 @@ export function AppMenubar({
       <MenubarMenu>
         <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Rules</MenubarTrigger>
         <MenubarContent>
+          <MenubarItem onClick={onFiltersClick}>
+            <Search className="h-3.5 w-3.5 mr-2" />
+            Filters...
+          </MenubarItem>
           <MenubarItem onClick={onRulesClick}>
             <Shield className="h-3.5 w-3.5 mr-2" />
             AutoResponder...
