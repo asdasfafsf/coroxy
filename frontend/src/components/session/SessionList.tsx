@@ -392,17 +392,27 @@ export function SessionList({
       return { ...DEFAULT_COL_WIDTHS };
     }
   });
-  const resizingCol = useRef<{ key: ColKey; startX: number; startWidth: number } | null>(null);
+  // Pointer events + setPointerCapture → parent's HTML5 drag(draggable)를 우회하여
+  // resize 동작이 컬럼 순서 재정렬 드래그에 선점되지 않도록 함. 구형/비표준 환경에
+  // 대비해 window-level mousemove/mouseup fallback도 함께 설치.
+  const resizingCol = useRef<{
+    key: ColKey;
+    startX: number;
+    startWidth: number;
+    el: HTMLElement | null;
+    pointerId: number | null;
+  } | null>(null);
   useEffect(() => {
-    const onMove = (e: MouseEvent) => {
+    const endResize = () => {
       const ctx = resizingCol.current;
       if (!ctx) return;
-      const delta = e.clientX - ctx.startX;
-      const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
-      setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
-    };
-    const onUp = () => {
-      if (!resizingCol.current) return;
+      if (ctx.el && ctx.pointerId != null) {
+        try {
+          ctx.el.releasePointerCapture(ctx.pointerId);
+        } catch {
+          // ignore
+        }
+      }
       resizingCol.current = null;
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
@@ -415,27 +425,92 @@ export function SessionList({
         return prev;
       });
     };
+    const onMove = (e: MouseEvent) => {
+      const ctx = resizingCol.current;
+      if (!ctx) return;
+      const delta = e.clientX - ctx.startX;
+      const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
+      setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
+    };
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
+    window.addEventListener('mouseup', endResize);
     return () => {
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('mouseup', endResize);
     };
   }, []);
-  const handleColResizeStart = useCallback(
-    (key: ColKey, e: React.MouseEvent) => {
+  const handleColResizePointerDown = useCallback(
+    (key: ColKey, e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      const el = e.currentTarget as HTMLElement;
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        // ignore — capture may fail in unusual contexts but handler still works
+      }
       resizingCol.current = {
         key,
         startX: e.clientX,
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        el,
+        pointerId: e.pointerId,
       };
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
     },
     [colWidths],
   );
+  // Mouse event fallback — pointer 이벤트가 발화되지 않는 환경용. window mouseup에
+  // 등록된 endResize가 저장/정리까지 처리.
+  const handleColResizeMouseDown = useCallback(
+    (key: ColKey, e: React.MouseEvent) => {
+      if (resizingCol.current) return;
+      e.preventDefault();
+      e.stopPropagation();
+      resizingCol.current = {
+        key,
+        startX: e.clientX,
+        startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        el: null,
+        pointerId: null,
+      };
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [colWidths],
+  );
+  const handleColResizePointerMove = useCallback((e: React.PointerEvent) => {
+    const ctx = resizingCol.current;
+    if (!ctx) return;
+    const delta = e.clientX - ctx.startX;
+    const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
+    setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
+  }, []);
+  const handleColResizePointerUp = useCallback((e: React.PointerEvent) => {
+    const ctx = resizingCol.current;
+    if (!ctx) return;
+    if (ctx.el && ctx.pointerId != null) {
+      try {
+        ctx.el.releasePointerCapture(ctx.pointerId);
+      } catch {
+        // ignore
+      }
+    }
+    resizingCol.current = null;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    setColWidths((prev) => {
+      try {
+        localStorage.setItem('coroxy-col-widths', JSON.stringify(prev));
+      } catch {
+        // ignore quota/storage errors
+      }
+      return prev;
+    });
+    // suppress click after resize so sort doesn't toggle
+    e.stopPropagation();
+  }, []);
 
   const toggleCol = (col: string) => {
     setHiddenCols((prev) => {
@@ -568,13 +643,18 @@ export function SessionList({
                   {col.label} <SortIcon col={col.key} />
                   {!isPath && (
                     <span
-                      onMouseDown={(e) => handleColResizeStart(col.key, e)}
+                      draggable={false}
+                      onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
+                      onPointerMove={handleColResizePointerMove}
+                      onPointerUp={handleColResizePointerUp}
+                      onPointerCancel={handleColResizePointerUp}
+                      onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
                       onClick={(e) => e.stopPropagation()}
                       onDragStart={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                       }}
-                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10"
+                      className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 touch-none"
                       role="separator"
                       aria-orientation="vertical"
                       aria-label={`Resize ${col.label} column`}
