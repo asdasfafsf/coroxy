@@ -113,13 +113,20 @@ type ColKey =
   | 'duration'
   | 'time';
 
+type ColAlign = 'left' | 'center' | 'right';
+
 interface ColDef {
   key: ColKey;
   label: string;
-  width: string;
+  /** Default pixel width for fixed columns. Ignored for `path` (flex-1). */
+  defaultWidth: number;
+  align?: ColAlign;
   cellClass?: string;
   render: (session: model.Session) => React.ReactNode;
 }
+
+const COL_MIN_WIDTH = 40;
+const COL_MAX_WIDTH = 500;
 
 const cellBase =
   'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
@@ -128,7 +135,7 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'protocol',
     label: 'Proto',
-    width: 'w-15',
+    defaultWidth: 60,
     render: (s) => {
       const badge = protoBadge(s.protocol);
       return (
@@ -143,22 +150,28 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'host',
     label: 'Host',
-    width: 'w-[180px]',
+    defaultWidth: 180,
     cellClass: 'truncate',
     render: (s) => s.target?.host || '-',
   },
-  { key: 'method', label: 'Method', width: 'w-15', render: (s) => s.request?.method || '-' },
+  {
+    key: 'method',
+    label: 'Method',
+    defaultWidth: 60,
+    render: (s) => s.request?.method || '-',
+  },
   {
     key: 'path',
     label: 'Path',
-    width: 'flex-1 min-w-0',
+    defaultWidth: 0,
     cellClass: 'truncate',
     render: (s) => getPath(s.request?.url),
   },
   {
     key: 'status',
     label: 'Status',
-    width: 'w-14 text-center',
+    defaultWidth: 56,
+    align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
     ),
@@ -166,33 +179,49 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'type',
     label: 'Type',
-    width: 'w-14',
+    defaultWidth: 56,
     cellClass: 'text-muted-foreground',
     render: (s) => shortContentType(s.response?.content_type),
   },
   {
     key: 'size',
     label: 'Size',
-    width: 'w-16 text-right',
+    defaultWidth: 64,
+    align: 'right',
     cellClass: 'text-muted-foreground',
     render: (s) => formatBytes(s.response?.body_size),
   },
   {
     key: 'duration',
     label: 'Duration',
-    width: 'w-16 text-right',
+    defaultWidth: 64,
+    align: 'right',
     render: (s) => formatDuration(s.duration),
   },
   {
     key: 'time',
     label: 'Time',
-    width: 'w-16',
+    defaultWidth: 64,
     cellClass: 'text-muted-foreground',
     render: (s) => formatTime(s.created_at),
   },
 ];
 
 const DEFAULT_ORDER: ColKey[] = COL_DEFS.map((c) => c.key);
+
+const DEFAULT_COL_WIDTHS: Record<ColKey, number> = COL_DEFS.reduce(
+  (acc, c) => {
+    acc[c.key] = c.defaultWidth;
+    return acc;
+  },
+  {} as Record<ColKey, number>,
+);
+
+function alignClass(a?: ColAlign): string {
+  if (a === 'center') return 'text-center';
+  if (a === 'right') return 'text-right';
+  return '';
+}
 
 type SortKey = ColKey;
 type SortDir = 'asc' | 'desc';
@@ -238,6 +267,7 @@ interface RowProps {
   onContextSession: (session: model.Session) => void;
   marks: Map<string, string>;
   orderedCols: ColDef[];
+  colWidths: Record<ColKey, number>;
 }
 
 function SessionRow(
@@ -257,6 +287,7 @@ function SessionRow(
     onContextSession,
     marks,
     orderedCols,
+    colWidths,
   } = props;
   const session = sessions[index];
   const markColor = marks.get(session.id);
@@ -287,15 +318,19 @@ function SessionRow(
         )}
         {index + 1}
       </div>
-      {orderedCols.map((col) => (
-        <div
-          key={col.key}
-          className={cn(cellBase, col.width, col.key === 'path' ? '' : 'shrink-0', col.cellClass)}
-          title={col.key === 'path' ? session.request?.url : undefined}
-        >
-          {col.render(session)}
-        </div>
-      ))}
+      {orderedCols.map((col) => {
+        const isPath = col.key === 'path';
+        return (
+          <div
+            key={col.key}
+            className={cn(cellBase, col.cellClass, alignClass(col.align), !isPath && 'shrink-0')}
+            style={isPath ? { flex: 1, minWidth: 0 } : { width: colWidths[col.key], flexShrink: 0 }}
+            title={isPath ? session.request?.url : undefined}
+          >
+            {col.render(session)}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -340,6 +375,67 @@ export function SessionList({
   });
   const [dragKey, setDragKey] = useState<ColKey | null>(null);
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
+  const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
+    try {
+      const stored = localStorage.getItem('coroxy-col-widths');
+      if (!stored) return { ...DEFAULT_COL_WIDTHS };
+      const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
+      const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
+      for (const k of DEFAULT_ORDER) {
+        const v = parsed[k];
+        if (typeof v === 'number' && Number.isFinite(v)) {
+          merged[k] = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, v));
+        }
+      }
+      return merged;
+    } catch {
+      return { ...DEFAULT_COL_WIDTHS };
+    }
+  });
+  const resizingCol = useRef<{ key: ColKey; startX: number; startWidth: number } | null>(null);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      const ctx = resizingCol.current;
+      if (!ctx) return;
+      const delta = e.clientX - ctx.startX;
+      const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
+      setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
+    };
+    const onUp = () => {
+      if (!resizingCol.current) return;
+      resizingCol.current = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setColWidths((prev) => {
+        try {
+          localStorage.setItem('coroxy-col-widths', JSON.stringify(prev));
+        } catch {
+          // ignore quota/storage errors
+        }
+        return prev;
+      });
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+  const handleColResizeStart = useCallback(
+    (key: ColKey, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      resizingCol.current = {
+        key,
+        startX: e.clientX,
+        startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+      };
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    },
+    [colWidths],
+  );
 
   const toggleCol = (col: string) => {
     setHiddenCols((prev) => {
@@ -426,19 +522,23 @@ export function SessionList({
               const isDropTarget =
                 dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
               const isSorted = sortKey === col.key;
+              const isPath = col.key === 'path';
               return (
                 <div
                   key={col.key}
                   draggable
                   className={cn(
                     headerClass,
-                    col.width,
-                    col.key === 'path' ? '' : 'shrink-0',
-                    'cursor-pointer select-none transition-colors',
+                    alignClass(col.align),
+                    !isPath && 'shrink-0',
+                    'relative cursor-pointer select-none transition-colors',
                     isSorted && 'text-foreground bg-accent/60',
                     isDragging && 'opacity-40',
                     isDropTarget && 'bg-primary/25 text-foreground ring-1 ring-inset ring-primary',
                   )}
+                  style={
+                    isPath ? { flex: 1, minWidth: 0 } : { width: colWidths[col.key], flexShrink: 0 }
+                  }
                   onClick={() => handleSort(col.key)}
                   onDragStart={(e) => {
                     setDragKey(col.key);
@@ -466,6 +566,20 @@ export function SessionList({
                   }}
                 >
                   {col.label} <SortIcon col={col.key} />
+                  {!isPath && (
+                    <span
+                      onMouseDown={(e) => handleColResizeStart(col.key, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      onDragStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label={`Resize ${col.label} column`}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -510,6 +624,7 @@ export function SessionList({
                   onContextSession: handleContextSession,
                   marks,
                   orderedCols,
+                  colWidths,
                 }}
                 style={{ height: containerHeight, width: '100%' }}
               />
