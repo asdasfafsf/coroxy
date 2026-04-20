@@ -436,10 +436,10 @@ function App() {
             onGroupChange={setActiveTabId}
             onGroupAdd={handleTabAdd}
           />
-          {/* Drag handle — overlaps right edge border */}
+          {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
           <div
             onMouseDown={handleSidebarResizeStart}
-            className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/50 active:bg-primary transition-colors z-10"
+            className="absolute -right-0.5 top-0 bottom-0 w-1 cursor-col-resize bg-border/40 hover:bg-primary/70 active:bg-primary transition-colors z-10"
             role="separator"
             aria-orientation="vertical"
           />
