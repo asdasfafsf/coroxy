@@ -400,12 +400,16 @@ export function SessionList({
   // Pointer events + setPointerCapture → parent's HTML5 drag(draggable)를 우회하여
   // resize 동작이 컬럼 순서 재정렬 드래그에 선점되지 않도록 함. 구형/비표준 환경에
   // 대비해 window-level mousemove/mouseup fallback도 함께 설치.
+  // inverse=true: Path 오른쪽 핸들처럼 드래그 방향과 **반대로** 대상 컬럼 폭을 조절.
+  // (Path 는 flex:1 이므로 직접 폭을 갖지 않고, 대신 다음 순서 컬럼의 폭을 줄여서
+  //  Path 가 남는 공간을 더 먹게 만든다.)
   const resizingCol = useRef<{
     key: ColKey;
     startX: number;
     startWidth: number;
     el: HTMLElement | null;
     pointerId: number | null;
+    inverse: boolean;
   } | null>(null);
   useEffect(() => {
     const endResize = () => {
@@ -433,7 +437,7 @@ export function SessionList({
     const onMove = (e: MouseEvent) => {
       const ctx = resizingCol.current;
       if (!ctx) return;
-      const delta = e.clientX - ctx.startX;
+      const delta = (e.clientX - ctx.startX) * (ctx.inverse ? -1 : 1);
       const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
       setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
     };
@@ -445,7 +449,7 @@ export function SessionList({
     };
   }, []);
   const handleColResizePointerDown = useCallback(
-    (key: ColKey, e: React.PointerEvent) => {
+    (key: ColKey, e: React.PointerEvent, inverse = false) => {
       e.preventDefault();
       e.stopPropagation();
       const el = e.currentTarget as HTMLElement;
@@ -460,6 +464,7 @@ export function SessionList({
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
         el,
         pointerId: e.pointerId,
+        inverse,
       };
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
@@ -469,7 +474,7 @@ export function SessionList({
   // Mouse event fallback — pointer 이벤트가 발화되지 않는 환경용. window mouseup에
   // 등록된 endResize가 저장/정리까지 처리.
   const handleColResizeMouseDown = useCallback(
-    (key: ColKey, e: React.MouseEvent) => {
+    (key: ColKey, e: React.MouseEvent, inverse = false) => {
       if (resizingCol.current) return;
       e.preventDefault();
       e.stopPropagation();
@@ -479,6 +484,7 @@ export function SessionList({
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
         el: null,
         pointerId: null,
+        inverse,
       };
       document.body.style.cursor = 'col-resize';
       document.body.style.userSelect = 'none';
@@ -488,7 +494,7 @@ export function SessionList({
   const handleColResizePointerMove = useCallback((e: React.PointerEvent) => {
     const ctx = resizingCol.current;
     if (!ctx) return;
-    const delta = e.clientX - ctx.startX;
+    const delta = (e.clientX - ctx.startX) * (ctx.inverse ? -1 : 1);
     const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
     setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
   }, []);
@@ -665,6 +671,33 @@ export function SessionList({
                       aria-label={`Resize ${col.label} column`}
                     />
                   )}
+                  {isPath &&
+                    (() => {
+                      // Path 는 flex:1 이라 자체 폭이 없음. Path 오른쪽 경계를 드래그하면
+                      // 다음 순서 컬럼의 폭을 반비례로 조절하여 Path 가 남는 공간을 흡수한다.
+                      const pathIdx = orderedCols.findIndex((c) => c.key === 'path');
+                      const nextCol = orderedCols[pathIdx + 1];
+                      if (!nextCol) return null;
+                      return (
+                        <span
+                          draggable={false}
+                          onPointerDown={(e) => handleColResizePointerDown(nextCol.key, e, true)}
+                          onPointerMove={handleColResizePointerMove}
+                          onPointerUp={handleColResizePointerUp}
+                          onPointerCancel={handleColResizePointerUp}
+                          onMouseDown={(e) => handleColResizeMouseDown(nextCol.key, e, true)}
+                          onClick={(e) => e.stopPropagation()}
+                          onDragStart={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 touch-none"
+                          role="separator"
+                          aria-orientation="vertical"
+                          aria-label={`Resize Path column (adjusts ${nextCol.label})`}
+                        />
+                      );
+                    })()}
                 </div>
               );
             })}
