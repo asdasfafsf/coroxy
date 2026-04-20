@@ -429,11 +429,16 @@ function App() {
           style={{ width: sidebarWidth }}
         >
           <SessionSidebar
-            groups={sessionTabs.map((t) => ({
-              id: t.id,
-              label: t.label,
-              count: t.id === activeTabId ? filteredSessions.length : 0,
-            }))}
+            groups={sessionTabs.map((t) => {
+              const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
+              const f = fid ? savedFilters.find((sf) => sf.id === fid) : null;
+              return {
+                id: t.id,
+                label: t.label,
+                count: t.id === activeTabId ? filteredSessions.length : 0,
+                filterName: f?.name ?? null,
+              };
+            })}
             activeGroupId={activeTabId}
             onGroupChange={setActiveTabId}
             onGroupAdd={handleTabAdd}
@@ -521,7 +526,21 @@ function App() {
           {/* Toolbar */}
           <Toolbar
             onSessionsClear={handleSessionsClear}
-            activeFilterName={activeFilter?.name ?? null}
+            savedFilters={savedFilters}
+            activeFilterId={activeFilter?.id ?? null}
+            onSelectFilter={(fid) => {
+              setSessionTabs((prev) =>
+                prev.map((t) => (t.id === activeTabId ? { ...t, filterId: fid ?? 'default' } : t)),
+              );
+            }}
+            onNewFilter={() => {
+              setEditingFilterId(null);
+              setShowFilters(true);
+            }}
+            onEditActiveFilter={() => {
+              setEditingFilterId(activeFilter?.id ?? null);
+              setShowFilters(true);
+            }}
           />
           {/* Request table + Inspector — vertical split */}
           <ResizablePanelGroup orientation="vertical" className="flex-1">
@@ -574,6 +593,7 @@ function App() {
         onOpenChange={setShowFilters}
         initial={savedFilters.find((f) => f.id === editingFilterId) ?? null}
         onSave={(filter) => {
+          const isNew = !savedFilters.some((f) => f.id === filter.id);
           setSavedFilters((prev) => {
             const idx = prev.findIndex((f) => f.id === filter.id);
             if (idx >= 0) {
@@ -584,8 +604,20 @@ function App() {
             return [...prev, filter];
           });
           setEditingFilterId(filter.id);
+          if (isNew) {
+            // 새 필터 저장 시 현재 활성 탭에 자동 적용
+            setSessionTabs((prev) =>
+              prev.map((t) => (t.id === activeTabId ? { ...t, filterId: filter.id } : t)),
+            );
+          }
         }}
-        onDelete={(id) => setSavedFilters((prev) => prev.filter((f) => f.id !== id))}
+        onDelete={(id) => {
+          setSavedFilters((prev) => prev.filter((f) => f.id !== id));
+          // 이 필터를 참조하던 탭들은 default(pass-all)로 복귀
+          setSessionTabs((prev) =>
+            prev.map((t) => (t.filterId === id ? { ...t, filterId: 'default' } : t)),
+          );
+        }}
       />
       {showDiff && diffSessionA && diffSessionB && (
         <SessionDiff
