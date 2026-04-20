@@ -323,7 +323,12 @@ function SessionRow(
         return (
           <div
             key={col.key}
-            className={cn(cellBase, col.cellClass, alignClass(col.align), !isPath && 'shrink-0')}
+            className={cn(
+              cellBase,
+              col.cellClass,
+              alignClass(col.align),
+              !isPath && 'shrink-0 border-r border-border/20',
+            )}
             style={isPath ? { flex: 1, minWidth: 0 } : { width: colWidths[col.key], flexShrink: 0 }}
             title={isPath ? session.request?.url : undefined}
           >
@@ -605,7 +610,7 @@ export function SessionList({
                   className={cn(
                     headerClass,
                     alignClass(col.align),
-                    !isPath && 'shrink-0',
+                    !isPath && 'shrink-0 border-r border-border/60',
                     'relative cursor-pointer select-none transition-colors',
                     isSorted && 'text-foreground bg-accent/60',
                     isDragging && 'opacity-40',
