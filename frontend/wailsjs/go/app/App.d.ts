@@ -36,8 +36,6 @@ export function ExportSessionsJSON():Promise<void>;
 
 export function ExportSessionsSAZ():Promise<void>;
 
-export function GetThrottle():Promise<app.ThrottleConfig>;
-
 export function HandleNewSession(arg1:model.Session):Promise<void>;
 
 export function ImportSessionsHAR():Promise<number>;
@@ -81,6 +79,8 @@ export function StartProxy():Promise<void>;
 export function StopProxy():Promise<void>;
 
 export function TagSession(arg1:string,arg2:string,arg3:boolean):Promise<void>;
+
+export function ThrottleState():Promise<app.ThrottleConfig>;
 
 export function Throttler():Promise<throttle.Throttler>;
 

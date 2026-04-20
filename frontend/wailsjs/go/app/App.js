@@ -58,10 +58,6 @@ export function ExportSessionsSAZ() {
   return window['go']['app']['App']['ExportSessionsSAZ']();
 }
 
-export function GetThrottle() {
-  return window['go']['app']['App']['GetThrottle']();
-}
-
 export function HandleNewSession(arg1) {
   return window['go']['app']['App']['HandleNewSession'](arg1);
 }
@@ -148,6 +144,10 @@ export function StopProxy() {
 
 export function TagSession(arg1, arg2, arg3) {
   return window['go']['app']['App']['TagSession'](arg1, arg2, arg3);
+}
+
+export function ThrottleState() {
+  return window['go']['app']['App']['ThrottleState']();
 }
 
 export function Throttler() {

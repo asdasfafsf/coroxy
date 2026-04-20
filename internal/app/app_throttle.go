@@ -26,9 +26,9 @@ func (a *App) SetThrottle(preset string) {
 	}
 }
 
-// GetThrottle returns the current throttling state.
-func (a *App) GetThrottle() ThrottleConfig {
-	cfg := a.throttler.GetConfig()
+// ThrottleState returns the current throttling state.
+func (a *App) ThrottleState() ThrottleConfig {
+	cfg := a.throttler.Config()
 	preset := "off"
 	switch {
 	case cfg.BytesPerSec == throttle.Preset3G.BytesPerSec:

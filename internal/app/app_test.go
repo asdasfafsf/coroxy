@@ -95,7 +95,7 @@ func TestApp_CommentSession_MissingSession_NoOp(t *testing.T) {
 	a.CommentSession("missing", "ignored")
 }
 
-func TestApp_GetThrottle_PresetMapping(t *testing.T) {
+func TestApp_ThrottleState_PresetMapping(t *testing.T) {
 	tests := []struct {
 		name       string
 		setPreset  string
@@ -114,7 +114,7 @@ func TestApp_GetThrottle_PresetMapping(t *testing.T) {
 			a := newTestApp(t)
 			a.SetThrottle(tt.setPreset)
 
-			cfg := a.GetThrottle()
+			cfg := a.ThrottleState()
 			if cfg.Preset != tt.wantPreset {
 				t.Errorf("Preset = %q, want %q", cfg.Preset, tt.wantPreset)
 			}
