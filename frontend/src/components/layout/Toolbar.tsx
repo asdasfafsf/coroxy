@@ -3,19 +3,42 @@ import { toast } from 'sonner';
 import { StartProxy, StopProxy, ClearSessions, ProxyState } from '../../../wailsjs/go/app/App';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Play, Square, Trash2, Filter as FilterIcon } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Play,
+  Square,
+  Trash2,
+  Filter as FilterIcon,
+  Pencil,
+  ChevronDown,
+  Plus,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { SavedFilter } from '@/lib/filter';
 
 interface ToolbarProps {
   onSessionsClear: () => void;
-  activeFilterName: string | null;
+  savedFilters: SavedFilter[];
+  activeFilterId: string | null;
+  onSelectFilter: (id: string | null) => void;
+  onNewFilter: () => void;
+  onEditActiveFilter: () => void;
 }
 
-/**
- * WON-188: 기존 검색창/Protocol 토글/Advanced 패널 전부 제거. 활성 필터 이름만 표시.
- * WON-190에서 필터 스위처 드롭다운 + edit 버튼 추가 예정.
- */
-export function Toolbar({ onSessionsClear, activeFilterName }: ToolbarProps) {
+export function Toolbar({
+  onSessionsClear,
+  savedFilters,
+  activeFilterId,
+  onSelectFilter,
+  onNewFilter,
+  onEditActiveFilter,
+}: ToolbarProps) {
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +68,7 @@ export function Toolbar({ onSessionsClear, activeFilterName }: ToolbarProps) {
   };
 
   const isRunning = proxyState === 'running';
+  const activeFilter = savedFilters.find((f) => f.id === activeFilterId) ?? null;
 
   return (
     <div className="flex flex-col">
@@ -85,11 +109,65 @@ export function Toolbar({ onSessionsClear, activeFilterName }: ToolbarProps) {
 
         <Separator orientation="vertical" className="h-4 mx-1" />
 
-        <div className="flex-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <FilterIcon className="h-3.5 w-3.5" />
-          <span>Filter:</span>
-          <span className="text-foreground font-medium">{activeFilterName ?? 'All Traffic'}</span>
+        {/* Filter switcher */}
+        <div className="flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+              >
+                <FilterIcon className="h-3.5 w-3.5" />
+                <span className="text-foreground font-medium">
+                  {activeFilter ? activeFilter.name : 'All Traffic'}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-[240px]">
+              <DropdownMenuItem
+                onClick={() => onSelectFilter(null)}
+                className={cn('text-xs', activeFilterId === null && 'bg-primary/10 text-primary')}
+              >
+                <FilterIcon className="h-3.5 w-3.5 mr-2" />
+                All Traffic (no filter)
+              </DropdownMenuItem>
+              {savedFilters.length > 0 && <DropdownMenuSeparator />}
+              {savedFilters.map((f) => (
+                <DropdownMenuItem
+                  key={f.id}
+                  onClick={() => onSelectFilter(f.id)}
+                  className={cn('text-xs', activeFilterId === f.id && 'bg-primary/10 text-primary')}
+                >
+                  <span className="truncate">{f.name}</span>
+                  <span className="ml-auto text-[10px] text-muted-foreground uppercase">
+                    {f.kind}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onNewFilter} className="text-xs">
+                <Plus className="h-3.5 w-3.5 mr-2" />
+                New filter...
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {activeFilter && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onEditActiveFilter}
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              title="Edit filter"
+            >
+              <Pencil className="h-3 w-3" />
+            </Button>
+          )}
         </div>
+
+        <div className="flex-1" />
 
         <div
           className={cn(

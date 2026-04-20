@@ -6,6 +6,7 @@ interface SessionGroup {
   id: string;
   label: string;
   count: number;
+  filterName?: string | null;
 }
 
 interface SessionSidebarProps {
@@ -50,7 +51,14 @@ export function SessionSidebar({
               ) : (
                 <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               )}
-              <span className="truncate flex-1">{group.label}</span>
+              <span className="flex-1 min-w-0 flex flex-col">
+                <span className="truncate">{group.label}</span>
+                {group.filterName && (
+                  <span className="truncate text-[10px] text-muted-foreground">
+                    {group.filterName}
+                  </span>
+                )}
+              </span>
               {group.count > 0 && (
                 <span
                   className={cn(
