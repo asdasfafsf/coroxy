@@ -428,6 +428,11 @@ function App() {
           className="relative border-r border-border shrink-0 flex flex-col overflow-hidden"
           style={{ width: sidebarWidth }}
         >
+          {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
+          <div
+            className="h-7 shrink-0 bg-background"
+            style={{ ['WebkitAppRegion' as never]: 'drag' }}
+          />
           <SessionSidebar
             groups={sessionTabs.map((t) => {
               const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
