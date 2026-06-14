@@ -104,12 +104,12 @@ const ROW_HEIGHT = 28;
 
 type ColKey =
   | 'protocol'
-  | 'host'
   | 'method'
-  | 'path'
+  | 'url'
   | 'status'
   | 'type'
-  | 'size'
+  | 'request'
+  | 'response'
   | 'duration'
   | 'time';
 
@@ -118,15 +118,16 @@ type ColAlign = 'left' | 'center' | 'right';
 interface ColDef {
   key: ColKey;
   label: string;
-  /** Default pixel width for fixed columns. Ignored for `path` (flex-1). */
   defaultWidth: number;
+  /** label 글자수 + padding + sort icon 여유. drag 최소폭 + CSS min-width 에 동일 적용 */
+  minWidth: number;
   align?: ColAlign;
   cellClass?: string;
   render: (session: model.Session) => React.ReactNode;
+  rowTitle?: (session: model.Session) => string | undefined;
 }
 
 const COL_MIN_WIDTH = 40;
-const COL_MAX_WIDTH = 500;
 
 const cellBase =
   'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
@@ -135,7 +136,9 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'protocol',
     label: 'Proto',
-    defaultWidth: 60,
+    defaultWidth: 72,
+    minWidth: 64,
+    align: 'center',
     render: (s) => {
       const badge = protoBadge(s.protocol);
       return (
@@ -148,60 +151,79 @@ const COL_DEFS: ColDef[] = [
     },
   },
   {
-    key: 'host',
-    label: 'Host',
-    defaultWidth: 180,
-    cellClass: 'truncate',
-    render: (s) => s.target?.host || '-',
-  },
-  {
     key: 'method',
     label: 'Method',
-    defaultWidth: 60,
+    defaultWidth: 80,
+    minWidth: 72,
+    align: 'center',
     render: (s) => s.request?.method || '-',
   },
   {
-    key: 'path',
-    label: 'Path',
-    defaultWidth: 0,
+    key: 'url',
+    label: 'URL',
+    defaultWidth: 460,
+    minWidth: 240,
+    align: 'center',
     cellClass: 'truncate',
-    render: (s) => getPath(s.request?.url),
+    render: (s) => {
+      const host = s.target?.host || '';
+      const path = getPath(s.request?.url) || '';
+      const text = host + path;
+      return text || s.request?.url || '-';
+    },
+    rowTitle: (s) => s.request?.url || undefined,
   },
   {
     key: 'status',
     label: 'Status',
-    defaultWidth: 56,
+    defaultWidth: 72,
+    minWidth: 68,
     align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
     ),
   },
   {
-    key: 'type',
-    label: 'Type',
-    defaultWidth: 56,
+    key: 'request',
+    label: 'Request',
+    defaultWidth: 96,
+    minWidth: 80,
+    align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => shortContentType(s.response?.content_type),
+    render: (s) => formatBytes(s.request?.body_size),
   },
   {
-    key: 'size',
-    label: 'Size',
-    defaultWidth: 64,
-    align: 'right',
+    key: 'response',
+    label: 'Response',
+    defaultWidth: 96,
+    minWidth: 92,
+    align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => formatBytes(s.response?.body_size),
   },
   {
+    key: 'type',
+    label: 'Type',
+    defaultWidth: 96,
+    minWidth: 56,
+    align: 'center',
+    cellClass: 'text-muted-foreground',
+    render: (s) => shortContentType(s.response?.content_type),
+  },
+  {
     key: 'duration',
     label: 'Duration',
-    defaultWidth: 64,
-    align: 'right',
+    defaultWidth: 88,
+    minWidth: 88,
+    align: 'center',
     render: (s) => formatDuration(s.duration),
   },
   {
     key: 'time',
     label: 'Time',
-    defaultWidth: 64,
+    defaultWidth: 96,
+    minWidth: 56,
+    align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => formatTime(s.created_at),
   },
@@ -212,6 +234,14 @@ const DEFAULT_ORDER: ColKey[] = COL_DEFS.map((c) => c.key);
 const DEFAULT_COL_WIDTHS: Record<ColKey, number> = COL_DEFS.reduce(
   (acc, c) => {
     acc[c.key] = c.defaultWidth;
+    return acc;
+  },
+  {} as Record<ColKey, number>,
+);
+
+const COL_MIN_MAP: Record<ColKey, number> = COL_DEFS.reduce(
+  (acc, c) => {
+    acc[c.key] = c.minWidth;
     return acc;
   },
   {} as Record<ColKey, number>,
@@ -233,17 +263,22 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
     switch (key) {
       case 'protocol':
         return m * (a.protocol || '').localeCompare(b.protocol || '');
-      case 'host':
-        return m * (a.target?.host || '').localeCompare(b.target?.host || '');
       case 'method':
         return m * (a.request?.method || '').localeCompare(b.request?.method || '');
-      case 'path':
-        return m * (a.request?.url || '').localeCompare(b.request?.url || '');
+      case 'url':
+        return (
+          m *
+          ((a.target?.host || '') + (getPath(a.request?.url) || '')).localeCompare(
+            (b.target?.host || '') + (getPath(b.request?.url) || ''),
+          )
+        );
       case 'status':
         return m * ((a.response?.status_code || 0) - (b.response?.status_code || 0));
       case 'type':
         return m * (a.response?.content_type || '').localeCompare(b.response?.content_type || '');
-      case 'size':
+      case 'request':
+        return m * ((a.request?.body_size || 0) - (b.request?.body_size || 0));
+      case 'response':
         return m * ((a.response?.body_size || 0) - (b.response?.body_size || 0));
       case 'duration':
         return m * ((a.duration || 0) - (b.duration || 0));
@@ -319,7 +354,7 @@ function SessionRow(
         {index + 1}
       </div>
       {orderedCols.map((col) => {
-        const isPath = col.key === 'path';
+        const isUrl = col.key === 'url';
         return (
           <div
             key={col.key}
@@ -327,10 +362,15 @@ function SessionRow(
               cellBase,
               col.cellClass,
               alignClass(col.align),
-              !isPath && 'shrink-0 border-r border-border/20',
+              'border-r border-border/20',
+              !isUrl && 'shrink-0',
             )}
-            style={isPath ? { flex: 1, minWidth: 0 } : { width: colWidths[col.key], flexShrink: 0 }}
-            title={isPath ? session.request?.url : undefined}
+            style={
+              isUrl
+                ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
+                : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
+            }
+            title={col.rowTitle?.(session)}
           >
             {col.render(session)}
           </div>
@@ -353,12 +393,15 @@ export function SessionList({
 }: SessionListProps) {
   const [contextSession, setContextSession] = useState<SessionExt | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(600);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [listHeight, setListHeight] = useState(400);
+  const URL_MIN = 240;
+  const INDEX_COL = 40;
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v2');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -366,10 +409,9 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order');
+      const stored = localStorage.getItem('coroxy-col-order-v2');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
-      // Filter to known keys, then append any missing keys (forward compatibility)
       const known = new Set(DEFAULT_ORDER);
       const valid = parsed.filter((k): k is ColKey => known.has(k as ColKey));
       const missing = DEFAULT_ORDER.filter((k) => !valid.includes(k));
@@ -382,14 +424,14 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths');
+      const stored = localStorage.getItem('coroxy-col-widths-v2');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
       for (const k of DEFAULT_ORDER) {
         const v = parsed[k];
         if (typeof v === 'number' && Number.isFinite(v)) {
-          merged[k] = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, v));
+          merged[k] = Math.max(COL_MIN_WIDTH, v);
         }
       }
       return merged;
@@ -423,7 +465,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -434,8 +476,23 @@ export function SessionList({
       const ctx = resizingCol.current;
       if (!ctx) return;
       const delta = e.clientX - ctx.startX;
-      const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
-      setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
+      setColWidths((prev) => {
+        const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
+        // URL 이외 컬럼: URL 이 minWidth 아래로 밀리지 않도록 max 제한
+        let target = ctx.startWidth + delta;
+        if (ctx.key !== 'url') {
+          const othersSum = (Object.keys(prev) as ColKey[])
+            .filter((k) => k !== ctx.key && k !== 'url')
+            .reduce((acc, k) => acc + prev[k], 0);
+          const maxThis = Math.max(
+            colMin,
+            (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
+          );
+          target = Math.min(target, maxThis);
+        }
+        const next = Math.max(colMin, target);
+        return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+      });
     };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', endResize);
@@ -489,8 +546,22 @@ export function SessionList({
     const ctx = resizingCol.current;
     if (!ctx) return;
     const delta = e.clientX - ctx.startX;
-    const next = Math.max(COL_MIN_WIDTH, Math.min(COL_MAX_WIDTH, ctx.startWidth + delta));
-    setColWidths((prev) => (prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next }));
+    setColWidths((prev) => {
+      const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
+      let target = ctx.startWidth + delta;
+      if (ctx.key !== 'url') {
+        const othersSum = (Object.keys(prev) as ColKey[])
+          .filter((k) => k !== ctx.key && k !== 'url')
+          .reduce((acc, k) => acc + prev[k], 0);
+        const maxThis = Math.max(
+          colMin,
+          (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
+        );
+        target = Math.min(target, maxThis);
+      }
+      const next = Math.max(colMin, target);
+      return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+    });
   }, []);
   const handleColResizePointerUp = useCallback((e: React.PointerEvent) => {
     const ctx = resizingCol.current;
@@ -507,7 +578,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -522,7 +593,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v2', JSON.stringify([...next]));
       return next;
     });
   };
@@ -560,7 +631,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v2', JSON.stringify(next));
       return next;
     });
   };
@@ -574,12 +645,20 @@ export function SessionList({
     );
   };
 
+  // 세로 리사이즈 시 List height 가 즉시 따라가도록 containerRef(전체 높이)와
+  // headerRef(헤더 높이)를 동시에 관찰하여 listHeight = container - header 로 계산.
   useEffect(() => {
-    if (!containerRef.current) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setContainerHeight(entry.contentRect.height - 28);
-    });
-    observer.observe(containerRef.current);
+    const c = containerRef.current;
+    if (!c) return;
+    const recompute = () => {
+      const headerH = headerRef.current?.getBoundingClientRect().height ?? 28;
+      const h = c.clientHeight - headerH;
+      setListHeight(h > 0 ? h : 0);
+    };
+    recompute();
+    const observer = new ResizeObserver(recompute);
+    observer.observe(c);
+    if (headerRef.current) observer.observe(headerRef.current);
     return () => observer.disconnect();
   }, []);
 
@@ -591,230 +670,243 @@ export function SessionList({
     'px-2.5 py-1.5 text-left bg-card/90 text-muted-foreground font-semibold text-[10px] uppercase tracking-wider border-b border-border whitespace-nowrap';
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden bg-background flex flex-col">
-      {/* Header — own ContextMenu for column visibility, does not block HTML5 drag */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="flex shrink-0">
-            <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-            {orderedCols.map((col) => {
-              const isDragging = dragKey === col.key;
-              const isDropTarget =
-                dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
-              const isSorted = sortKey === col.key;
-              const isPath = col.key === 'path';
-              return (
-                <div
-                  key={col.key}
-                  draggable
-                  className={cn(
-                    headerClass,
-                    alignClass(col.align),
-                    !isPath && 'shrink-0 border-r border-border/60',
-                    'relative cursor-pointer select-none transition-colors',
-                    isSorted && 'text-foreground bg-accent/60',
-                    isDragging && 'opacity-40',
-                    isDropTarget && 'bg-primary/25 text-foreground ring-1 ring-inset ring-primary',
-                  )}
-                  style={
-                    isPath ? { flex: 1, minWidth: 0 } : { width: colWidths[col.key], flexShrink: 0 }
-                  }
-                  onClick={() => handleSort(col.key)}
-                  onDragStart={(e) => {
-                    setDragKey(col.key);
-                    e.dataTransfer.effectAllowed = 'move';
-                    e.dataTransfer.setData('text/plain', col.key);
-                  }}
-                  onDragOver={(e) => {
-                    if (!dragKey || dragKey === col.key) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = 'move';
-                    if (dropTargetKey !== col.key) setDropTargetKey(col.key);
-                  }}
-                  onDragLeave={() => {
-                    if (dropTargetKey === col.key) setDropTargetKey(null);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragKey) moveCol(dragKey, col.key);
-                    setDragKey(null);
-                    setDropTargetKey(null);
-                  }}
-                  onDragEnd={() => {
-                    setDragKey(null);
-                    setDropTargetKey(null);
-                  }}
-                >
-                  {col.label} <SortIcon col={col.key} />
-                  {!isPath && (
-                    <span
-                      draggable={false}
-                      onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
-                      onPointerMove={handleColResizePointerMove}
-                      onPointerUp={handleColResizePointerUp}
-                      onPointerCancel={handleColResizePointerUp}
-                      onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      onDragStart={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 touch-none"
-                      role="separator"
-                      aria-orientation="vertical"
-                      aria-label={`Resize ${col.label} column`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </ContextMenuTrigger>
-        <ContextMenuContent>
-          {COL_DEFS.map((col) => (
-            <ContextMenuCheckboxItem
-              key={col.key}
-              checked={!hiddenCols.has(col.key)}
-              onSelect={(e) => e.preventDefault()}
-              onCheckedChange={() => toggleCol(col.key)}
-            >
-              {col.label}
-            </ContextMenuCheckboxItem>
-          ))}
-        </ContextMenuContent>
-      </ContextMenu>
-
-      {/* Rows — own ContextMenu for per-row actions */}
-      <ContextMenu>
-        <ContextMenuTrigger asChild>
-          <div className="flex-1 min-h-0">
-            {sortedSessions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-3">
-                <Inbox className="h-10 w-10 opacity-30" />
-                <span className="text-sm">No sessions captured</span>
-                <span className="text-xs opacity-60">
-                  Start the proxy to begin capturing traffic
-                </span>
-              </div>
-            ) : (
-              <List
-                rowHeight={ROW_HEIGHT}
-                rowCount={sortedSessions.length}
-                rowComponent={SessionRow}
-                rowProps={{
-                  sessions: sortedSessions,
-                  selectedIds,
-                  activeId,
-                  onSelect,
-                  onContextSession: handleContextSession,
-                  marks,
-                  orderedCols,
-                  colWidths,
-                }}
-                style={{ height: containerHeight, width: '100%' }}
-              />
-            )}
-          </div>
-        </ContextMenuTrigger>
-
-        <ContextMenuContent className="w-52">
-          {contextSession?.request && (
-            <>
-              <ContextMenuItem onClick={() => contextSession && onReplay?.(contextSession)}>
-                <Play className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                Replay Request
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && onComposerPrefill?.(contextSession)}
-              >
-                <PenLine className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                Edit in Composer
-              </ContextMenuItem>
-            </>
-          )}
-          <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
-            <GitCompare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-            {diffPending ? 'Compare with this' : 'Compare...'}
-          </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-              Copy
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}
-              >
-                URL
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() =>
-                  contextSession && copyToClipboard(copyRequestHeaders(contextSession))
-                }
-              >
-                Request Headers
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() =>
-                  contextSession && copyToClipboard(copyResponseHeaders(contextSession))
-                }
-              >
-                Response Headers
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyCurl(contextSession))}
-              >
-                cURL Command
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={() => contextSession && copyToClipboard(copyResponseBody(contextSession))}
-              >
-                Response Body
-              </ContextMenuItem>
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuSub>
-            <ContextMenuSubTrigger>
-              <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-              Tags
-            </ContextMenuSubTrigger>
-            <ContextMenuSubContent>
-              {['important', 'bug', 'review', 'done'].map((tag) => {
-                const hasTag = contextSession?.tags?.includes(tag);
+    <div
+      ref={containerRef}
+      className="h-full w-full overflow-x-auto overflow-y-hidden bg-background flex flex-col"
+    >
+      {/* inner wrapper: 콘텐츠 최소폭을 min-w-max 로 보장 → 컨테이너보다 넓으면 바깥 overflow-x-auto 가 스크롤 제공 */}
+      <div className="flex flex-1 min-h-0 flex-col min-w-max">
+        {/* Header — own ContextMenu for column visibility, does not block HTML5 drag */}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div ref={headerRef} className="flex shrink-0">
+              <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
+              {orderedCols.map((col, idx) => {
+                const isDragging = dragKey === col.key;
+                const isDropTarget =
+                  dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
+                const isSorted = sortKey === col.key;
+                const isLast = idx === orderedCols.length - 1;
+                const isUrl = col.key === 'url';
                 return (
-                  <ContextMenuItem
-                    key={tag}
-                    onClick={() => contextSession && TagSession(contextSession.id, tag, !!hasTag)}
+                  <div
+                    key={col.key}
+                    draggable
+                    className={cn(
+                      headerClass,
+                      alignClass(col.align),
+                      'border-r border-border/60',
+                      !isUrl && 'shrink-0',
+                      'relative cursor-pointer select-none transition-colors',
+                      isSorted && 'text-foreground bg-accent/60',
+                      isDragging && 'opacity-40',
+                      isDropTarget &&
+                        'bg-primary/25 text-foreground ring-1 ring-inset ring-primary',
+                    )}
+                    style={
+                      isUrl
+                        ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
+                        : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
+                    }
+                    onClick={() => handleSort(col.key)}
+                    onDragStart={(e) => {
+                      setDragKey(col.key);
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', col.key);
+                    }}
+                    onDragOver={(e) => {
+                      if (!dragKey || dragKey === col.key) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'move';
+                      if (dropTargetKey !== col.key) setDropTargetKey(col.key);
+                    }}
+                    onDragLeave={() => {
+                      if (dropTargetKey === col.key) setDropTargetKey(null);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      if (dragKey) moveCol(dragKey, col.key);
+                      setDragKey(null);
+                      setDropTargetKey(null);
+                    }}
+                    onDragEnd={() => {
+                      setDragKey(null);
+                      setDropTargetKey(null);
+                    }}
                   >
-                    <span
-                      className={cn(
-                        'mr-2',
-                        hasTag ? 'text-status-success' : 'text-muted-foreground',
-                      )}
-                    >
-                      {hasTag ? '\u2713' : '\u25CB'}
-                    </span>
-                    {tag}
-                  </ContextMenuItem>
+                    {col.label} <SortIcon col={col.key} />
+                    {!isLast && (
+                      <span
+                        draggable={false}
+                        onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
+                        onPointerMove={handleColResizePointerMove}
+                        onPointerUp={handleColResizePointerUp}
+                        onPointerCancel={handleColResizePointerUp}
+                        onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 touch-none"
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label={`Resize ${col.label} column`}
+                      />
+                    )}
+                  </div>
                 );
               })}
-            </ContextMenuSubContent>
-          </ContextMenuSub>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            onClick={() => {
-              if (!contextSession) return;
-              const comment = prompt('Comment:', contextSession.comment || '');
-              if (comment !== null) CommentSession(contextSession.id, comment);
-            }}
-          >
-            <MessageSquare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-            {contextSession?.comment ? 'Edit Comment' : 'Add Comment'}
-          </ContextMenuItem>
-        </ContextMenuContent>
-      </ContextMenu>
+            </div>
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            {COL_DEFS.map((col) => (
+              <ContextMenuCheckboxItem
+                key={col.key}
+                checked={!hiddenCols.has(col.key)}
+                onSelect={(e) => e.preventDefault()}
+                onCheckedChange={() => toggleCol(col.key)}
+              >
+                {col.label}
+              </ContextMenuCheckboxItem>
+            ))}
+          </ContextMenuContent>
+        </ContextMenu>
+
+        {/* Rows — own ContextMenu for per-row actions */}
+        <ContextMenu>
+          <ContextMenuTrigger asChild>
+            <div className="flex-1 min-h-0">
+              {sortedSessions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-3">
+                  <Inbox className="h-10 w-10 opacity-30" />
+                  <span className="text-sm">No sessions captured</span>
+                  <span className="text-xs opacity-60">
+                    Start the proxy to begin capturing traffic
+                  </span>
+                </div>
+              ) : (
+                <List
+                  rowHeight={ROW_HEIGHT}
+                  rowCount={sortedSessions.length}
+                  rowComponent={SessionRow}
+                  rowProps={{
+                    sessions: sortedSessions,
+                    selectedIds,
+                    activeId,
+                    onSelect,
+                    onContextSession: handleContextSession,
+                    marks,
+                    orderedCols,
+                    colWidths,
+                  }}
+                  style={{ height: listHeight, width: '100%' }}
+                />
+              )}
+            </div>
+          </ContextMenuTrigger>
+
+          <ContextMenuContent className="w-52">
+            {contextSession?.request && (
+              <>
+                <ContextMenuItem onClick={() => contextSession && onReplay?.(contextSession)}>
+                  <Play className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                  Replay Request
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => contextSession && onComposerPrefill?.(contextSession)}
+                >
+                  <PenLine className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                  Edit in Composer
+                </ContextMenuItem>
+              </>
+            )}
+            <ContextMenuItem onClick={() => contextSession && onDiff?.(contextSession)}>
+              <GitCompare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              {diffPending ? 'Compare with this' : 'Compare...'}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <Copy className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                Copy
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuItem
+                  onClick={() => contextSession && copyToClipboard(copyUrl(contextSession))}
+                >
+                  URL
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() =>
+                    contextSession && copyToClipboard(copyRequestHeaders(contextSession))
+                  }
+                >
+                  Request Headers
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() =>
+                    contextSession && copyToClipboard(copyResponseHeaders(contextSession))
+                  }
+                >
+                  Response Headers
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() => contextSession && copyToClipboard(copyCurl(contextSession))}
+                >
+                  cURL Command
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={() =>
+                    contextSession && copyToClipboard(copyResponseBody(contextSession))
+                  }
+                >
+                  Response Body
+                </ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <Tag className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                Tags
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                {['important', 'bug', 'review', 'done'].map((tag) => {
+                  const hasTag = contextSession?.tags?.includes(tag);
+                  return (
+                    <ContextMenuItem
+                      key={tag}
+                      onClick={() => contextSession && TagSession(contextSession.id, tag, !!hasTag)}
+                    >
+                      <span
+                        className={cn(
+                          'mr-2',
+                          hasTag ? 'text-status-success' : 'text-muted-foreground',
+                        )}
+                      >
+                        {hasTag ? '\u2713' : '\u25CB'}
+                      </span>
+                      {tag}
+                    </ContextMenuItem>
+                  );
+                })}
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onClick={() => {
+                if (!contextSession) return;
+                const comment = prompt('Comment:', contextSession.comment || '');
+                if (comment !== null) CommentSession(contextSession.id, comment);
+              }}
+            >
+              <MessageSquare className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+              {contextSession?.comment ? 'Edit Comment' : 'Add Comment'}
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </div>
     </div>
   );
 }

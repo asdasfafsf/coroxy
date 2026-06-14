@@ -111,7 +111,7 @@ export function Toolbar({
 
         {/* Filter switcher */}
         <div className="flex items-center gap-1">
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
@@ -127,7 +127,7 @@ export function Toolbar({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-[240px]">
               <DropdownMenuItem
-                onClick={() => onSelectFilter(null)}
+                onSelect={() => onSelectFilter(null)}
                 className={cn('text-xs', activeFilterId === null && 'bg-primary/10 text-primary')}
               >
                 <FilterIcon className="h-3.5 w-3.5 mr-2" />
@@ -137,7 +137,7 @@ export function Toolbar({
               {savedFilters.map((f) => (
                 <DropdownMenuItem
                   key={f.id}
-                  onClick={() => onSelectFilter(f.id)}
+                  onSelect={() => onSelectFilter(f.id)}
                   className={cn('text-xs', activeFilterId === f.id && 'bg-primary/10 text-primary')}
                 >
                   <span className="truncate">{f.name}</span>
@@ -147,7 +147,7 @@ export function Toolbar({
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onNewFilter} className="text-xs">
+              <DropdownMenuItem onSelect={onNewFilter} className="text-xs">
                 <Plus className="h-3.5 w-3.5 mr-2" />
                 New filter...
               </DropdownMenuItem>
