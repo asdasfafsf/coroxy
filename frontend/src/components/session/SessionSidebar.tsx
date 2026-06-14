@@ -23,26 +23,26 @@ export function SessionSidebar({
   onGroupAdd,
 }: SessionSidebarProps) {
   return (
-    <div className="flex flex-col h-full bg-sidebar min-w-0">
+    <div className="flex flex-col h-full min-w-0">
       {/* macOS traffic lights area + drag region */}
       <div
-        className="h-9 shrink-0 border-b border-border bg-card flex items-center pl-[78px] pr-3"
+        className="mac-toolbar h-8 shrink-0 flex items-center pl-[78px] pr-3"
         style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
       >
-        <span className="text-xs font-medium text-muted-foreground">Sessions</span>
+        <span className="text-[12px] font-semibold text-sidebar-foreground/70">Sessions</span>
       </div>
 
       {/* Session group list */}
       <ScrollArea className="flex-1">
-        <div className="py-1">
+        <div className="py-2 px-2">
           {groups.map((group) => (
             <button
               key={group.id}
               className={cn(
-                'relative w-full flex items-center gap-2 pl-[10px] pr-3 py-2 text-[12px] text-left transition-colors border-l-2',
+                'relative w-full flex items-center gap-2 px-2.5 py-1.5 text-[12px] text-left transition-colors rounded-md',
                 activeGroupId === group.id
-                  ? 'bg-primary/15 text-foreground font-medium border-primary'
-                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-foreground border-transparent',
+                  ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium shadow-[inset_0_0_0_0.5px_var(--sidebar-border)]'
+                  : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/55 hover:text-sidebar-foreground',
               )}
               onClick={() => onGroupChange(group.id)}
             >
@@ -79,7 +79,7 @@ export function SessionSidebar({
       {/* Add session button */}
       <div className="border-t border-sidebar-border p-2">
         <button
-          className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/50 rounded transition-colors"
+          className="w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 rounded-md transition-colors"
           onClick={onGroupAdd}
         >
           <Plus className="h-3.5 w-3.5" />

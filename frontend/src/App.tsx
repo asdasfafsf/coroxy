@@ -422,15 +422,15 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-background text-foreground font-sans">
+      <div className="mac-app-shell flex h-screen text-foreground font-sans">
         {/* ===== Left sidebar — session groups (draggable width) ===== */}
         <div
-          className="relative border-r border-border shrink-0 flex flex-col overflow-hidden"
+          className="mac-sidebar relative border-r border-sidebar-border shrink-0 flex flex-col overflow-hidden"
           style={{ width: sidebarWidth }}
         >
           {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
           <div
-            className="h-7 shrink-0 bg-background"
+            className="mac-titlebar mac-traffic-lights h-7 shrink-0"
             style={{ ['WebkitAppRegion' as never]: 'drag' }}
           />
           <SessionSidebar
@@ -451,14 +451,14 @@ function App() {
           {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
           <div
             onMouseDown={handleSidebarResizeStart}
-            className="absolute -right-0.5 top-0 bottom-0 w-1 cursor-col-resize bg-border/40 hover:bg-primary/70 active:bg-primary transition-colors z-10"
+            className="absolute -right-px top-0 bottom-0 w-1 cursor-col-resize bg-transparent hover:bg-primary/45 active:bg-primary/70 transition-colors z-10"
             role="separator"
             aria-orientation="vertical"
           />
         </div>
 
         {/* ===== Right main column ===== */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 bg-background/90">
           {/* Menubar */}
           <AppMenubar
             isRunning={isRunning}
@@ -564,7 +564,7 @@ function App() {
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={55} minSize={20}>
-              <div className="h-full bg-card overflow-hidden">
+              <div className="mac-inspector-pane h-full overflow-hidden">
                 <Inspector session={activeSession} />
               </div>
             </ResizablePanel>

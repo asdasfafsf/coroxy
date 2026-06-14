@@ -107,12 +107,14 @@ export function AppMenubar({
 }: AppMenubarProps) {
   return (
     <Menubar
-      className="rounded-none border-b border-border border-t-0 border-x-0 py-0 px-2 h-9 bg-card shrink-0"
+      className="mac-toolbar rounded-none border-0 py-0 pl-2 pr-3 h-8 shrink-0 text-muted-foreground"
       style={{ '--wails-draggable': 'drag' } as React.CSSProperties}
     >
       {/* File */}
       <MenubarMenu>
-        <MenubarTrigger className="text-xs font-medium px-2 py-0.5">File</MenubarTrigger>
+        <MenubarTrigger className="text-[12px] font-medium px-2 py-0.5 rounded-md data-[state=open]:bg-muted/70">
+          File
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onToggleProxy}>
             {isRunning ? (
@@ -166,7 +168,9 @@ export function AppMenubar({
 
       {/* Edit */}
       <MenubarMenu>
-        <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Edit</MenubarTrigger>
+        <MenubarTrigger className="text-[12px] font-medium px-2 py-0.5 rounded-md data-[state=open]:bg-muted/70">
+          Edit
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onClear}>
             <Scissors className="h-3.5 w-3.5 mr-2" />
@@ -242,7 +246,9 @@ export function AppMenubar({
 
       {/* Rules */}
       <MenubarMenu>
-        <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Rules</MenubarTrigger>
+        <MenubarTrigger className="text-[12px] font-medium px-2 py-0.5 rounded-md data-[state=open]:bg-muted/70">
+          Rules
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onFiltersClick}>
             <Search className="h-3.5 w-3.5 mr-2" />
@@ -289,7 +295,9 @@ export function AppMenubar({
 
       {/* Tools */}
       <MenubarMenu>
-        <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Tools</MenubarTrigger>
+        <MenubarTrigger className="text-[12px] font-medium px-2 py-0.5 rounded-md data-[state=open]:bg-muted/70">
+          Tools
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onComposerClick}>
             <Send className="h-3.5 w-3.5 mr-2" />
@@ -309,7 +317,9 @@ export function AppMenubar({
 
       {/* Help */}
       <MenubarMenu>
-        <MenubarTrigger className="text-xs font-medium px-2 py-0.5">Help</MenubarTrigger>
+        <MenubarTrigger className="text-[12px] font-medium px-2 py-0.5 rounded-md data-[state=open]:bg-muted/70">
+          Help
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarItem onClick={onShortcutsClick}>
             <Keyboard className="h-3.5 w-3.5 mr-2" />

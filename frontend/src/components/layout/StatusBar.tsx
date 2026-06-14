@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 
 type Theme = 'system' | 'dark' | 'light';
 
-const THEME_CYCLE: Theme[] = ['dark', 'light', 'system'];
 const THEME_LABEL: Record<Theme, string> = { dark: 'Dark', light: 'Light', system: 'Auto' };
 const THEME_NEXT: Record<Theme, Theme> = { dark: 'light', light: 'system', system: 'dark' };
 
@@ -33,7 +32,7 @@ export function StatusBar({
   const nextTheme = THEME_NEXT[theme];
 
   return (
-    <div className="flex items-center px-3 py-0.5 bg-sidebar border-t border-border text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
+    <div className="flex items-center px-3 py-0.5 bg-sidebar/80 border-t border-border/70 text-[11px] text-muted-foreground gap-2 h-6 shrink-0 backdrop-blur-xl">
       {/* Proxy status */}
       <span className="flex items-center gap-1.5">
         <span

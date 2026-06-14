@@ -3,12 +3,13 @@ import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const TAB_TRIGGER_CLASS =
-  'text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]';
-const TAB_LIST_CLASS = 'bg-card border-b border-border rounded-none h-8 px-1';
+  'text-[11px] h-6 px-2.5 rounded-md data-[state=active]:bg-background/80 data-[state=active]:text-foreground data-[state=active]:shadow-sm';
+const TAB_LIST_CLASS =
+  'bg-muted/55 border-b border-border/70 rounded-none h-8 px-1.5 backdrop-blur-xl';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
+import { decodeBody, formatBytes } from '@/lib/format';
 import {
   ChevronRight,
   Copy,
@@ -30,8 +31,8 @@ interface InspectorProps {
 export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center">
+      <div className="mac-inspector-pane flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-muted/45 flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
           <MousePointerClick className="h-8 w-8 opacity-40" />
         </div>
         <div className="text-center">
@@ -48,7 +49,7 @@ export function Inspector({ session }: InspectorProps) {
     <ResizablePanelGroup orientation="vertical" id="coroxy-inspector" className="h-full">
       {/* Request Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
-        <div className="flex flex-col h-full">
+        <div className="mac-inspector-pane flex flex-col h-full">
           <PaneHeader title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
@@ -112,7 +113,7 @@ export function Inspector({ session }: InspectorProps) {
 
       {/* Response Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
-        <div className="flex flex-col h-full">
+        <div className="mac-inspector-pane flex flex-col h-full">
           <PaneHeader title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
@@ -179,7 +180,7 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 text-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/45 text-foreground text-[10px] font-semibold uppercase border-b border-border/70 mac-subtle-inset">
       <span className="text-primary">{icon}</span>
       {title}
     </div>
@@ -240,7 +241,7 @@ function CopyableRow({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+    window.navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -256,7 +257,7 @@ function CopyableRow({
         {label}
       </span>
       <span
-        className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
+        className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/60 rounded-md px-1 -mx-1"
         onClick={handleCopy}
       >
         {value}
@@ -512,11 +513,11 @@ function BodyContent({
         )}
       </div>
       {parsedJson !== null && viewMode === 'tree' ? (
-        <div className="bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+        <div className="bg-secondary/70 p-3 rounded-lg max-h-[400px] overflow-auto shadow-[inset_0_0_0_1px_var(--border)]">
           <JsonTreeView data={parsedJson} />
         </div>
       ) : (
-        <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+        <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary/70 p-3 rounded-lg max-h-[400px] overflow-auto shadow-[inset_0_0_0_1px_var(--border)]">
           {formatBody(decoded, contentType)}
         </pre>
       )}
@@ -545,14 +546,14 @@ function ImagePreview({
   for (let i = 0; i < bytes.length; i += chunkSize) {
     parts.push(String.fromCharCode(...bytes.slice(i, i + chunkSize)));
   }
-  const base64 = btoa(parts.join(''));
+  const base64 = window.btoa(parts.join(''));
   const dataUrl = `data:${mime};base64,${base64}`;
   return (
     <div>
       <div className="text-muted-foreground text-xs mb-2">
         {formatBytes(size)} · {contentType}
       </div>
-      <div className="bg-secondary p-4 rounded-md flex items-center justify-center">
+      <div className="bg-secondary/70 p-4 rounded-lg flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
         <img
           src={dataUrl}
           alt="Response body"
@@ -581,7 +582,7 @@ function TimingView({ session }: { session: model.Session }) {
   return (
     <div className="space-y-3">
       <div className="text-muted-foreground text-xs">Total: {totalMs.toFixed(1)}ms</div>
-      <div className="flex h-6 rounded-md overflow-hidden bg-secondary">
+      <div className="flex h-6 rounded-lg overflow-hidden bg-secondary/70 shadow-[inset_0_0_0_1px_var(--border)]">
         {phases.map((p) => {
           if (p.value <= 0) return null;
           const pct = total > 0 ? (p.value / total) * 100 : 0;

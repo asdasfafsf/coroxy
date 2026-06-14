@@ -72,14 +72,17 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center gap-1 px-2 py-1.5 bg-card border-b border-border shadow-sm">
+      <div className="mac-toolbar flex items-center gap-1.5 px-2.5 py-1.5 border-b-0">
         <div className="flex items-center gap-1">
           <Button
             size="sm"
             variant={isRunning ? 'destructive' : 'default'}
             onClick={handleToggle}
             disabled={loading}
-            className="h-7 px-3 text-xs gap-1.5 font-medium"
+            className={cn(
+              'h-7 px-3 text-[12px] gap-1.5 font-medium rounded-md shadow-sm',
+              !isRunning && 'bg-primary hover:bg-primary/90',
+            )}
           >
             {loading ? (
               '...'
@@ -100,14 +103,14 @@ export function Toolbar({
             size="sm"
             variant="ghost"
             onClick={handleClear}
-            className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+            className="h-7 px-2 text-[12px] gap-1 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
           >
             <Trash2 className="h-3 w-3" />
             Clear
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-4 mx-1" />
+        <Separator orientation="vertical" className="h-5 mx-1 bg-border/70" />
 
         {/* Filter switcher */}
         <div className="flex items-center gap-1">
@@ -116,7 +119,7 @@ export function Toolbar({
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 px-2 text-xs gap-1.5 text-muted-foreground hover:text-foreground"
+                className="h-7 px-2 text-[12px] gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
               >
                 <FilterIcon className="h-3.5 w-3.5" />
                 <span className="text-foreground font-medium">
@@ -159,7 +162,7 @@ export function Toolbar({
               size="sm"
               variant="ghost"
               onClick={onEditActiveFilter}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
               title="Edit filter"
             >
               <Pencil className="h-3 w-3" />
@@ -171,10 +174,10 @@ export function Toolbar({
 
         <div
           className={cn(
-            'flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ml-1',
+            'mac-subtle-inset flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ml-1',
             isRunning
               ? 'text-status-success bg-status-success/10 border border-status-success/20'
-              : 'text-muted-foreground bg-muted/50',
+              : 'text-muted-foreground bg-muted/60 border border-border/60',
           )}
         >
           {isRunning && (
