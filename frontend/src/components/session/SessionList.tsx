@@ -100,7 +100,7 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 28;
+const ROW_HEIGHT = 30;
 
 type ColKey =
   | 'protocol'
@@ -130,7 +130,7 @@ interface ColDef {
 const COL_MIN_WIDTH = 40;
 
 const cellBase =
-  'px-2.5 text-foreground text-[12.5px] whitespace-nowrap overflow-hidden text-ellipsis';
+  'px-2.5 text-foreground/90 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis';
 
 const COL_DEFS: ColDef[] = [
   {
@@ -143,7 +143,11 @@ const COL_DEFS: ColDef[] = [
       const badge = protoBadge(s.protocol);
       return (
         <span
-          className={cn('text-[11px] font-semibold px-1.5 py-0.5 rounded-sm', badge.bg, badge.text)}
+          className={cn(
+            'text-[10.5px] font-semibold px-1.5 py-0.5 rounded-md',
+            badge.bg,
+            badge.text,
+          )}
         >
           {s.protocol}
         </span>
@@ -333,11 +337,10 @@ function SessionRow(
     <div
       style={style}
       className={cn(
-        'relative flex items-center cursor-pointer border-b border-border/25 transition-colors',
-        !isSelected && !isActive && 'hover:bg-muted/45',
+        'session-row relative flex items-center cursor-pointer transition-colors',
         !isSelected && !isActive && rowTintClass(session),
-        isSelected && !isActive && 'mac-row-selected hover:bg-primary/25',
-        isActive && 'mac-row-active hover:bg-primary/35 text-foreground',
+        isSelected && !isActive && 'mac-row-selected',
+        isActive && 'mac-row-active text-foreground',
       )}
       onClick={(e) =>
         onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })
@@ -345,7 +348,7 @@ function SessionRow(
       onContextMenu={() => onContextSession(session)}
     >
       {isActive && (
-        <span className="absolute inset-y-[3px] left-1 w-[3px] rounded-full bg-primary pointer-events-none" />
+        <span className="absolute inset-y-[5px] left-1.5 w-0.5 rounded-full bg-primary pointer-events-none" />
       )}
       <div className={cn(cellBase, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
         {markColor && (
@@ -358,13 +361,7 @@ function SessionRow(
         return (
           <div
             key={col.key}
-            className={cn(
-              cellBase,
-              col.cellClass,
-              alignClass(col.align),
-              'border-r border-border/20',
-              !isUrl && 'shrink-0',
-            )}
+            className={cn(cellBase, col.cellClass, alignClass(col.align), !isUrl && 'shrink-0')}
             style={
               isUrl
                 ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
@@ -667,12 +664,12 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2.5 py-1.5 text-left text-muted-foreground font-semibold text-[10px] uppercase border-b border-border/70 whitespace-nowrap';
+    'mac-table-header px-2.5 py-1.5 text-left text-muted-foreground font-semibold text-[11px] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-x-auto overflow-y-hidden bg-background/70 flex flex-col"
+      className="session-table h-full w-full overflow-x-auto overflow-y-hidden flex flex-col"
     >
       {/* inner wrapper: 콘텐츠 최소폭을 min-w-max 로 보장 → 컨테이너보다 넓으면 바깥 overflow-x-auto 가 스크롤 제공 */}
       <div className="flex flex-1 min-h-0 flex-col min-w-max">
@@ -695,13 +692,12 @@ export function SessionList({
                     className={cn(
                       headerClass,
                       alignClass(col.align),
-                      'border-r border-border/45',
                       !isUrl && 'shrink-0',
                       'relative cursor-pointer select-none transition-colors',
-                      isSorted && 'text-foreground bg-accent/50',
+                      isSorted && 'text-foreground bg-accent/40',
                       isDragging && 'opacity-40',
                       isDropTarget &&
-                        'bg-primary/20 text-foreground ring-1 ring-inset ring-primary/60',
+                        'bg-primary/14 text-foreground ring-1 ring-inset ring-primary/50',
                     )}
                     style={
                       isUrl
@@ -748,7 +744,7 @@ export function SessionList({
                           e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/35 active:bg-primary/60 z-10 touch-none"
+                        className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
                         role="separator"
                         aria-orientation="vertical"
                         aria-label={`Resize ${col.label} column`}
@@ -778,10 +774,12 @@ export function SessionList({
           <ContextMenuTrigger asChild>
             <div className="flex-1 min-h-0">
               {sortedSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-3">
-                  <Inbox className="h-10 w-10 opacity-30" />
-                  <span className="text-sm">No sessions captured</span>
-                  <span className="text-xs opacity-60">
+                <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-2">
+                  <Inbox className="h-9 w-9 opacity-25" />
+                  <span className="text-[13px] font-medium text-foreground/55">
+                    No sessions captured
+                  </span>
+                  <span className="text-xs opacity-55">
                     Start the proxy to begin capturing traffic
                   </span>
                 </div>

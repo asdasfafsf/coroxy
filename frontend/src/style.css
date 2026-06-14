@@ -232,22 +232,32 @@ body {
 @layer components {
   .mac-app-shell {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 9%), transparent 120px),
-      radial-gradient(circle at 20% -100px, oklch(0.78 0.035 250 / 18%), transparent 330px),
-      radial-gradient(circle at 95% 20%, oklch(0.62 0.03 190 / 12%), transparent 360px),
+      linear-gradient(180deg, oklch(1 0 0 / 8%), transparent 140px),
+      radial-gradient(circle at 16% -120px, oklch(0.76 0.025 248 / 13%), transparent 340px),
+      radial-gradient(circle at 100% 0%, oklch(0.62 0.02 190 / 8%), transparent 360px),
       var(--background);
+  }
+
+  .coroxy-window {
+    border: 1px solid color-mix(in oklch, var(--border) 90%, transparent);
+    border-radius: 16px;
+    background: color-mix(in oklch, var(--card) 92%, var(--background));
+    box-shadow:
+      0 22px 54px oklch(0 0 0 / 16%),
+      0 2px 8px oklch(0 0 0 / 10%),
+      inset 0 1px 0 oklch(1 0 0 / 18%);
   }
 
   .codex-panel {
     border: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
-    border-radius: 18px;
-    box-shadow:
-      0 18px 48px oklch(0 0 0 / 16%),
-      inset 0 1px 0 oklch(1 0 0 / 12%);
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 12%);
   }
 
   .mac-sidebar {
-    background: linear-gradient(180deg, oklch(1 0 0 / 13%), transparent 180px), var(--sidebar);
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 12%), transparent 160px),
+      color-mix(in oklch, var(--sidebar) 94%, var(--background));
     backdrop-filter: blur(30px) saturate(150%);
   }
 
@@ -279,18 +289,47 @@ body {
 
   .mac-toolbar {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 10%), oklch(1 0 0 / 0%)),
-      color-mix(in oklch, var(--card) 80%, transparent);
+      linear-gradient(180deg, oklch(1 0 0 / 8%), oklch(1 0 0 / 0%)),
+      color-mix(in oklch, var(--card) 86%, transparent);
     backdrop-filter: blur(22px) saturate(140%);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 12%),
-      inset 0 -1px 0 var(--border);
+      inset 0 1px 0 oklch(1 0 0 / 14%),
+      inset 0 -1px 0 color-mix(in oklch, var(--border) 82%, transparent);
   }
 
   .mac-table-header {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 6%), transparent),
-      color-mix(in oklch, var(--card) 94%, var(--background));
+      linear-gradient(180deg, oklch(1 0 0 / 5%), transparent),
+      color-mix(in oklch, var(--card) 90%, var(--background));
+  }
+
+  .session-table {
+    background: color-mix(in oklch, var(--card) 82%, var(--background));
+  }
+
+  .session-row {
+    box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--border) 46%, transparent);
+  }
+
+  .session-row:hover {
+    background: color-mix(in oklch, var(--muted) 54%, transparent);
+  }
+
+  .session-col-resize {
+    background: transparent;
+  }
+
+  .session-col-resize::after {
+    content: '';
+    position: absolute;
+    inset: 5px 3px;
+    border-radius: 999px;
+    background: transparent;
+  }
+
+  .session-col-resize:hover::after,
+  .session-col-resize:active::after {
+    background: color-mix(in oklch, var(--primary) 54%, transparent);
   }
 
   [data-slot='resizable-handle'][aria-orientation='horizontal'] {
@@ -312,17 +351,26 @@ body {
   }
 
   .mac-row-selected {
-    background: color-mix(in oklch, var(--primary) 24%, transparent);
+    background: color-mix(in oklch, var(--primary) 16%, var(--card));
   }
 
   .mac-row-active {
-    background: color-mix(in oklch, var(--primary) 34%, transparent);
+    background:
+      linear-gradient(90deg, color-mix(in oklch, var(--primary) 26%, transparent), transparent 42%),
+      color-mix(in oklch, var(--primary) 18%, var(--card));
   }
 
   .mac-inspector-pane {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 4%), transparent 120px),
-      color-mix(in oklch, var(--card) 92%, var(--background));
+      linear-gradient(180deg, oklch(1 0 0 / 3%), transparent 120px),
+      color-mix(in oklch, var(--card) 88%, var(--background));
+  }
+
+  .inspector-code-surface {
+    background: color-mix(in oklch, var(--secondary) 72%, var(--background));
+    border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 2px oklch(0 0 0 / 4%);
   }
 
   .mac-subtle-inset {

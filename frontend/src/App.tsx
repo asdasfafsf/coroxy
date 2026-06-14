@@ -422,166 +422,175 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="mac-app-shell flex h-screen gap-2 p-2 text-foreground font-sans">
-        {/* ===== Left sidebar — session groups (draggable width) ===== */}
-        <div
-          className="mac-sidebar codex-panel relative shrink-0 flex flex-col overflow-hidden"
-          style={{ width: sidebarWidth }}
-        >
-          {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
+      <div className="mac-app-shell h-screen p-2.5 text-foreground font-sans">
+        <div className="coroxy-window flex h-full min-h-0 overflow-hidden">
+          {/* ===== Left sidebar — session groups (draggable width) ===== */}
           <div
-            className="mac-titlebar mac-traffic-lights h-7 shrink-0"
-            style={{ ['WebkitAppRegion' as never]: 'drag' }}
-          />
-          <SessionSidebar
-            groups={sessionTabs.map((t) => {
-              const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
-              const f = fid ? savedFilters.find((sf) => sf.id === fid) : null;
-              return {
-                id: t.id,
-                label: t.label,
-                count: t.id === activeTabId ? filteredSessions.length : 0,
-                filterName: f?.name ?? null,
-              };
-            })}
-            activeGroupId={activeTabId}
-            onGroupChange={setActiveTabId}
-            onGroupAdd={handleTabAdd}
-          />
-          {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
-          <div
-            onMouseDown={handleSidebarResizeStart}
-            className="absolute -right-1 top-3 bottom-3 w-2 cursor-col-resize rounded-full bg-transparent hover:bg-primary/25 active:bg-primary/45 transition-colors z-10"
-            role="separator"
-            aria-orientation="vertical"
-          />
-        </div>
-
-        {/* ===== Right main column ===== */}
-        <div className="codex-panel flex flex-col flex-1 min-w-0 overflow-hidden bg-background/82">
-          {/* Menubar */}
-          <AppMenubar
-            isRunning={isRunning}
-            sysProxy={sysProxy}
-            hasSelection={!!activeSession}
-            onToggleProxy={handleToggleProxy}
-            onToggleSysProxy={handleToggleSysProxy}
-            onClear={handleClear}
-            onExportHAR={() =>
-              ExportSessionsHAR().catch((e) =>
-                toast.error('HAR export 실패', { description: String(e) }),
-              )
-            }
-            onExportJSON={() =>
-              ExportSessionsJSON().catch((e) =>
-                toast.error('JSON export 실패', { description: String(e) }),
-              )
-            }
-            onImportHAR={() =>
-              ImportSessionsHAR().catch((e) =>
-                toast.error('HAR import 실패', { description: String(e) }),
-              )
-            }
-            onImportSAZ={() =>
-              ImportSessionsSAZ().catch((e) =>
-                toast.error('SAZ import 실패', { description: String(e) }),
-              )
-            }
-            onSettingsClick={() => setShowSettings(true)}
-            onRulesClick={() => setShowRules(true)}
-            onFiltersClick={() => {
-              setEditingFilterId(null);
-              setShowFilters(true);
-            }}
-            onComposerClick={() => setShowComposer(true)}
-            onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-            onCopyRequestHeaders={() =>
-              activeSession && copyToClipboard(copyRequestHeaders(activeSession))
-            }
-            onCopyResponseHeaders={() =>
-              activeSession && copyToClipboard(copyResponseHeaders(activeSession))
-            }
-            onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-            onCopyResponseBody={() =>
-              activeSession && copyToClipboard(copyResponseBody(activeSession))
-            }
-            onAboutClick={() => setShowAbout(true)}
-            onShortcutsClick={() => setShowShortcuts(true)}
-            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
-            onDeleteSelected={handleDeleteSelected}
-            onTextWizardClick={() => setShowTextWizard(true)}
-            onCompareClick={handleCompareFromMenu}
-            selectedCount={selectedIds.size}
-            onMark={handleMark}
-            onUnmarkAll={handleUnmarkAll}
-            onSave={() =>
-              SaveSessions().catch((e) => toast.error('세션 저장 실패', { description: String(e) }))
-            }
-            onLoad={() =>
-              LoadSessions().catch((e) =>
-                toast.error('세션 불러오기 실패', { description: String(e) }),
-              )
-            }
-            throttlePreset={throttlePreset}
-            onThrottleChange={(preset) => {
-              SetThrottle(preset);
-              setThrottlePreset(preset);
-            }}
-          />
-          {/* Toolbar */}
-          <Toolbar
-            onSessionsClear={handleSessionsClear}
-            savedFilters={savedFilters}
-            activeFilterId={activeFilter?.id ?? null}
-            onSelectFilter={(fid) => {
-              setSessionTabs((prev) =>
-                prev.map((t) => (t.id === activeTabId ? { ...t, filterId: fid ?? 'default' } : t)),
-              );
-            }}
-            onNewFilter={() => {
-              setEditingFilterId(null);
-              setShowFilters(true);
-            }}
-            onEditActiveFilter={() => {
-              setEditingFilterId(activeFilter?.id ?? null);
-              setShowFilters(true);
-            }}
-          />
-          {/* Request table + Inspector — vertical split */}
-          <ResizablePanelGroup orientation="vertical" className="flex-1 bg-background/60">
-            <ResizablePanel defaultSize={45} minSize={20}>
-              <SessionList
-                sessions={filteredSessions}
-                selectedIds={selectedIds}
-                activeId={activeSessionId}
-                onSelect={handleSelect}
-                onReplay={handleReplay}
-                onComposerPrefill={handleComposerPrefill}
-                onDiff={handleDiff}
-                diffPending={!!diffSessionA && !diffSessionB}
-                marks={marks}
-              />
-            </ResizablePanel>
-            <ResizableHandle
-              withHandle
-              className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
+            className="mac-sidebar relative shrink-0 flex flex-col overflow-hidden border-r border-sidebar-border"
+            style={{ width: sidebarWidth }}
+          >
+            {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
+            <div
+              className="mac-titlebar mac-traffic-lights h-7 shrink-0"
+              style={{ ['WebkitAppRegion' as never]: 'drag' }}
             />
-            <ResizablePanel defaultSize={55} minSize={20}>
-              <div className="mac-inspector-pane h-full overflow-hidden">
-                <Inspector session={activeSession} />
-              </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-          {/* StatusBar inside main column */}
-          <StatusBar
-            sessionCount={sessions.length}
-            selectedCount={selectedIds.size}
-            isRunning={isRunning}
-            theme={theme}
-            onThemeChange={setTheme}
-            totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
-            totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
-          />
+            <SessionSidebar
+              groups={sessionTabs.map((t) => {
+                const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
+                const f = fid ? savedFilters.find((sf) => sf.id === fid) : null;
+                return {
+                  id: t.id,
+                  label: t.label,
+                  count: t.id === activeTabId ? filteredSessions.length : 0,
+                  filterName: f?.name ?? null,
+                };
+              })}
+              activeGroupId={activeTabId}
+              onGroupChange={setActiveTabId}
+              onGroupAdd={handleTabAdd}
+            />
+            {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
+            <div
+              onMouseDown={handleSidebarResizeStart}
+              className="absolute -right-1.5 top-10 bottom-7 w-3 cursor-col-resize bg-transparent transition-colors z-10 after:absolute after:inset-y-3 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-primary/45 active:after:bg-primary/70"
+              role="separator"
+              aria-orientation="vertical"
+            />
+          </div>
+
+          {/* ===== Right main column ===== */}
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-card/88">
+            {/* Menubar */}
+            <AppMenubar
+              isRunning={isRunning}
+              sysProxy={sysProxy}
+              hasSelection={!!activeSession}
+              onToggleProxy={handleToggleProxy}
+              onToggleSysProxy={handleToggleSysProxy}
+              onClear={handleClear}
+              onExportHAR={() =>
+                ExportSessionsHAR().catch((e) =>
+                  toast.error('HAR export 실패', { description: String(e) }),
+                )
+              }
+              onExportJSON={() =>
+                ExportSessionsJSON().catch((e) =>
+                  toast.error('JSON export 실패', { description: String(e) }),
+                )
+              }
+              onImportHAR={() =>
+                ImportSessionsHAR().catch((e) =>
+                  toast.error('HAR import 실패', { description: String(e) }),
+                )
+              }
+              onImportSAZ={() =>
+                ImportSessionsSAZ().catch((e) =>
+                  toast.error('SAZ import 실패', { description: String(e) }),
+                )
+              }
+              onSettingsClick={() => setShowSettings(true)}
+              onRulesClick={() => setShowRules(true)}
+              onFiltersClick={() => {
+                setEditingFilterId(null);
+                setShowFilters(true);
+              }}
+              onComposerClick={() => setShowComposer(true)}
+              onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
+              onCopyRequestHeaders={() =>
+                activeSession && copyToClipboard(copyRequestHeaders(activeSession))
+              }
+              onCopyResponseHeaders={() =>
+                activeSession && copyToClipboard(copyResponseHeaders(activeSession))
+              }
+              onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
+              onCopyResponseBody={() =>
+                activeSession && copyToClipboard(copyResponseBody(activeSession))
+              }
+              onAboutClick={() => setShowAbout(true)}
+              onShortcutsClick={() => setShowShortcuts(true)}
+              onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
+              onDeleteSelected={handleDeleteSelected}
+              onTextWizardClick={() => setShowTextWizard(true)}
+              onCompareClick={handleCompareFromMenu}
+              selectedCount={selectedIds.size}
+              onMark={handleMark}
+              onUnmarkAll={handleUnmarkAll}
+              onSave={() =>
+                SaveSessions().catch((e) =>
+                  toast.error('세션 저장 실패', { description: String(e) }),
+                )
+              }
+              onLoad={() =>
+                LoadSessions().catch((e) =>
+                  toast.error('세션 불러오기 실패', { description: String(e) }),
+                )
+              }
+              throttlePreset={throttlePreset}
+              onThrottleChange={(preset) => {
+                SetThrottle(preset);
+                setThrottlePreset(preset);
+              }}
+            />
+            {/* Toolbar */}
+            <Toolbar
+              onSessionsClear={handleSessionsClear}
+              savedFilters={savedFilters}
+              activeFilterId={activeFilter?.id ?? null}
+              onSelectFilter={(fid) => {
+                setSessionTabs((prev) =>
+                  prev.map((t) =>
+                    t.id === activeTabId ? { ...t, filterId: fid ?? 'default' } : t,
+                  ),
+                );
+              }}
+              onNewFilter={() => {
+                setEditingFilterId(null);
+                setShowFilters(true);
+              }}
+              onEditActiveFilter={() => {
+                setEditingFilterId(activeFilter?.id ?? null);
+                setShowFilters(true);
+              }}
+            />
+            {/* Request table + Inspector — vertical split */}
+            <ResizablePanelGroup orientation="vertical" className="flex-1 bg-background/40">
+              <ResizablePanel defaultSize={45} minSize={20}>
+                <SessionList
+                  sessions={filteredSessions}
+                  selectedIds={selectedIds}
+                  activeId={activeSessionId}
+                  onSelect={handleSelect}
+                  onReplay={handleReplay}
+                  onComposerPrefill={handleComposerPrefill}
+                  onDiff={handleDiff}
+                  diffPending={!!diffSessionA && !diffSessionB}
+                  marks={marks}
+                />
+              </ResizablePanel>
+              <ResizableHandle
+                withHandle
+                className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
+              />
+              <ResizablePanel defaultSize={55} minSize={20}>
+                <div className="mac-inspector-pane h-full overflow-hidden">
+                  <Inspector session={activeSession} />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+            {/* StatusBar inside main column */}
+            <StatusBar
+              sessionCount={sessions.length}
+              selectedCount={selectedIds.size}
+              isRunning={isRunning}
+              theme={theme}
+              onThemeChange={setTheme}
+              totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
+              totalResponseBytes={sessions.reduce(
+                (sum, s) => sum + (s.response?.body_size || 0),
+                0,
+              )}
+            />
+          </div>
         </div>
       </div>
 

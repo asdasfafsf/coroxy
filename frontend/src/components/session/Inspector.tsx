@@ -1,11 +1,6 @@
 import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const TAB_TRIGGER_CLASS =
-  'text-[11px] h-6 px-2.5 rounded-md data-[state=active]:bg-background/80 data-[state=active]:text-foreground data-[state=active]:shadow-sm';
-const TAB_LIST_CLASS =
-  'bg-muted/55 border-b border-border/70 rounded-none h-8 px-1.5 backdrop-blur-xl';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -22,6 +17,11 @@ import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
+const TAB_TRIGGER_CLASS =
+  'text-[11px] h-6 px-2.5 rounded-md text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[0_1px_2px_oklch(0_0_0_/_10%),inset_0_0_0_1px_var(--border)]';
+const TAB_LIST_CLASS =
+  'bg-muted/42 border-b border-border/70 rounded-none h-8 px-1.5 backdrop-blur-xl';
+
 type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
 
 interface InspectorProps {
@@ -32,12 +32,12 @@ export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
       <div className="mac-inspector-pane flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-muted/45 flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
-          <MousePointerClick className="h-8 w-8 opacity-40" />
+        <div className="w-14 h-14 rounded-xl bg-muted/38 flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
+          <MousePointerClick className="h-7 w-7 opacity-35" />
         </div>
         <div className="text-center">
-          <div className="text-sm font-medium text-foreground/60">Select a session</div>
-          <div className="text-xs mt-1 opacity-50">
+          <div className="text-[13px] font-medium text-foreground/60">Select a session</div>
+          <div className="text-xs mt-1 opacity-45">
             Click a request in the sidebar to inspect it
           </div>
         </div>
@@ -75,7 +75,7 @@ export function Inspector({ session }: InspectorProps) {
                 Raw
               </TabsTrigger>
             </TabsList>
-            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+            <div className="flex-1 overflow-auto p-3 text-[12px] leading-5 font-mono">
               <TabsContent value="headers" className="mt-0">
                 <RequestHeaders session={session} />
               </TabsContent>
@@ -142,7 +142,7 @@ export function Inspector({ session }: InspectorProps) {
                   </TabsTrigger>
                 )}
             </TabsList>
-            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+            <div className="flex-1 overflow-auto p-3 text-[12px] leading-5 font-mono">
               <TabsContent value="headers" className="mt-0">
                 <ResponseHeaders session={session} />
               </TabsContent>
@@ -180,7 +180,7 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/45 text-foreground text-[10px] font-semibold uppercase border-b border-border/70 mac-subtle-inset">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/34 text-foreground/84 text-[11px] font-semibold border-b border-border/70 mac-subtle-inset">
       <span className="text-primary">{icon}</span>
       {title}
     </div>
@@ -513,11 +513,11 @@ function BodyContent({
         )}
       </div>
       {parsedJson !== null && viewMode === 'tree' ? (
-        <div className="bg-secondary/70 p-3 rounded-lg max-h-[400px] overflow-auto shadow-[inset_0_0_0_1px_var(--border)]">
+        <div className="inspector-code-surface p-3 max-h-[400px] overflow-auto">
           <JsonTreeView data={parsedJson} />
         </div>
       ) : (
-        <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary/70 p-3 rounded-lg max-h-[400px] overflow-auto shadow-[inset_0_0_0_1px_var(--border)]">
+        <pre className="inspector-code-surface whitespace-pre-wrap text-foreground text-xs leading-5 p-3 max-h-[400px] overflow-auto">
           {formatBody(decoded, contentType)}
         </pre>
       )}
@@ -553,7 +553,7 @@ function ImagePreview({
       <div className="text-muted-foreground text-xs mb-2">
         {formatBytes(size)} · {contentType}
       </div>
-      <div className="bg-secondary/70 p-4 rounded-lg flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
+      <div className="inspector-code-surface p-4 flex items-center justify-center">
         <img
           src={dataUrl}
           alt="Response body"
@@ -582,7 +582,7 @@ function TimingView({ session }: { session: model.Session }) {
   return (
     <div className="space-y-3">
       <div className="text-muted-foreground text-xs">Total: {totalMs.toFixed(1)}ms</div>
-      <div className="flex h-6 rounded-lg overflow-hidden bg-secondary/70 shadow-[inset_0_0_0_1px_var(--border)]">
+      <div className="inspector-code-surface flex h-6 overflow-hidden p-0">
         {phases.map((p) => {
           if (p.value <= 0) return null;
           const pct = total > 0 ? (p.value / total) * 100 : 0;
