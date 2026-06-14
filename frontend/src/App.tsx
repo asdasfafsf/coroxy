@@ -422,10 +422,10 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="mac-app-shell flex h-screen text-foreground font-sans">
+      <div className="mac-app-shell flex h-screen gap-2 p-2 text-foreground font-sans">
         {/* ===== Left sidebar — session groups (draggable width) ===== */}
         <div
-          className="mac-sidebar relative border-r border-sidebar-border shrink-0 flex flex-col overflow-hidden"
+          className="mac-sidebar codex-panel relative shrink-0 flex flex-col overflow-hidden"
           style={{ width: sidebarWidth }}
         >
           {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
@@ -451,14 +451,14 @@ function App() {
           {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
           <div
             onMouseDown={handleSidebarResizeStart}
-            className="absolute -right-px top-0 bottom-0 w-1 cursor-col-resize bg-transparent hover:bg-primary/45 active:bg-primary/70 transition-colors z-10"
+            className="absolute -right-1 top-3 bottom-3 w-2 cursor-col-resize rounded-full bg-transparent hover:bg-primary/25 active:bg-primary/45 transition-colors z-10"
             role="separator"
             aria-orientation="vertical"
           />
         </div>
 
         {/* ===== Right main column ===== */}
-        <div className="flex flex-col flex-1 min-w-0 bg-background/90">
+        <div className="codex-panel flex flex-col flex-1 min-w-0 overflow-hidden bg-background/82">
           {/* Menubar */}
           <AppMenubar
             isRunning={isRunning}
@@ -548,7 +548,7 @@ function App() {
             }}
           />
           {/* Request table + Inspector — vertical split */}
-          <ResizablePanelGroup orientation="vertical" className="flex-1">
+          <ResizablePanelGroup orientation="vertical" className="flex-1 bg-background/60">
             <ResizablePanel defaultSize={45} minSize={20}>
               <SessionList
                 sessions={filteredSessions}
@@ -562,7 +562,10 @@ function App() {
                 marks={marks}
               />
             </ResizablePanel>
-            <ResizableHandle withHandle />
+            <ResizableHandle
+              withHandle
+              className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
+            />
             <ResizablePanel defaultSize={55} minSize={20}>
               <div className="mac-inspector-pane h-full overflow-hidden">
                 <Inspector session={activeSession} />
