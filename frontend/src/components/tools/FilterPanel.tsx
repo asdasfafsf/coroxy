@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -61,13 +61,23 @@ function toJsSkeleton(filter: SavedFilter): string {
 }
 
 export function FilterPanel(props: FilterPanelProps) {
-  // Dialog가 unmount되면 useState 초기화. 새 initial/열림마다 key로 remount.
-  const formKey = `${props.initial?.id ?? 'new'}-${props.open ? 'o' : 'c'}`;
+  // id 기반 remount: 서로 다른 필터를 이어서 편집할 때 draft가 확실히 초기화되도록.
+  // open 전환으로는 outer Dialog가 remount되지 않게 하여 Radix portal 타이밍 이슈를 피한다.
+  const formKey = props.initial?.id ?? 'new';
   return <FilterPanelInner key={formKey} {...props} />;
 }
 
 function FilterPanelInner({ open, onOpenChange, initial, onSave, onDelete }: FilterPanelProps) {
   const [draft, setDraft] = useState<SavedFilter>(() => initial ?? newBuilder());
+
+  // open이 false→true로 바뀌는 순간 draft를 최신 initial로 재설정.
+  // dep를 initial?.id로 한정하여 savedFilters reference 변경만으로는 draft가 리셋되지 않게 한다.
+  useEffect(() => {
+    if (open) {
+      setDraft(initial ?? newBuilder());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initial?.id]);
 
   const isBuilder = draft.kind === 'builder';
 
