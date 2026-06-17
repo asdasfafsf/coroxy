@@ -664,7 +664,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2.5 py-1.5 text-left text-muted-foreground font-semibold text-[11px] border-b border-border/70 whitespace-nowrap';
+    'mac-table-header px-2.5 h-7 flex items-center text-left text-muted-foreground/72 font-medium text-[10.5px] border-b border-border/55 whitespace-nowrap';
 
   return (
     <div
@@ -677,7 +677,7 @@ export function SessionList({
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div ref={headerRef} className="flex shrink-0">
-              <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
+              <div className={cn(headerClass, 'w-10 shrink-0 text-muted-foreground/48')}>#</div>
               {orderedCols.map((col, idx) => {
                 const isDragging = dragKey === col.key;
                 const isDropTarget =

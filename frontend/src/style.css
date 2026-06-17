@@ -232,20 +232,22 @@ body {
 @layer components {
   .mac-app-shell {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 8%), transparent 140px),
-      radial-gradient(circle at 16% -120px, oklch(0.76 0.025 248 / 13%), transparent 340px),
-      radial-gradient(circle at 100% 0%, oklch(0.62 0.02 190 / 8%), transparent 360px),
+      linear-gradient(180deg, oklch(1 0 0 / 6%), transparent 132px),
+      radial-gradient(circle at 12% -80px, oklch(0.7 0.04 230 / 12%), transparent 340px),
+      radial-gradient(circle at 88% 0%, oklch(0.63 0.045 155 / 9%), transparent 360px),
       var(--background);
   }
 
   .coroxy-window {
-    border: 1px solid color-mix(in oklch, var(--border) 90%, transparent);
-    border-radius: 16px;
-    background: color-mix(in oklch, var(--card) 92%, var(--background));
+    border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 5%), transparent 160px),
+      color-mix(in oklch, var(--card) 88%, var(--background));
     box-shadow:
-      0 22px 54px oklch(0 0 0 / 16%),
-      0 2px 8px oklch(0 0 0 / 10%),
-      inset 0 1px 0 oklch(1 0 0 / 18%);
+      0 28px 68px oklch(0 0 0 / 18%),
+      0 3px 12px oklch(0 0 0 / 10%),
+      inset 0 1px 0 oklch(1 0 0 / 16%);
   }
 
   .codex-panel {
@@ -256,9 +258,9 @@ body {
 
   .mac-sidebar {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 12%), transparent 160px),
-      color-mix(in oklch, var(--sidebar) 94%, var(--background));
-    backdrop-filter: blur(30px) saturate(150%);
+      linear-gradient(180deg, oklch(1 0 0 / 9%), transparent 180px),
+      color-mix(in oklch, var(--sidebar) 90%, var(--background));
+    backdrop-filter: blur(34px) saturate(142%);
   }
 
   .mac-titlebar {
@@ -289,18 +291,69 @@ body {
 
   .mac-toolbar {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 8%), oklch(1 0 0 / 0%)),
-      color-mix(in oklch, var(--card) 86%, transparent);
+      linear-gradient(180deg, oklch(1 0 0 / 7%), oklch(1 0 0 / 0%)),
+      color-mix(in oklch, var(--card) 78%, transparent);
     backdrop-filter: blur(22px) saturate(140%);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 14%),
-      inset 0 -1px 0 color-mix(in oklch, var(--border) 82%, transparent);
+      inset 0 1px 0 oklch(1 0 0 / 12%),
+      inset 0 -1px 0 color-mix(in oklch, var(--border) 70%, transparent);
+  }
+
+  .toolbar-control-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    padding: 2px;
+    border: 1px solid color-mix(in oklch, var(--border) 62%, transparent);
+    border-radius: 10px;
+    background: color-mix(in oklch, var(--muted) 44%, transparent);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 8%),
+      inset 0 -1px 0 oklch(0 0 0 / 5%);
+  }
+
+  .toolbar-button {
+    border-radius: 8px;
+    box-shadow: none;
+  }
+
+  .toolbar-button:hover {
+    background: color-mix(in oklch, var(--muted) 68%, transparent);
+  }
+
+  .status-readout {
+    border: 1px solid;
+    border-radius: 9px;
+    background: color-mix(in oklch, var(--muted) 34%, transparent);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 7%),
+      inset 0 -1px 0 oklch(0 0 0 / 5%);
+  }
+
+  .statusbar {
+    border-top: 1px solid color-mix(in oklch, var(--border) 70%, transparent);
+    background: color-mix(in oklch, var(--sidebar) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(130%);
+  }
+
+  .source-list-item {
+    border-radius: 9px;
+  }
+
+  .source-list-item-active {
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 9%), transparent),
+      color-mix(in oklch, var(--sidebar-accent) 86%, var(--primary) 10%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in oklch, var(--sidebar-border) 82%, transparent),
+      0 1px 2px oklch(0 0 0 / 7%);
   }
 
   .mac-table-header {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 5%), transparent),
-      color-mix(in oklch, var(--card) 90%, var(--background));
+      linear-gradient(180deg, oklch(1 0 0 / 3%), transparent),
+      color-mix(in oklch, var(--card) 72%, var(--background));
+    box-shadow: inset 0 -1px 0 color-mix(in oklch, var(--border) 34%, transparent);
   }
 
   .session-table {

@@ -43,7 +43,10 @@ export function Toolbar({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    ProxyState().then(setProxyState);
+    Promise.resolve()
+      .then(() => ProxyState())
+      .then(setProxyState)
+      .catch(() => {});
   }, []);
 
   const handleToggle = async () => {
@@ -72,16 +75,16 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="mac-toolbar flex items-center gap-1.5 px-2.5 py-1.5 border-b-0">
-        <div className="flex items-center gap-1">
+      <div className="mac-toolbar flex items-center gap-2 px-2.5 py-1.5 border-b-0">
+        <div className="toolbar-control-group">
           <Button
             size="sm"
             variant={isRunning ? 'destructive' : 'default'}
             onClick={handleToggle}
             disabled={loading}
             className={cn(
-              'h-7 px-3 text-[12px] gap-1.5 font-medium rounded-md shadow-sm',
-              !isRunning && 'bg-primary hover:bg-primary/90',
+              'toolbar-button h-7 px-3 text-[12px] gap-1.5 font-medium',
+              !isRunning && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
             {loading ? (
@@ -103,23 +106,23 @@ export function Toolbar({
             size="sm"
             variant="ghost"
             onClick={handleClear}
-            className="h-7 px-2 text-[12px] gap-1 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
+            className="toolbar-button h-7 px-2 text-[12px] gap-1 text-muted-foreground hover:text-foreground"
           >
             <Trash2 className="h-3 w-3" />
             Clear
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-5 mx-1 bg-border/70" />
+        <Separator orientation="vertical" className="h-5 bg-border/70" />
 
         {/* Filter switcher */}
-        <div className="flex items-center gap-1">
+        <div className="toolbar-control-group">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-7 px-2 text-[12px] gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
+                className="toolbar-button h-7 px-2 text-[12px] gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <FilterIcon className="h-3.5 w-3.5" />
                 <span className="text-foreground font-medium">
@@ -162,7 +165,7 @@ export function Toolbar({
               size="sm"
               variant="ghost"
               onClick={onEditActiveFilter}
-              className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-md"
+              className="toolbar-button h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
               title="Edit filter"
             >
               <Pencil className="h-3 w-3" />
@@ -174,10 +177,10 @@ export function Toolbar({
 
         <div
           className={cn(
-            'mac-subtle-inset flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ml-1',
+            'status-readout flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 ml-1',
             isRunning
-              ? 'text-status-success bg-status-success/10 border border-status-success/20'
-              : 'text-muted-foreground bg-muted/60 border border-border/60',
+              ? 'text-status-success border-status-success/22'
+              : 'text-muted-foreground border-border/64',
           )}
         >
           {isRunning && (

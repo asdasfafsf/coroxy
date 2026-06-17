@@ -139,16 +139,20 @@ function App() {
   }, []);
 
   useEffect(() => {
-    Sessions()
+    Promise.resolve()
+      .then(() => Sessions())
       .then((s) => setSessions(s || []))
       .catch(() => {});
-    ProxyState()
+    Promise.resolve()
+      .then(() => ProxyState())
       .then(setProxyState)
       .catch(() => {});
-    IsSystemProxyActive()
+    Promise.resolve()
+      .then(() => IsSystemProxyActive())
       .then(setSysProxy)
       .catch(() => {});
-    ThrottleState()
+    Promise.resolve()
+      .then(() => ThrottleState())
       .then((cfg) => setThrottlePreset(cfg.preset))
       .catch(() => {});
   }, []);
@@ -166,7 +170,8 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      ProxyState()
+      Promise.resolve()
+        .then(() => ProxyState())
         .then(setProxyState)
         .catch(() => {});
     }, 2000);
@@ -552,7 +557,6 @@ function App() {
                 setShowFilters(true);
               }}
             />
-            {/* Request table + Inspector — vertical split */}
             <ResizablePanelGroup orientation="vertical" className="flex-1 bg-background/40">
               <ResizablePanel defaultSize={45} minSize={20}>
                 <SessionList
@@ -577,7 +581,6 @@ function App() {
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
-            {/* StatusBar inside main column */}
             <StatusBar
               sessionCount={sessions.length}
               selectedCount={selectedIds.size}

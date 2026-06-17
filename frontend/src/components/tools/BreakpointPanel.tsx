@@ -36,13 +36,20 @@ export function BreakpointPanel() {
   const [editBody, setEditBody] = useState('');
 
   const refresh = () => {
-    PendingBreakpoints().then((p) => setPending(p || []));
+    Promise.resolve()
+      .then(() => PendingBreakpoints())
+      .then((p) => setPending(p || []))
+      .catch(() => {});
   };
 
   useEffect(() => {
     refresh();
-    const cancel = EventsOn('coroxy:breakpoint:hit', refresh);
-    return cancel;
+    try {
+      const cancel = EventsOn('coroxy:breakpoint:hit', refresh);
+      return cancel;
+    } catch {
+      return undefined;
+    }
   }, []);
 
   const startEdit = (p: PendingRequest) => {

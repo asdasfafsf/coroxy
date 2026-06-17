@@ -32,7 +32,7 @@ export function StatusBar({
   const nextTheme = THEME_NEXT[theme];
 
   return (
-    <div className="flex items-center px-3 py-0.5 bg-sidebar/80 border-t border-border/70 text-[11px] text-muted-foreground gap-2 h-6 shrink-0 backdrop-blur-xl">
+    <div className="statusbar flex items-center px-3 py-0.5 text-[11px] text-muted-foreground gap-2 h-6 shrink-0">
       {/* Proxy status */}
       <span className="flex items-center gap-1.5">
         <span
@@ -78,7 +78,7 @@ export function StatusBar({
           <Button
             variant="ghost"
             size="sm"
-            className="h-5 px-1.5 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
+            className="toolbar-button h-5 px-1.5 gap-1 text-[10px] text-muted-foreground hover:text-foreground"
             onClick={() => onThemeChange(nextTheme)}
           >
             {theme === 'light' ? (
