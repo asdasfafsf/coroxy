@@ -256,10 +256,25 @@ function resizeColWidths(
   key: ColKey,
   startWidth: number,
   delta: number,
+  nextKey: ColKey | null,
+  startNextWidth: number | null,
 ): Record<ColKey, number> {
   const colMin = COL_MIN_MAP[key] ?? COL_MIN_WIDTH;
-  const next = Math.max(colMin, startWidth + delta);
-  return prev[key] === next ? prev : { ...prev, [key]: next };
+  if (!nextKey || startNextWidth == null) {
+    const next = Math.max(colMin, startWidth + delta);
+    return prev[key] === next ? prev : { ...prev, [key]: next };
+  }
+
+  const nextMin = COL_MIN_MAP[nextKey] ?? COL_MIN_WIDTH;
+  const maxShrink = startWidth - colMin;
+  const maxGrow = startNextWidth - nextMin;
+  const clampedDelta = Math.max(-maxShrink, Math.min(delta, maxGrow));
+  const nextWidth = startWidth + clampedDelta;
+  const nextNeighborWidth = startNextWidth - clampedDelta;
+
+  return prev[key] === nextWidth && prev[nextKey] === nextNeighborWidth
+    ? prev
+    : { ...prev, [key]: nextWidth, [nextKey]: nextNeighborWidth };
 }
 
 function alignClass(a?: ColAlign): string {
@@ -445,8 +460,10 @@ export function SessionList({
   // 대비해 window-level mousemove/mouseup fallback도 함께 설치.
   const resizingCol = useRef<{
     key: ColKey;
+    nextKey: ColKey | null;
     startX: number;
     startWidth: number;
+    startNextWidth: number | null;
     el: HTMLElement | null;
     pointerId: number | null;
   } | null>(null);
@@ -478,7 +495,14 @@ export function SessionList({
       if (!ctx) return;
       const delta = e.clientX - ctx.startX;
       setColWidths((prev) => {
-        return resizeColWidths(prev, ctx.key, ctx.startWidth, delta);
+        return resizeColWidths(
+          prev,
+          ctx.key,
+          ctx.startWidth,
+          delta,
+          ctx.nextKey,
+          ctx.startNextWidth,
+        );
       });
     };
     window.addEventListener('mousemove', onMove);
@@ -489,7 +513,7 @@ export function SessionList({
     };
   }, []);
   const handleColResizePointerDown = useCallback(
-    (key: ColKey, e: React.PointerEvent) => {
+    (key: ColKey, nextKey: ColKey | null, e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const el = e.currentTarget as HTMLElement;
@@ -500,8 +524,10 @@ export function SessionList({
       }
       resizingCol.current = {
         key,
+        nextKey,
         startX: e.clientX,
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        startNextWidth: nextKey ? (colWidths[nextKey] ?? DEFAULT_COL_WIDTHS[nextKey]) : null,
         el,
         pointerId: e.pointerId,
       };
@@ -513,14 +539,16 @@ export function SessionList({
   // Mouse event fallback — pointer 이벤트가 발화되지 않는 환경용. window mouseup에
   // 등록된 endResize가 저장/정리까지 처리.
   const handleColResizeMouseDown = useCallback(
-    (key: ColKey, e: React.MouseEvent) => {
+    (key: ColKey, nextKey: ColKey | null, e: React.MouseEvent) => {
       if (resizingCol.current) return;
       e.preventDefault();
       e.stopPropagation();
       resizingCol.current = {
         key,
+        nextKey,
         startX: e.clientX,
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        startNextWidth: nextKey ? (colWidths[nextKey] ?? DEFAULT_COL_WIDTHS[nextKey]) : null,
         el: null,
         pointerId: null,
       };
@@ -534,7 +562,7 @@ export function SessionList({
     if (!ctx) return;
     const delta = e.clientX - ctx.startX;
     setColWidths((prev) => {
-      return resizeColWidths(prev, ctx.key, ctx.startWidth, delta);
+      return resizeColWidths(prev, ctx.key, ctx.startWidth, delta, ctx.nextKey, ctx.startNextWidth);
     });
   }, []);
   const handleColResizePointerUp = useCallback((e: React.PointerEvent) => {
@@ -655,7 +683,8 @@ export function SessionList({
           <ContextMenuTrigger asChild>
             <div ref={headerRef} className="flex shrink-0">
               <div className={cn(headerClass, 'w-10 shrink-0 text-muted-foreground/48')}>#</div>
-              {orderedCols.map((col) => {
+              {orderedCols.map((col, index) => {
+                const nextCol = orderedCols[index + 1] ?? null;
                 const isDragging = dragKey === col.key;
                 const isDropTarget =
                   dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
@@ -702,23 +731,25 @@ export function SessionList({
                     }}
                   >
                     {col.label} <SortIcon col={col.key} />
-                    <span
-                      draggable={false}
-                      onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
-                      onPointerMove={handleColResizePointerMove}
-                      onPointerUp={handleColResizePointerUp}
-                      onPointerCancel={handleColResizePointerUp}
-                      onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      onDragStart={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }}
-                      className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
-                      role="separator"
-                      aria-orientation="vertical"
-                      aria-label={`Resize ${col.label} column`}
-                    />
+                    {nextCol ? (
+                      <span
+                        draggable={false}
+                        onPointerDown={(e) => handleColResizePointerDown(col.key, nextCol.key, e)}
+                        onPointerMove={handleColResizePointerMove}
+                        onPointerUp={handleColResizePointerUp}
+                        onPointerCancel={handleColResizePointerUp}
+                        onMouseDown={(e) => handleColResizeMouseDown(col.key, nextCol.key, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        onDragStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
+                        role="separator"
+                        aria-orientation="vertical"
+                        aria-label={`Resize ${col.label} column`}
+                      />
+                    ) : null}
                   </div>
                 );
               })}
