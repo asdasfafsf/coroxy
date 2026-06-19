@@ -83,7 +83,7 @@ export function Toolbar({
             onClick={handleToggle}
             disabled={loading}
             className={cn(
-              'toolbar-button h-7 px-3 text-[12px] gap-1.5 font-medium',
+              'toolbar-button capture-button h-7 px-3 text-[12px] gap-1.5 font-semibold',
               !isRunning && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
@@ -114,6 +114,11 @@ export function Toolbar({
         </div>
 
         <Separator orientation="vertical" className="h-5 bg-border/70" />
+
+        <div className="toolbar-section-label">
+          <span className={cn('toolbar-section-dot', isRunning && 'toolbar-section-dot-live')} />
+          <span>Traffic</span>
+        </div>
 
         {/* Filter switcher */}
         <div className="toolbar-control-group">

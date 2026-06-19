@@ -438,7 +438,12 @@ function App() {
             <div
               className="mac-titlebar mac-traffic-lights h-7 shrink-0"
               style={{ ['WebkitAppRegion' as never]: 'drag' }}
-            />
+            >
+              <div className="sidebar-wordmark">
+                <span className="sidebar-wordmark-mark">C</span>
+                <span>Coroxy</span>
+              </div>
+            </div>
             <SessionSidebar
               groups={sessionTabs.map((t) => {
                 const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
