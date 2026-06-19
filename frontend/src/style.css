@@ -278,26 +278,6 @@ body {
     -webkit-app-region: drag;
   }
 
-  .mac-traffic-lights {
-    position: relative;
-  }
-
-  .mac-traffic-lights::before {
-    content: '';
-    position: absolute;
-    left: 14px;
-    top: 9px;
-    width: 12px;
-    height: 12px;
-    border-radius: 999px;
-    background: #ff5f57;
-    box-shadow:
-      20px 0 0 #febc2e,
-      40px 0 0 #28c840,
-      inset 0 0 0 0.5px rgb(0 0 0 / 22%);
-    opacity: 0.92;
-  }
-
   .sidebar-wordmark {
     position: absolute;
     left: 74px;

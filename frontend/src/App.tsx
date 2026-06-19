@@ -434,9 +434,9 @@ function App() {
             className="mac-sidebar relative shrink-0 flex flex-col overflow-hidden border-r border-sidebar-border"
             style={{ width: sidebarWidth }}
           >
-            {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
+            {/* native macOS traffic lights 영역 확보 + 창 드래그 */}
             <div
-              className="mac-titlebar mac-traffic-lights h-7 shrink-0"
+              className="mac-titlebar h-7 shrink-0"
               style={{ ['WebkitAppRegion' as never]: 'drag' }}
             >
               <div className="sidebar-wordmark">
