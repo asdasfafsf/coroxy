@@ -251,6 +251,17 @@ const COL_MIN_MAP: Record<ColKey, number> = COL_DEFS.reduce(
   {} as Record<ColKey, number>,
 );
 
+function resizeColWidths(
+  prev: Record<ColKey, number>,
+  key: ColKey,
+  startWidth: number,
+  delta: number,
+): Record<ColKey, number> {
+  const colMin = COL_MIN_MAP[key] ?? COL_MIN_WIDTH;
+  const next = Math.max(colMin, startWidth + delta);
+  return prev[key] === next ? prev : { ...prev, [key]: next };
+}
+
 function alignClass(a?: ColAlign): string {
   if (a === 'center') return 'text-center';
   if (a === 'right') return 'text-right';
@@ -357,16 +368,11 @@ function SessionRow(
         {index + 1}
       </div>
       {orderedCols.map((col) => {
-        const isUrl = col.key === 'url';
         return (
           <div
             key={col.key}
-            className={cn(cellBase, col.cellClass, alignClass(col.align), !isUrl && 'shrink-0')}
-            style={
-              isUrl
-                ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
-                : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
-            }
+            className={cn(cellBase, col.cellClass, alignClass(col.align), 'shrink-0')}
+            style={{ width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }}
             title={col.rowTitle?.(session)}
           >
             {col.render(session)}
@@ -392,8 +398,6 @@ export function SessionList({
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
-  const URL_MIN = 240;
-  const INDEX_COL = 40;
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
@@ -474,21 +478,7 @@ export function SessionList({
       if (!ctx) return;
       const delta = e.clientX - ctx.startX;
       setColWidths((prev) => {
-        const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
-        // URL 이외 컬럼: URL 이 minWidth 아래로 밀리지 않도록 max 제한
-        let target = ctx.startWidth + delta;
-        if (ctx.key !== 'url') {
-          const othersSum = (Object.keys(prev) as ColKey[])
-            .filter((k) => k !== ctx.key && k !== 'url')
-            .reduce((acc, k) => acc + prev[k], 0);
-          const maxThis = Math.max(
-            colMin,
-            (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
-          );
-          target = Math.min(target, maxThis);
-        }
-        const next = Math.max(colMin, target);
-        return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+        return resizeColWidths(prev, ctx.key, ctx.startWidth, delta);
       });
     };
     window.addEventListener('mousemove', onMove);
@@ -544,20 +534,7 @@ export function SessionList({
     if (!ctx) return;
     const delta = e.clientX - ctx.startX;
     setColWidths((prev) => {
-      const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
-      let target = ctx.startWidth + delta;
-      if (ctx.key !== 'url') {
-        const othersSum = (Object.keys(prev) as ColKey[])
-          .filter((k) => k !== ctx.key && k !== 'url')
-          .reduce((acc, k) => acc + prev[k], 0);
-        const maxThis = Math.max(
-          colMin,
-          (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
-        );
-        target = Math.min(target, maxThis);
-      }
-      const next = Math.max(colMin, target);
-      return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+      return resizeColWidths(prev, ctx.key, ctx.startWidth, delta);
     });
   }, []);
   const handleColResizePointerUp = useCallback((e: React.PointerEvent) => {
@@ -678,13 +655,11 @@ export function SessionList({
           <ContextMenuTrigger asChild>
             <div ref={headerRef} className="flex shrink-0">
               <div className={cn(headerClass, 'w-10 shrink-0 text-muted-foreground/48')}>#</div>
-              {orderedCols.map((col, idx) => {
+              {orderedCols.map((col) => {
                 const isDragging = dragKey === col.key;
                 const isDropTarget =
                   dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
                 const isSorted = sortKey === col.key;
-                const isLast = idx === orderedCols.length - 1;
-                const isUrl = col.key === 'url';
                 return (
                   <div
                     key={col.key}
@@ -692,18 +667,14 @@ export function SessionList({
                     className={cn(
                       headerClass,
                       alignClass(col.align),
-                      !isUrl && 'shrink-0',
+                      'shrink-0',
                       'relative cursor-pointer select-none transition-colors',
                       isSorted && 'text-foreground bg-accent/40',
                       isDragging && 'opacity-40',
                       isDropTarget &&
                         'bg-primary/14 text-foreground ring-1 ring-inset ring-primary/50',
                     )}
-                    style={
-                      isUrl
-                        ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
-                        : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
-                    }
+                    style={{ width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }}
                     onClick={() => handleSort(col.key)}
                     onDragStart={(e) => {
                       setDragKey(col.key);
@@ -731,25 +702,23 @@ export function SessionList({
                     }}
                   >
                     {col.label} <SortIcon col={col.key} />
-                    {!isLast && (
-                      <span
-                        draggable={false}
-                        onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
-                        onPointerMove={handleColResizePointerMove}
-                        onPointerUp={handleColResizePointerUp}
-                        onPointerCancel={handleColResizePointerUp}
-                        onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
-                        onClick={(e) => e.stopPropagation()}
-                        onDragStart={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                        className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
-                        role="separator"
-                        aria-orientation="vertical"
-                        aria-label={`Resize ${col.label} column`}
-                      />
-                    )}
+                    <span
+                      draggable={false}
+                      onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
+                      onPointerMove={handleColResizePointerMove}
+                      onPointerUp={handleColResizePointerUp}
+                      onPointerCancel={handleColResizePointerUp}
+                      onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      onDragStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
+                      className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
+                      role="separator"
+                      aria-orientation="vertical"
+                      aria-label={`Resize ${col.label} column`}
+                    />
                   </div>
                 );
               })}
