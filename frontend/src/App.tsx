@@ -469,7 +469,7 @@ function App() {
           </div>
 
           {/* ===== Right main column ===== */}
-          <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-card">
+          <div className="mac-main-column flex flex-col flex-1 min-w-0 overflow-hidden">
             {/* Menubar */}
             <AppMenubar
               isRunning={isRunning}
@@ -581,7 +581,7 @@ function App() {
                 className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
               />
               <ResizablePanel defaultSize={55} minSize={20}>
-                <div className="mac-inspector-pane h-full overflow-hidden">
+                <div className="h-full overflow-hidden">
                   <Inspector session={activeSession} />
                 </div>
               </ResizablePanel>
