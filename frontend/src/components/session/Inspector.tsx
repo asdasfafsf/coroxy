@@ -31,14 +31,16 @@ interface InspectorProps {
 export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
-      <div className="mac-inspector-pane flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-        <div className="w-14 h-14 rounded-xl bg-muted/38 flex items-center justify-center shadow-[inset_0_0_0_1px_var(--border)]">
-          <MousePointerClick className="h-7 w-7 opacity-35" />
-        </div>
-        <div className="text-center">
-          <div className="text-[13px] font-medium text-foreground/60">Select a session</div>
-          <div className="text-xs mt-1 opacity-45">
-            Click a request in the sidebar to inspect it
+      <div className="mac-inspector-pane flex h-full items-center justify-center px-6 text-muted-foreground">
+        <div className="empty-state-card">
+          <div className="empty-state-icon">
+            <MousePointerClick className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="text-[13px] font-semibold text-foreground/82">Select a session</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              Click a request in the sidebar to inspect it
+            </div>
           </div>
         </div>
       </div>

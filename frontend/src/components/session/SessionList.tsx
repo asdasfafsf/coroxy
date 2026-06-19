@@ -774,14 +774,20 @@ export function SessionList({
           <ContextMenuTrigger asChild>
             <div className="flex-1 min-h-0">
               {sortedSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-2">
-                  <Inbox className="h-9 w-9 opacity-25" />
-                  <span className="text-[13px] font-medium text-foreground/55">
-                    No sessions captured
-                  </span>
-                  <span className="text-xs opacity-55">
-                    Start the proxy to begin capturing traffic
-                  </span>
+                <div className="empty-table-state flex h-full items-center justify-center px-6 py-16">
+                  <div className="empty-state-card">
+                    <div className="empty-state-icon">
+                      <Inbox className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="text-[13px] font-semibold text-foreground/82">
+                        No sessions captured
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Start the proxy to begin capturing traffic
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <List

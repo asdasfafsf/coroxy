@@ -427,7 +427,7 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="mac-app-shell h-screen p-2.5 text-foreground font-sans">
+      <div className="mac-app-shell h-screen p-1.5 text-foreground font-sans">
         <div className="coroxy-window flex h-full min-h-0 overflow-hidden">
           {/* ===== Left sidebar — session groups (draggable width) ===== */}
           <div
@@ -464,7 +464,7 @@ function App() {
           </div>
 
           {/* ===== Right main column ===== */}
-          <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-card/88">
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden bg-card">
             {/* Menubar */}
             <AppMenubar
               isRunning={isRunning}
