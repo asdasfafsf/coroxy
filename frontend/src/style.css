@@ -87,7 +87,7 @@ body {
   --chart-3: oklch(0.54 0.14 292);
   --chart-4: oklch(0.62 0.15 85);
   --chart-5: oklch(0.6 0.14 42);
-  --radius: 0.32rem;
+  --radius: 0.72rem;
   --sidebar: oklch(0.92 0.006 255 / 88%);
   --sidebar-foreground: oklch(0.24 0.012 255);
   --sidebar-primary: oklch(0.57 0.17 252);
@@ -105,17 +105,17 @@ body {
 }
 
 .dark {
-  --background: oklch(0.205 0.006 255);
+  --background: oklch(0.22 0.008 255);
   --foreground: oklch(0.91 0.004 255);
-  --card: oklch(0.235 0.006 255);
+  --card: oklch(0.255 0.008 255);
   --card-foreground: oklch(0.9 0.004 255);
   --popover: oklch(0.285 0.008 255 / 98%);
   --popover-foreground: oklch(0.9 0.004 255);
   --primary: oklch(0.66 0.17 252);
   --primary-foreground: oklch(0.98 0 0);
-  --secondary: oklch(0.28 0.006 255);
+  --secondary: oklch(0.305 0.008 255);
   --secondary-foreground: oklch(0.9 0.004 255);
-  --muted: oklch(0.315 0.006 255);
+  --muted: oklch(0.35 0.008 255);
   --muted-foreground: oklch(0.68 0.008 255);
   --accent: oklch(0.35 0.008 255);
   --accent-foreground: oklch(0.92 0.004 255);
@@ -129,11 +129,11 @@ body {
   --chart-4: oklch(0.75 0.16 85);
   --chart-5: oklch(0.68 0.17 42);
 
-  --sidebar: oklch(0.255 0.007 255);
+  --sidebar: oklch(0.285 0.008 255 / 88%);
   --sidebar-foreground: oklch(0.86 0.004 255);
   --sidebar-primary: oklch(0.68 0.16 252);
   --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.39 0.012 255);
+  --sidebar-accent: oklch(0.43 0.014 255 / 88%);
   --sidebar-accent-foreground: oklch(0.93 0.004 255);
   --sidebar-border: oklch(1 0 0 / 14%);
   --sidebar-ring: oklch(0.68 0.16 252);
@@ -232,18 +232,31 @@ body {
 @layer components {
   .mac-app-shell {
     background:
-      linear-gradient(180deg, color-mix(in oklch, var(--background) 88%, black), var(--background)),
+      radial-gradient(
+        circle at 18% -8%,
+        color-mix(in oklch, var(--primary) 18%, transparent),
+        transparent 32%
+      ),
+      radial-gradient(
+        circle at 92% 4%,
+        color-mix(in oklch, var(--status-success) 11%, transparent),
+        transparent 30%
+      ),
+      linear-gradient(180deg, color-mix(in oklch, var(--background) 88%, white), var(--background)),
       var(--background);
   }
 
   .coroxy-window {
-    border: 1px solid color-mix(in oklch, var(--border) 94%, transparent);
-    border-radius: 13px;
-    background: linear-gradient(180deg, oklch(1 0 0 / 4%), transparent 96px), var(--card);
+    border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+    border-radius: 22px;
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 12%), transparent 138px),
+      color-mix(in oklch, var(--card) 82%, transparent);
+    backdrop-filter: blur(28px) saturate(145%);
     box-shadow:
-      0 18px 44px oklch(0 0 0 / 20%),
-      0 1px 3px oklch(0 0 0 / 16%),
-      inset 0 1px 0 oklch(1 0 0 / 16%);
+      0 26px 72px oklch(0 0 0 / 18%),
+      0 10px 26px oklch(0 0 0 / 10%),
+      inset 0 1px 0 oklch(1 0 0 / 24%);
   }
 
   .codex-panel {
@@ -253,12 +266,15 @@ body {
   }
 
   .mac-sidebar {
-    background: linear-gradient(180deg, oklch(1 0 0 / 5%), transparent 120px), var(--sidebar);
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 12%), transparent 180px),
+      color-mix(in oklch, var(--sidebar) 86%, transparent);
+    backdrop-filter: blur(30px) saturate(150%);
   }
 
   .mac-titlebar {
-    min-height: 30px;
-    background: color-mix(in oklch, var(--sidebar) 88%, black);
+    min-height: 36px;
+    background: linear-gradient(180deg, oklch(1 0 0 / 8%), transparent);
     -webkit-app-region: drag;
   }
 
@@ -285,7 +301,7 @@ body {
   .sidebar-wordmark {
     position: absolute;
     left: 74px;
-    top: 7px;
+    top: 10px;
     display: inline-flex;
     align-items: center;
     gap: 7px;
@@ -300,7 +316,7 @@ body {
     width: 16px;
     height: 16px;
     place-items: center;
-    border-radius: 5px;
+    border-radius: 7px;
     color: var(--primary-foreground);
     font-size: 10px;
     line-height: 1;
@@ -314,11 +330,12 @@ body {
 
   .mac-toolbar {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 5%), transparent),
-      color-mix(in oklch, var(--card) 92%, var(--background));
+      linear-gradient(180deg, oklch(1 0 0 / 10%), transparent),
+      color-mix(in oklch, var(--card) 70%, transparent);
+    backdrop-filter: blur(24px) saturate(145%);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 12%),
-      inset 0 -1px 0 color-mix(in oklch, var(--border) 92%, transparent);
+      inset 0 -1px 0 color-mix(in oklch, var(--border) 56%, transparent);
   }
 
   .toolbar-control-group {
@@ -326,9 +343,11 @@ body {
     align-items: center;
     gap: 1px;
     padding: 2px;
-    border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 8px;
-    background: color-mix(in oklch, var(--muted) 62%, var(--card));
+    border: 1px solid color-mix(in oklch, var(--border) 62%, transparent);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, oklch(1 0 0 / 11%), transparent),
+      color-mix(in oklch, var(--muted) 42%, transparent);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 9%),
       0 1px 1px oklch(0 0 0 / 8%);
@@ -336,6 +355,7 @@ body {
 
   .capture-button {
     min-width: 74px;
+    border-radius: 999px;
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 18%),
       0 1px 2px color-mix(in oklch, var(--primary) 18%, transparent);
@@ -368,7 +388,7 @@ body {
   }
 
   .toolbar-button {
-    border-radius: 6px;
+    border-radius: 999px;
     box-shadow: none;
   }
 
@@ -378,8 +398,8 @@ body {
 
   .status-readout {
     border: 1px solid;
-    border-radius: 7px;
-    background: color-mix(in oklch, var(--muted) 54%, var(--card));
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted) 34%, transparent);
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 7%);
   }
 
@@ -393,7 +413,7 @@ body {
   }
 
   .source-list-item {
-    border-radius: 7px;
+    border-radius: 12px;
   }
 
   .source-summary {
@@ -404,10 +424,10 @@ body {
     min-height: 54px;
     padding: 9px 10px;
     border: 1px solid color-mix(in oklch, var(--sidebar-border) 82%, transparent);
-    border-radius: 10px;
+    border-radius: 16px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 7%), transparent),
-      color-mix(in oklch, var(--sidebar-accent) 42%, var(--sidebar));
+      color-mix(in oklch, var(--sidebar-accent) 48%, transparent);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 8%),
       0 1px 2px oklch(0 0 0 / 8%);
@@ -418,7 +438,7 @@ body {
     min-width: 28px;
     height: 28px;
     place-items: center;
-    border-radius: 8px;
+    border-radius: 12px;
     color: var(--primary);
     font-size: 12px;
     font-weight: 800;
@@ -429,8 +449,8 @@ body {
 
   .source-list-item-active {
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 10%), transparent),
-      color-mix(in oklch, var(--sidebar-accent) 76%, var(--primary) 24%);
+      linear-gradient(180deg, oklch(1 0 0 / 16%), transparent),
+      color-mix(in oklch, var(--sidebar-accent) 68%, var(--primary) 22%);
     box-shadow:
       inset 0 0 0 1px color-mix(in oklch, var(--primary) 30%, var(--sidebar-border)),
       0 1px 2px oklch(0 0 0 / 12%);
@@ -451,14 +471,31 @@ body {
       inset 0 1px 0 oklch(1 0 0 / 8%);
   }
 
-  .session-table {
+  .main-workspace {
+    padding: 10px;
+    gap: 10px;
     background:
       linear-gradient(
         180deg,
-        color-mix(in oklch, var(--secondary) 26%, transparent) 0,
-        transparent 92px
+        color-mix(in oklch, var(--background) 18%, transparent),
+        transparent 160px
       ),
-      color-mix(in oklch, var(--card) 96%, var(--background));
+      color-mix(in oklch, var(--background) 24%, transparent);
+  }
+
+  .session-table {
+    border: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
+    border-radius: 16px;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--secondary) 18%, transparent) 0,
+        transparent 112px
+      ),
+      color-mix(in oklch, var(--card) 72%, transparent);
+    box-shadow:
+      0 10px 26px oklch(0 0 0 / 7%),
+      inset 0 1px 0 oklch(1 0 0 / 12%);
   }
 
   .session-row {
@@ -515,9 +552,14 @@ body {
   }
 
   .mac-inspector-pane {
+    border: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
+    border-radius: 16px;
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 3%), transparent 80px),
-      color-mix(in oklch, var(--card) 94%, var(--background));
+      linear-gradient(180deg, oklch(1 0 0 / 9%), transparent 120px),
+      color-mix(in oklch, var(--card) 72%, transparent);
+    box-shadow:
+      0 10px 26px oklch(0 0 0 / 7%),
+      inset 0 1px 0 oklch(1 0 0 / 12%);
   }
 
   .empty-table-state {
@@ -539,10 +581,11 @@ body {
     max-width: 390px;
     padding: 14px 15px;
     border: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
-    border-radius: 11px;
+    border-radius: 18px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 7%), transparent),
-      color-mix(in oklch, var(--secondary) 64%, var(--card));
+      color-mix(in oklch, var(--secondary) 52%, transparent);
+    backdrop-filter: blur(18px) saturate(140%);
     box-shadow:
       0 16px 38px oklch(0 0 0 / 12%),
       0 1px 2px oklch(0 0 0 / 10%),
@@ -555,7 +598,7 @@ body {
     height: 38px;
     place-items: center;
     flex: 0 0 auto;
-    border-radius: 9px;
+    border-radius: 14px;
     color: var(--primary);
     background: color-mix(in oklch, var(--primary) 13%, var(--card));
     box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary) 22%, transparent);
@@ -564,7 +607,7 @@ body {
   .inspector-code-surface {
     background: color-mix(in oklch, var(--secondary) 72%, var(--background));
     border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
-    border-radius: 10px;
+    border-radius: 14px;
     box-shadow: inset 0 1px 2px oklch(0 0 0 / 4%);
   }
 

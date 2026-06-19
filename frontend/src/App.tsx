@@ -427,7 +427,7 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="mac-app-shell h-screen p-1.5 text-foreground font-sans">
+      <div className="mac-app-shell h-screen p-3 text-foreground font-sans">
         <div className="coroxy-window flex h-full min-h-0 overflow-hidden">
           {/* ===== Left sidebar — session groups (draggable width) ===== */}
           <div
@@ -562,7 +562,7 @@ function App() {
                 setShowFilters(true);
               }}
             />
-            <ResizablePanelGroup orientation="vertical" className="flex-1 bg-background/40">
+            <ResizablePanelGroup orientation="vertical" className="main-workspace flex-1">
               <ResizablePanel defaultSize={45} minSize={20}>
                 <SessionList
                   sessions={filteredSessions}
