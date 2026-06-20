@@ -672,7 +672,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2.5 h-7 flex items-center text-left text-muted-foreground/70 font-medium text-[10px] border-b border-border/55 whitespace-nowrap';
+    'mac-table-header px-2 h-6 flex items-center text-left text-muted-foreground/78 font-medium text-[10px] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div
