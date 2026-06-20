@@ -557,8 +557,8 @@ function App() {
                 setShowFilters(true);
               }}
             />
-            <ResizablePanelGroup orientation="vertical" className="main-workspace flex-1">
-              <ResizablePanel defaultSize={45} minSize={20}>
+            <ResizablePanelGroup orientation="horizontal" className="main-workspace flex-1">
+              <ResizablePanel defaultSize={62} minSize={34}>
                 <SessionList
                   sessions={filteredSessions}
                   selectedIds={selectedIds}
@@ -575,7 +575,7 @@ function App() {
                 withHandle
                 className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
               />
-              <ResizablePanel defaultSize={55} minSize={20}>
+              <ResizablePanel defaultSize={38} minSize={28}>
                 <div className="h-full overflow-hidden">
                   <Inspector session={activeSession} />
                 </div>

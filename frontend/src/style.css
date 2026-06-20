@@ -498,6 +498,24 @@ body {
     background: color-mix(in oklch, var(--primary) 58%, transparent);
   }
 
+  [data-slot='resizable-handle'][aria-orientation='vertical'] {
+    width: 10px !important;
+    background: transparent !important;
+  }
+
+  [data-slot='resizable-handle'][aria-orientation='vertical'] > div {
+    width: 3px;
+    height: 36px;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--border) 82%, transparent);
+  }
+
+  [data-slot='resizable-handle'][aria-orientation='vertical']:hover > div,
+  [data-slot='resizable-handle'][aria-orientation='vertical'][data-panel-resize-handle-active]
+    > div {
+    background: color-mix(in oklch, var(--primary) 58%, transparent);
+  }
+
   .mac-row-selected {
     background: color-mix(in oklch, var(--primary) 20%, var(--card));
   }
