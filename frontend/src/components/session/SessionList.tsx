@@ -130,7 +130,7 @@ interface ColDef {
 const COL_MIN_WIDTH = 40;
 
 const cellBase =
-  'px-2.5 text-foreground/90 text-[12px] whitespace-nowrap overflow-hidden text-ellipsis';
+  'px-2.5 text-foreground/88 text-[11.5px] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
 
 const COL_DEFS: ColDef[] = [
   {
@@ -672,7 +672,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2.5 h-7 flex items-center text-left text-muted-foreground/72 font-medium text-[10.5px] border-b border-border/55 whitespace-nowrap';
+    'mac-table-header px-2.5 h-7 flex items-center text-left text-muted-foreground/70 font-medium text-[10px] border-b border-border/55 whitespace-nowrap';
 
   return (
     <div

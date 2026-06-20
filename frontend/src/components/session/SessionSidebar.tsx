@@ -31,24 +31,24 @@ export function SessionSidebar({
         <div className="px-2 pb-2 pt-3">
           <div className="source-summary">
             <div className="min-w-0">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45">
+              <div className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-sidebar-foreground/45">
                 Active View
               </div>
-              <div className="mt-0.5 truncate text-[12px] font-semibold text-sidebar-foreground">
+              <div className="mt-0.5 truncate text-[12px] font-medium text-sidebar-foreground">
                 {activeGroup?.label ?? 'Sessions'}
               </div>
             </div>
             <div className="source-summary-count">{totalCount}</div>
           </div>
 
-          <div className="px-2.5 pb-1.5 pt-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-sidebar-foreground/45">
+          <div className="px-2.5 pb-1.5 pt-3 text-[9.5px] font-medium uppercase tracking-[0.08em] text-sidebar-foreground/45">
             Sessions
           </div>
           {groups.map((group) => (
             <button
               key={group.id}
               className={cn(
-                'source-list-item relative w-full flex items-center gap-2 px-2.5 py-1.5 text-[12px] text-left transition-colors',
+                'source-list-item relative w-full flex items-center gap-2 px-2.5 py-1.5 text-[11.5px] text-left transition-colors',
                 activeGroupId === group.id
                   ? 'source-list-item-active text-sidebar-accent-foreground font-medium'
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/55 hover:text-sidebar-foreground',
@@ -71,7 +71,7 @@ export function SessionSidebar({
               {group.count > 0 && (
                 <span
                   className={cn(
-                    'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded-md',
+                    'text-[10px] tabular-nums shrink-0 px-1.5 py-0.5 rounded',
                     activeGroupId === group.id
                       ? 'bg-primary/12 text-primary font-semibold'
                       : 'text-muted-foreground',

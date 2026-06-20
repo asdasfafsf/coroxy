@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource-variable/inter';
 @import '@fontsource-variable/jetbrains-mono';
 @import '@fontsource-variable/geist-mono';
 
@@ -13,7 +14,8 @@ body {
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans:
-    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif;
+    'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+    system-ui, sans-serif;
   --font-mono:
     'Geist Mono Variable', 'Geist Mono', 'JetBrains Mono Variable', 'JetBrains Mono', 'SF Mono',
     'Menlo', monospace;
@@ -87,7 +89,7 @@ body {
   --chart-3: oklch(0.54 0.14 292);
   --chart-4: oklch(0.62 0.15 85);
   --chart-5: oklch(0.6 0.14 42);
-  --radius: 0.72rem;
+  --radius: 0.56rem;
   --sidebar: oklch(0.885 0.009 250 / 92%);
   --sidebar-foreground: oklch(0.24 0.012 255);
   --sidebar-primary: oklch(0.57 0.17 252);
@@ -156,7 +158,12 @@ body {
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'cv01', 'ss03';
+    font-feature-settings:
+      'cv01',
+      'cv05',
+      'ss03',
+      'tnum' 0;
+    font-variation-settings: 'opsz' 14;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -240,7 +247,7 @@ body {
 
   .coroxy-window {
     border: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
-    border-radius: 24px;
+    border-radius: 20px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 28%), transparent 116px),
       color-mix(in oklch, var(--card) 88%, var(--background));
@@ -253,7 +260,7 @@ body {
 
   .codex-panel {
     border: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
-    border-radius: 14px;
+    border-radius: 11px;
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 12%);
   }
 
@@ -286,7 +293,7 @@ body {
     gap: 1px;
     padding: 2px;
     border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 999px;
+    border-radius: 11px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 11%), transparent),
       color-mix(in oklch, var(--muted) 72%, var(--card));
@@ -303,7 +310,7 @@ body {
 
   .capture-button {
     min-width: 74px;
-    border-radius: 999px;
+    border-radius: 9px;
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 18%),
       0 1px 2px color-mix(in oklch, var(--primary) 18%, transparent);
@@ -315,9 +322,9 @@ body {
     gap: 6px;
     margin-left: -2px;
     color: color-mix(in oklch, var(--muted-foreground) 92%, transparent);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+    font-size: 10.5px;
+    font-weight: 650;
+    letter-spacing: 0;
   }
 
   .toolbar-section-dot {
@@ -336,7 +343,7 @@ body {
   }
 
   .toolbar-button {
-    border-radius: 999px;
+    border-radius: 8px;
     box-shadow: none;
   }
 
@@ -346,7 +353,7 @@ body {
 
   .status-readout {
     border: 1px solid;
-    border-radius: 999px;
+    border-radius: 9px;
     background: color-mix(in oklch, var(--muted) 34%, transparent);
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 7%);
   }
@@ -361,7 +368,7 @@ body {
   }
 
   .source-list-item {
-    border-radius: 12px;
+    border-radius: 9px;
   }
 
   .source-summary {
@@ -372,7 +379,7 @@ body {
     min-height: 54px;
     padding: 9px 10px;
     border: 1px solid color-mix(in oklch, var(--sidebar-border) 92%, transparent);
-    border-radius: 16px;
+    border-radius: 12px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 28%), transparent),
       color-mix(in oklch, var(--sidebar-accent) 62%, var(--sidebar));
@@ -386,7 +393,7 @@ body {
     min-width: 28px;
     height: 28px;
     place-items: center;
-    border-radius: 12px;
+    border-radius: 8px;
     color: var(--primary);
     font-size: 12px;
     font-weight: 800;
@@ -438,7 +445,7 @@ body {
 
   .session-table {
     border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 17px;
+    border-radius: 12px;
     background:
       linear-gradient(180deg, color-mix(in oklch, var(--secondary) 18%, white) 0, transparent 96px),
       color-mix(in oklch, var(--card) 94%, white);
@@ -503,7 +510,7 @@ body {
 
   .mac-inspector-pane {
     border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 17px;
+    border-radius: 12px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 44%), transparent 118px),
       repeating-linear-gradient(
@@ -538,7 +545,7 @@ body {
     max-width: 370px;
     padding: 12px 14px;
     border: 1px solid color-mix(in oklch, var(--border) 74%, transparent);
-    border-radius: 15px;
+    border-radius: 12px;
     background:
       linear-gradient(180deg, oklch(1 0 0 / 58%), transparent),
       color-mix(in oklch, var(--card) 94%, var(--secondary));
@@ -555,7 +562,7 @@ body {
     height: 38px;
     place-items: center;
     flex: 0 0 auto;
-    border-radius: 13px;
+    border-radius: 10px;
     color: var(--primary);
     background:
       linear-gradient(180deg, oklch(1 0 0 / 38%), transparent),
@@ -568,7 +575,7 @@ body {
   .inspector-code-surface {
     background: color-mix(in oklch, var(--secondary) 72%, var(--background));
     border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
-    border-radius: 14px;
+    border-radius: 10px;
     box-shadow: inset 0 1px 2px oklch(0 0 0 / 4%);
   }
 

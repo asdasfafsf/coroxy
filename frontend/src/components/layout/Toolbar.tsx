@@ -83,7 +83,7 @@ export function Toolbar({
             onClick={handleToggle}
             disabled={loading}
             className={cn(
-              'toolbar-button capture-button h-7 px-3 text-[12px] gap-1.5 font-semibold',
+              'toolbar-button capture-button h-7 px-3 text-[11.5px] gap-1.5 font-medium',
               !isRunning && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
@@ -106,7 +106,7 @@ export function Toolbar({
             size="sm"
             variant="ghost"
             onClick={handleClear}
-            className="toolbar-button h-7 px-2 text-[12px] gap-1 text-muted-foreground hover:text-foreground"
+            className="toolbar-button h-7 px-2 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
           >
             <Trash2 className="h-3 w-3" />
             Clear
@@ -127,10 +127,10 @@ export function Toolbar({
               <Button
                 size="sm"
                 variant="ghost"
-                className="toolbar-button h-7 px-2 text-[12px] gap-1.5 text-muted-foreground hover:text-foreground"
+                className="toolbar-button h-7 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <FilterIcon className="h-3.5 w-3.5" />
-                <span className="text-foreground font-medium">
+                <span className="text-foreground font-normal">
                   {activeFilter ? activeFilter.name : 'All Traffic'}
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-60" />
