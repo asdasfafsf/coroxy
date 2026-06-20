@@ -432,27 +432,26 @@ body {
   }
 
   .main-workspace {
-    padding: 12px;
-    gap: 11px;
+    padding: 8px;
+    gap: 0;
     background:
       linear-gradient(
         180deg,
-        color-mix(in oklch, var(--background) 48%, transparent),
+        color-mix(in oklch, var(--background) 18%, transparent),
         transparent 160px
       ),
-      color-mix(in oklch, var(--background) 34%, var(--card));
+      color-mix(in oklch, var(--card) 88%, var(--background));
   }
 
   .session-table {
-    border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 12px;
+    border: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
+    border-radius: 8px 0 0 8px;
     background:
-      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 18%, white) 0, transparent 96px),
-      color-mix(in oklch, var(--card) 94%, white);
+      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 10%, white) 0, transparent 80px),
+      color-mix(in oklch, var(--card) 98%, white);
     box-shadow:
-      0 12px 28px oklch(0 0 0 / 8%),
-      0 1px 2px oklch(0 0 0 / 8%),
-      inset 0 1px 0 oklch(1 0 0 / 52%);
+      inset 0 1px 0 oklch(1 0 0 / 34%),
+      inset -1px 0 0 color-mix(in oklch, var(--border) 44%, transparent);
   }
 
   .session-row {
@@ -499,13 +498,13 @@ body {
   }
 
   [data-slot='resizable-handle'][aria-orientation='vertical'] {
-    width: 10px !important;
-    background: transparent !important;
+    width: 8px !important;
+    background: color-mix(in oklch, var(--border) 16%, transparent) !important;
   }
 
   [data-slot='resizable-handle'][aria-orientation='vertical'] > div {
     width: 3px;
-    height: 36px;
+    height: 32px;
     border-radius: 999px;
     background: color-mix(in oklch, var(--border) 82%, transparent);
   }
@@ -527,21 +526,21 @@ body {
   }
 
   .mac-inspector-pane {
-    border: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
-    border-radius: 12px;
+    border: 1px solid color-mix(in oklch, var(--border) 64%, transparent);
+    border-left: 0;
+    border-radius: 0 8px 8px 0;
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 44%), transparent 118px),
+      linear-gradient(180deg, oklch(1 0 0 / 22%), transparent 92px),
       repeating-linear-gradient(
         0deg,
         transparent 0,
         transparent 31px,
-        color-mix(in oklch, var(--border) 10%, transparent) 32px
+        color-mix(in oklch, var(--border) 6%, transparent) 32px
       ),
-      color-mix(in oklch, var(--card) 96%, white);
+      color-mix(in oklch, var(--card) 98%, white);
     box-shadow:
-      0 12px 28px oklch(0 0 0 / 8%),
-      0 1px 2px oklch(0 0 0 / 8%),
-      inset 0 1px 0 oklch(1 0 0 / 52%);
+      inset 0 1px 0 oklch(1 0 0 / 34%),
+      inset 1px 0 0 color-mix(in oklch, var(--border) 30%, transparent);
   }
 
   .empty-table-state {
@@ -562,16 +561,15 @@ body {
     min-width: 286px;
     max-width: 370px;
     padding: 12px 14px;
-    border: 1px solid color-mix(in oklch, var(--border) 74%, transparent);
-    border-radius: 12px;
+    border: 1px solid color-mix(in oklch, var(--border) 46%, transparent);
+    border-radius: 9px;
     background:
-      linear-gradient(180deg, oklch(1 0 0 / 58%), transparent),
-      color-mix(in oklch, var(--card) 94%, var(--secondary));
-    backdrop-filter: blur(18px) saturate(135%);
+      linear-gradient(180deg, oklch(1 0 0 / 18%), transparent),
+      color-mix(in oklch, var(--card) 96%, var(--secondary));
+    backdrop-filter: blur(8px) saturate(108%);
     box-shadow:
-      0 10px 24px oklch(0 0 0 / 8%),
-      0 1px 2px oklch(0 0 0 / 8%),
-      inset 0 1px 0 oklch(1 0 0 / 46%);
+      0 1px 1px oklch(0 0 0 / 5%),
+      inset 0 1px 0 oklch(1 0 0 / 24%);
   }
 
   .empty-state-icon {
