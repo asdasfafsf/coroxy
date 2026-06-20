@@ -413,6 +413,7 @@ export function SessionList({
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
+  const [listWidth, setListWidth] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
@@ -649,6 +650,7 @@ export function SessionList({
 
   // 세로 리사이즈 시 List height 가 즉시 따라가도록 containerRef(전체 높이)와
   // headerRef(헤더 높이)를 동시에 관찰하여 listHeight = container - header 로 계산.
+  // 빈 상태는 가로 스크롤 가능한 전체 테이블 폭이 아니라 사용자가 보는 viewport 폭 기준으로 중앙 정렬.
   useEffect(() => {
     const c = containerRef.current;
     if (!c) return;
@@ -656,6 +658,7 @@ export function SessionList({
       const headerH = headerRef.current?.getBoundingClientRect().height ?? 28;
       const h = c.clientHeight - headerH;
       setListHeight(h > 0 ? h : 0);
+      setListWidth(c.clientWidth);
     };
     recompute();
     const observer = new ResizeObserver(recompute);
@@ -774,7 +777,10 @@ export function SessionList({
           <ContextMenuTrigger asChild>
             <div className="flex-1 min-h-0">
               {sortedSessions.length === 0 ? (
-                <div className="empty-table-state flex h-full items-center justify-center px-6 py-16">
+                <div
+                  className="empty-table-state sticky left-0 flex h-full items-center justify-center px-6 py-16"
+                  style={{ width: listWidth || '100%' }}
+                >
                   <div className="empty-state-card">
                     <div className="empty-state-icon">
                       <Inbox className="h-6 w-6" />
