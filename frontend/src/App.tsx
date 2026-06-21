@@ -436,8 +436,33 @@ function App() {
                 filteredCount={filteredSessions.length}
                 totalCount={sessions.length}
               />
-              <ResizablePanelGroup orientation="horizontal" className="main-workspace flex-1">
-                <ResizablePanel defaultSize={62} minSize={34}>
+              {activeSession ? (
+                <ResizablePanelGroup orientation="horizontal" className="main-workspace flex-1">
+                  <ResizablePanel defaultSize={62} minSize={34}>
+                    <SessionList
+                      sessions={filteredSessions}
+                      selectedIds={selectedIds}
+                      activeId={activeSessionId}
+                      onSelect={handleSelect}
+                      onReplay={handleReplay}
+                      onComposerPrefill={handleComposerPrefill}
+                      onDiff={handleDiff}
+                      diffPending={!!diffSessionA && !diffSessionB}
+                      marks={marks}
+                    />
+                  </ResizablePanel>
+                  <ResizableHandle
+                    withHandle
+                    className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
+                  />
+                  <ResizablePanel defaultSize={38} minSize={28}>
+                    <div className="h-full overflow-hidden">
+                      <Inspector session={activeSession} />
+                    </div>
+                  </ResizablePanel>
+                </ResizablePanelGroup>
+              ) : (
+                <div className="main-workspace flex-1 min-h-0">
                   <SessionList
                     sessions={filteredSessions}
                     selectedIds={selectedIds}
@@ -449,17 +474,8 @@ function App() {
                     diffPending={!!diffSessionA && !diffSessionB}
                     marks={marks}
                   />
-                </ResizablePanel>
-                <ResizableHandle
-                  withHandle
-                  className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
-                />
-                <ResizablePanel defaultSize={38} minSize={28}>
-                  <div className="h-full overflow-hidden">
-                    <Inspector session={activeSession} />
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
+                </div>
+              )}
               <StatusBar
                 sessionCount={sessions.length}
                 selectedCount={selectedIds.size}
