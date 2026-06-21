@@ -86,7 +86,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="mac-toolbar flex h-8 items-center gap-1 border-b-0 px-2 py-0.5">
+      <div className="traffic-toolbar flex h-9 items-center gap-1 border-b-0 px-2 py-1">
         <div className="toolbar-control-group">
           <Button
             size="sm"

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Plus, Radio, FolderOpen } from 'lucide-react';
+import { Plus, Radio, FolderOpen, Activity, Send, ShieldCheck } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SessionGroup {
@@ -26,6 +26,20 @@ export function SessionSidebar({
 
   return (
     <div className="flex flex-col h-full min-w-0">
+      <div className="fiddler-section-switcher">
+        <button className="fiddler-section-item fiddler-section-item-active" type="button">
+          <Activity className="h-3.5 w-3.5" />
+          <span>Traffic</span>
+        </button>
+        <button className="fiddler-section-item" type="button">
+          <Send className="h-3.5 w-3.5" />
+          <span>Composer</span>
+        </button>
+        <button className="fiddler-section-item" type="button">
+          <ShieldCheck className="h-3.5 w-3.5" />
+          <span>Rules</span>
+        </button>
+      </div>
       <ScrollArea className="flex-1">
         <div className="px-2 pb-2 pt-2">
           <div className="source-section-header">

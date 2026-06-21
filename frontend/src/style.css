@@ -66,43 +66,52 @@ body {
 }
 
 :root {
-  --background: oklch(0.948 0.006 250);
+  --background: oklch(0.932 0.006 248);
   --foreground: oklch(0.21 0.012 250);
-  --card: oklch(0.992 0.002 250);
+  --card: oklch(0.985 0.003 248);
   --card-foreground: oklch(0.225 0.01 255);
   --popover: oklch(0.99 0.002 255 / 96%);
   --popover-foreground: oklch(0.225 0.01 255);
-  --primary: oklch(0.57 0.17 252);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.935 0.006 250);
+  --primary: oklch(0.62 0.17 151);
+  --primary-foreground: oklch(0.13 0.034 151);
+  --secondary: oklch(0.915 0.006 248);
   --secondary-foreground: oklch(0.23 0.01 255);
-  --muted: oklch(0.908 0.006 250);
+  --muted: oklch(0.89 0.006 248);
   --muted-foreground: oklch(0.43 0.012 250);
-  --accent: oklch(0.885 0.012 250);
+  --accent: oklch(0.86 0.01 248);
   --accent-foreground: oklch(0.22 0.01 255);
   --destructive: oklch(0.55 0.23 27);
-  --border: oklch(0.78 0.008 250);
-  --input: oklch(0.79 0.008 250);
-  --ring: oklch(0.57 0.17 252);
-  --chart-1: oklch(0.57 0.17 252);
+  --border: oklch(0.72 0.008 248);
+  --input: oklch(0.72 0.008 248);
+  --ring: oklch(0.62 0.17 151);
+  --chart-1: oklch(0.62 0.17 151);
   --chart-2: oklch(0.55 0.16 155);
   --chart-3: oklch(0.54 0.14 292);
   --chart-4: oklch(0.62 0.15 85);
   --chart-5: oklch(0.6 0.14 42);
-  --radius: 0.56rem;
-  --sidebar: oklch(0.885 0.009 250 / 92%);
-  --sidebar-foreground: oklch(0.24 0.012 255);
-  --sidebar-primary: oklch(0.57 0.17 252);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.84 0.013 250 / 86%);
-  --sidebar-accent-foreground: oklch(0.2 0.01 255);
-  --sidebar-border: oklch(0.72 0.009 250 / 76%);
-  --sidebar-ring: oklch(0.57 0.17 252);
+  --radius: 0.34rem;
+  --chrome: oklch(0.245 0.027 252);
+  --chrome-raised: oklch(0.285 0.03 252);
+  --chrome-lowered: oklch(0.19 0.022 252);
+  --chrome-foreground: oklch(0.91 0.008 248);
+  --chrome-muted: oklch(0.69 0.014 248);
+  --chrome-border: oklch(0.155 0.018 252);
+  --fiddler-green: oklch(0.67 0.18 151);
+  --fiddler-amber: oklch(0.72 0.16 74);
+  --fiddler-blue: oklch(0.62 0.15 238);
+  --sidebar: oklch(0.936 0.005 248);
+  --sidebar-foreground: oklch(0.28 0.012 248);
+  --sidebar-primary: var(--fiddler-green);
+  --sidebar-primary-foreground: oklch(0.13 0.034 151);
+  --sidebar-accent: oklch(0.875 0.006 248);
+  --sidebar-accent-foreground: oklch(0.18 0.012 248);
+  --sidebar-border: oklch(0.74 0.006 248 / 88%);
+  --sidebar-ring: var(--fiddler-green);
 
   --status-success: oklch(0.58 0.16 155);
   --status-warning: oklch(0.64 0.15 85);
   --status-error: oklch(0.55 0.23 27);
-  --status-info: oklch(0.57 0.17 252);
+  --status-info: oklch(0.58 0.15 238);
   --status-purple: oklch(0.56 0.16 292);
 }
 
@@ -238,17 +247,61 @@ body {
 
 @layer components {
   .mac-app-shell {
-    background: var(--background);
+    background: var(--chrome);
   }
 
   .coroxy-window {
-    border: 1px solid color-mix(in oklch, var(--border) 94%, transparent);
-    border-radius: 10px;
-    background: color-mix(in oklch, var(--card) 92%, var(--background));
-    backdrop-filter: blur(18px) saturate(112%);
+    border: 0;
+    border-radius: 0;
+    background: var(--card);
+    box-shadow: none;
+  }
+
+  .fiddler-app-bar {
+    color: var(--chrome-muted);
+    background: linear-gradient(180deg, oklch(0.31 0.032 252), var(--chrome) 86%), var(--chrome);
+    border-bottom: 1px solid var(--chrome-border);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 7%);
+  }
+
+  .fiddler-brand {
+    border-right: 1px solid color-mix(in oklch, var(--chrome-border) 86%, black);
+  }
+
+  .fiddler-brand-mark {
+    width: 13px;
+    height: 13px;
+    border-radius: 2px;
+    background:
+      linear-gradient(
+        135deg,
+        transparent 50%,
+        color-mix(in oklch, var(--fiddler-green) 86%, white) 51%
+      ),
+      linear-gradient(
+        180deg,
+        var(--fiddler-green),
+        color-mix(in oklch, var(--fiddler-green) 78%, black)
+      );
     box-shadow:
-      0 18px 48px oklch(0 0 0 / 14%),
-      inset 0 1px 0 oklch(1 0 0 / 44%);
+      inset 0 1px 0 oklch(1 0 0 / 26%),
+      0 0 0 1px color-mix(in oklch, var(--fiddler-green) 48%, black);
+  }
+
+  .fiddler-brand-name {
+    color: var(--chrome-foreground);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .fiddler-capture-state {
+    color: var(--chrome-muted);
+    background: color-mix(in oklch, var(--chrome-lowered) 82%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--chrome-muted) 13%, transparent);
+  }
+
+  .fiddler-workbench {
+    background: var(--card);
   }
 
   .codex-panel {
@@ -258,22 +311,41 @@ body {
   }
 
   .mac-sidebar {
-    background: color-mix(in oklch, var(--sidebar) 88%, var(--background));
-    backdrop-filter: blur(18px) saturate(116%);
+    background: linear-gradient(180deg, oklch(0.95 0.004 248), var(--sidebar));
+    color: var(--sidebar-foreground);
   }
 
   .mac-titlebar {
     min-height: 36px;
-    background: linear-gradient(180deg, oklch(1 0 0 / 8%), transparent);
+    background: linear-gradient(180deg, oklch(1 0 0 / 7%), transparent), var(--chrome-raised);
+    border-bottom: 1px solid var(--chrome-border);
     -webkit-app-region: drag;
   }
 
   .mac-toolbar {
-    background: color-mix(in oklch, var(--card) 90%, var(--background));
-    backdrop-filter: blur(14px) saturate(110%);
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 28%),
-      inset 0 -1px 0 color-mix(in oklch, var(--border) 90%, transparent);
+    color: var(--chrome-muted);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .mac-toolbar.text-muted-foreground,
+  .mac-toolbar .text-muted-foreground {
+    color: var(--chrome-muted) !important;
+  }
+
+  .mac-toolbar .text-foreground {
+    color: var(--chrome-foreground) !important;
+  }
+
+  .mac-toolbar [data-slot='menubar-trigger'] {
+    color: var(--chrome-muted);
+    border-radius: 3px;
+  }
+
+  .mac-toolbar [data-slot='menubar-trigger']:hover,
+  .mac-toolbar [data-slot='menubar-trigger'][data-state='open'] {
+    color: var(--chrome-foreground);
+    background: color-mix(in oklch, var(--chrome-muted) 14%, transparent);
   }
 
   .toolbar-control-group {
@@ -281,30 +353,56 @@ body {
     align-items: center;
     gap: 1px;
     padding: 1px;
-    border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
-    border-radius: 5px;
-    background: color-mix(in oklch, var(--muted) 42%, var(--card));
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 20%);
+    border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
+    border-radius: 4px;
+    background: color-mix(in oklch, var(--card) 84%, var(--secondary));
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 34%);
   }
 
   .toolbar-divider {
     height: 18px;
     margin: 0 2px;
-    background: color-mix(in oklch, var(--border) 76%, transparent);
+    background: color-mix(in oklch, var(--border) 86%, transparent);
+  }
+
+  .traffic-toolbar {
+    color: var(--muted-foreground);
+    background: linear-gradient(180deg, oklch(0.985 0.002 248), oklch(0.938 0.005 248));
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 72%);
+  }
+
+  .traffic-toolbar .text-muted-foreground {
+    color: var(--muted-foreground) !important;
+  }
+
+  .traffic-toolbar .text-foreground {
+    color: var(--foreground) !important;
   }
 
   .mac-main-column {
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--card) 96%, white), var(--card) 58%),
-      var(--card);
+    background: var(--card);
   }
 
   .capture-button {
     min-width: 74px;
-    border-radius: 6px;
+    border-radius: 4px;
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 18%),
-      0 1px 2px color-mix(in oklch, var(--primary) 18%, transparent);
+      inset 0 1px 0 oklch(1 0 0 / 20%),
+      0 0 0 1px color-mix(in oklch, var(--fiddler-green) 28%, transparent);
+  }
+
+  .capture-button:not([disabled]) {
+    background: linear-gradient(180deg, oklch(0.75 0.17 151), var(--fiddler-green)) !important;
+    color: var(--primary-foreground) !important;
+  }
+
+  .capture-button:not([disabled]):hover {
+    background: linear-gradient(
+      180deg,
+      oklch(0.79 0.17 151),
+      color-mix(in oklch, var(--fiddler-green) 88%, black)
+    ) !important;
   }
 
   .toolbar-section-label {
@@ -334,33 +432,38 @@ body {
   }
 
   .toolbar-button {
-    border-radius: 5px;
+    border-radius: 3px;
     box-shadow: none;
   }
 
   .toolbar-button:hover {
-    background: color-mix(in oklch, var(--muted) 68%, transparent);
+    background: color-mix(in oklch, var(--muted) 72%, transparent);
   }
 
   .quick-search-field {
-    border-radius: 5px;
+    border-radius: 3px;
   }
 
   .quick-search-input {
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--card) 96%, white), var(--card)), var(--card);
+    color: var(--foreground);
+    border-color: color-mix(in oklch, var(--border) 88%, transparent) !important;
+    background: linear-gradient(
+      180deg,
+      white,
+      color-mix(in oklch, var(--card) 88%, var(--secondary))
+    ) !important;
     box-shadow:
-      inset 0 1px 1px oklch(0 0 0 / 4%),
-      inset 0 1px 0 oklch(1 0 0 / 22%);
+      inset 0 1px 2px oklch(0 0 0 / 6%),
+      inset 0 1px 0 oklch(1 0 0 / 54%);
+  }
+
+  .quick-search-input::placeholder {
+    color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
   }
 
   .statusbar {
-    border-top: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
-    background: linear-gradient(
-      180deg,
-      color-mix(in oklch, var(--card) 96%, var(--background)),
-      var(--card)
-    );
+    border-top: 1px solid color-mix(in oklch, var(--border) 90%, transparent);
+    background: linear-gradient(180deg, oklch(0.95 0.004 248), oklch(0.925 0.005 248));
   }
 
   .statusbar-segment {
@@ -373,7 +476,50 @@ body {
   }
 
   .source-list-item {
-    border-radius: 5px;
+    border-radius: 3px;
+  }
+
+  .fiddler-section-switcher {
+    display: grid;
+    gap: 2px;
+    padding: 8px;
+    border-bottom: 1px solid color-mix(in oklch, var(--sidebar-border) 82%, transparent);
+    background: color-mix(in oklch, var(--sidebar) 84%, white);
+  }
+
+  .fiddler-section-item {
+    display: flex;
+    height: 29px;
+    align-items: center;
+    gap: 8px;
+    border-radius: 3px;
+    padding: 0 8px;
+    color: color-mix(in oklch, var(--sidebar-foreground) 68%, transparent);
+    font-size: 11.5px;
+    font-weight: 560;
+    text-align: left;
+    transition:
+      background 0.12s,
+      color 0.12s;
+  }
+
+  .fiddler-section-item:hover {
+    color: var(--sidebar-foreground);
+    background: color-mix(in oklch, var(--sidebar-accent) 78%, transparent);
+  }
+
+  .fiddler-section-item-active {
+    color: color-mix(in oklch, var(--sidebar-foreground) 94%, black);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--fiddler-green) 16%, transparent),
+        transparent 76%
+      ),
+      color-mix(in oklch, var(--sidebar-accent) 88%, white);
+    box-shadow:
+      inset 3px 0 0 var(--fiddler-green),
+      inset 0 0 0 1px color-mix(in oklch, var(--sidebar-border) 74%, transparent);
   }
 
   .source-list-item:hover {
@@ -405,32 +551,36 @@ body {
     font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
-    background: color-mix(in oklch, var(--sidebar-accent) 64%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--sidebar-border) 84%, transparent);
+    background: color-mix(in oklch, var(--chrome-lowered) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--chrome-muted) 16%, transparent);
   }
 
   .source-list-item-active {
     background:
-      linear-gradient(90deg, color-mix(in oklch, var(--primary) 16%, transparent), transparent 72%),
-      color-mix(in oklch, var(--sidebar-accent) 88%, var(--sidebar));
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--fiddler-green) 22%, transparent),
+        transparent 72%
+      ),
+      color-mix(in oklch, var(--sidebar-accent) 90%, var(--sidebar));
     box-shadow:
-      inset 0 0 0 1px color-mix(in oklch, var(--primary) 18%, var(--sidebar-border)),
-      inset 2px 0 0 color-mix(in oklch, var(--primary) 68%, transparent);
+      inset 0 0 0 1px color-mix(in oklch, var(--fiddler-green) 22%, var(--sidebar-border)),
+      inset 3px 0 0 color-mix(in oklch, var(--fiddler-green) 78%, transparent);
   }
 
   .source-sidebar-footer {
     padding: 7px 8px;
-    border-top: 1px solid color-mix(in oklch, var(--sidebar-border) 78%, transparent);
+    border-top: 1px solid var(--chrome-border);
     background: linear-gradient(
       180deg,
-      color-mix(in oklch, var(--sidebar) 92%, transparent),
-      color-mix(in oklch, var(--sidebar-accent) 32%, var(--sidebar))
+      color-mix(in oklch, var(--chrome) 92%, transparent),
+      color-mix(in oklch, var(--chrome-lowered) 68%, var(--chrome))
     );
   }
 
   .source-footer-command {
     height: 25px;
-    border-radius: 5px;
+    border-radius: 3px;
     color: color-mix(in oklch, var(--sidebar-foreground) 64%, transparent);
   }
 
@@ -441,10 +591,10 @@ body {
   }
 
   .mac-table-header {
-    background: color-mix(in oklch, var(--secondary) 76%, var(--card));
+    background: linear-gradient(180deg, oklch(0.91 0.004 248), oklch(0.865 0.005 248));
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 34%),
-      inset -1px 0 0 color-mix(in oklch, var(--border) 76%, transparent),
+      inset 0 1px 0 oklch(1 0 0 / 44%),
+      inset -1px 0 0 color-mix(in oklch, var(--border) 90%, transparent),
       inset 0 -1px 0 color-mix(in oklch, var(--border) 100%, transparent);
   }
 
@@ -456,20 +606,21 @@ body {
   }
 
   .main-workspace {
-    padding: 6px;
+    padding: 0;
     gap: 0;
-    background: color-mix(in oklch, var(--card) 82%, var(--background));
+    background: color-mix(in oklch, var(--card) 86%, var(--background));
   }
 
   .session-table {
-    border: 1px solid color-mix(in oklch, var(--border) 74%, transparent);
-    border-radius: 5px 0 0 5px;
+    border: 0;
+    border-top: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
+    border-radius: 0;
     background:
-      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 8%, white) 0, transparent 56px),
+      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 18%, white) 0, transparent 56px),
       color-mix(in oklch, var(--card) 98%, white);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 34%),
-      inset -1px 0 0 color-mix(in oklch, var(--border) 44%, transparent);
+      inset -1px 0 0 color-mix(in oklch, var(--border) 78%, transparent);
   }
 
   .session-row {
@@ -564,9 +715,10 @@ body {
   }
 
   .mac-inspector-pane {
-    border: 1px solid color-mix(in oklch, var(--border) 74%, transparent);
+    border: 0;
+    border-top: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
     border-left: 0;
-    border-radius: 0 5px 5px 0;
+    border-radius: 0;
     background:
       repeating-linear-gradient(
         0deg,
@@ -577,7 +729,7 @@ body {
       color-mix(in oklch, var(--card) 98%, white);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 24%),
-      inset 1px 0 0 color-mix(in oklch, var(--border) 30%, transparent);
+      inset 1px 0 0 color-mix(in oklch, var(--border) 78%, transparent);
   }
 
   .inspector-pane-header {
@@ -727,6 +879,30 @@ body {
     height: 26px;
     color: color-mix(in oklch, var(--primary) 82%, var(--foreground));
     background: color-mix(in oklch, var(--primary) 7%, var(--card));
+  }
+
+  .session-empty-banner {
+    display: inline-flex;
+    height: 24px;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+    border-radius: 3px;
+    padding: 0 8px;
+    color: color-mix(in oklch, var(--muted-foreground) 86%, transparent);
+    font-size: 11px;
+    background: color-mix(in oklch, var(--card) 84%, transparent);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 48%);
+  }
+
+  .session-empty-banner svg {
+    color: var(--primary);
+  }
+
+  .session-empty-banner-separator {
+    width: 1px;
+    height: 12px;
+    background: color-mix(in oklch, var(--border) 76%, transparent);
   }
 
   .session-empty-pill {
