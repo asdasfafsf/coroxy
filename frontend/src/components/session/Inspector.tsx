@@ -39,7 +39,7 @@ export function Inspector({ session }: InspectorProps) {
           <div>
             <div className="text-[13px] font-semibold text-foreground/82">Select a session</div>
             <div className="mt-1 text-xs text-muted-foreground">
-              Click a request in the sidebar to inspect it
+              Click a request in the session list to inspect it
             </div>
           </div>
         </div>
