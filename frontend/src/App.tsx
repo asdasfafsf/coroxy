@@ -70,6 +70,7 @@ function App() {
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => loadSavedFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
+  const [quickSearch, setQuickSearch] = useState('');
   useEffect(() => {
     saveSavedFilters(savedFilters);
   }, [savedFilters]);
@@ -187,9 +188,30 @@ function App() {
   }, [sessionTabs, activeTabId, savedFilters]);
 
   const filteredSessions = useMemo(() => {
-    if (!activeFilter) return sessions;
-    return sessions.filter((s) => evaluate(activeFilter, s));
-  }, [sessions, activeFilter]);
+    const filterMatched = activeFilter
+      ? sessions.filter((s) => evaluate(activeFilter, s))
+      : sessions;
+    const query = quickSearch.trim().toLowerCase();
+    if (!query) return filterMatched;
+
+    return filterMatched.filter((s) => {
+      const haystack = [
+        s.protocol,
+        s.state,
+        s.target?.host,
+        s.request?.method,
+        s.request?.url,
+        s.request?.content_type,
+        s.response?.status_code != null ? String(s.response.status_code) : '',
+        s.response?.status_text,
+        s.response?.content_type,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [sessions, activeFilter, quickSearch]);
 
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
@@ -380,7 +402,7 @@ function App() {
           key: 'f',
           mod: true,
           handler: () =>
-            document.querySelector<HTMLInputElement>('[placeholder*="filter" i]')?.focus(),
+            document.querySelector<HTMLInputElement>('[placeholder*="find sessions" i]')?.focus(),
         },
         {
           key: 'a',
@@ -556,6 +578,10 @@ function App() {
                 setEditingFilterId(activeFilter?.id ?? null);
                 setShowFilters(true);
               }}
+              quickSearch={quickSearch}
+              onQuickSearchChange={setQuickSearch}
+              filteredCount={filteredSessions.length}
+              totalCount={sessions.length}
             />
             <ResizablePanelGroup orientation="horizontal" className="main-workspace flex-1">
               <ResizablePanel defaultSize={62} minSize={34}>

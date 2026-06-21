@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { StartProxy, StopProxy, ClearSessions, ProxyState } from '../../../wailsjs/go/app/App';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
@@ -18,6 +19,8 @@ import {
   Pencil,
   ChevronDown,
   Plus,
+  Search,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SavedFilter } from '@/lib/filter';
@@ -29,6 +32,10 @@ interface ToolbarProps {
   onSelectFilter: (id: string | null) => void;
   onNewFilter: () => void;
   onEditActiveFilter: () => void;
+  quickSearch: string;
+  onQuickSearchChange: (value: string) => void;
+  filteredCount: number;
+  totalCount: number;
 }
 
 export function Toolbar({
@@ -38,6 +45,10 @@ export function Toolbar({
   onSelectFilter,
   onNewFilter,
   onEditActiveFilter,
+  quickSearch,
+  onQuickSearchChange,
+  filteredCount,
+  totalCount,
 }: ToolbarProps) {
   const [proxyState, setProxyState] = useState('stopped');
   const [loading, setLoading] = useState(false);
@@ -75,7 +86,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="mac-toolbar flex items-center gap-2 px-2.5 py-1.5 border-b-0">
+      <div className="mac-toolbar flex h-8 items-center gap-1.5 border-b-0 px-2 py-0.5">
         <div className="toolbar-control-group">
           <Button
             size="sm"
@@ -83,7 +94,7 @@ export function Toolbar({
             onClick={handleToggle}
             disabled={loading}
             className={cn(
-              'toolbar-button capture-button h-7 px-3 text-[11.5px] gap-1.5 font-medium',
+              'toolbar-button capture-button h-6 px-2.5 text-[11.5px] gap-1.5 font-medium',
               !isRunning && 'bg-primary text-primary-foreground hover:bg-primary/90',
             )}
           >
@@ -106,7 +117,7 @@ export function Toolbar({
             size="sm"
             variant="ghost"
             onClick={handleClear}
-            className="toolbar-button h-7 px-2 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
+            className="toolbar-button h-6 px-2 text-[11.5px] gap-1 text-muted-foreground hover:text-foreground"
           >
             <Trash2 className="h-3 w-3" />
             Clear
@@ -127,7 +138,7 @@ export function Toolbar({
               <Button
                 size="sm"
                 variant="ghost"
-                className="toolbar-button h-7 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
+                className="toolbar-button h-6 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
               >
                 <FilterIcon className="h-3.5 w-3.5" />
                 <span className="text-foreground font-normal">
@@ -170,7 +181,7 @@ export function Toolbar({
               size="sm"
               variant="ghost"
               onClick={onEditActiveFilter}
-              className="toolbar-button h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              className="toolbar-button h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
               title="Edit filter"
             >
               <Pencil className="h-3 w-3" />
@@ -178,11 +189,39 @@ export function Toolbar({
           )}
         </div>
 
+        <div className="quick-search-field relative flex h-6 w-[260px] min-w-[180px] max-w-[34vw] items-center">
+          <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/72" />
+          <Input
+            value={quickSearch}
+            onChange={(e) => onQuickSearchChange(e.target.value)}
+            placeholder="Find sessions"
+            className="h-6 rounded-[5px] border-border/80 bg-card/50 pl-7 pr-14 text-[11.5px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
+          />
+          <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
+            {quickSearch && (
+              <span className="tabular-nums">
+                {filteredCount}/{totalCount}
+              </span>
+            )}
+            {quickSearch && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="toolbar-button h-5 w-5 p-0"
+                onClick={() => onQuickSearchChange('')}
+                title="Clear search"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
         <div className="flex-1" />
 
         <div
           className={cn(
-            'status-readout flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 ml-1',
+            'status-readout ml-1 flex h-6 items-center gap-1.5 px-2.5 text-[11px] font-medium',
             isRunning
               ? 'text-status-success border-status-success/22'
               : 'text-muted-foreground border-border/64',
