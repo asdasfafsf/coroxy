@@ -4,17 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronDown,
-  Columns3,
   Eye,
   Filter as FilterIcon,
   Globe,
-  PanelRight,
-  Save,
+  MoreHorizontal,
+  Network,
   Search,
-  Share2,
   Terminal,
   Trash2,
-  X,
 } from 'lucide-react';
 
 interface ToolbarProps {
@@ -39,7 +36,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="traffic-toolbar flex h-[54px] flex-col border-b-0">
+      <div className="traffic-toolbar flex h-[62px] flex-col border-b-0">
         <div className="traffic-tab-row">
           <div className="traffic-workspace-tab">
             <Eye className="h-[13px] w-[13px]" />
@@ -48,118 +45,113 @@ export function Toolbar({
         </div>
 
         <div className="traffic-command-row">
-          <div className="toolbar-control-group fiddler-live-controls">
+          <div className="fiddler-filter-control">
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[28px] px-2.5 text-[14px] gap-1.5 text-foreground"
             >
-              <FilterIcon className="h-3 w-3" />
+              <FilterIcon className="h-4 w-4 text-[#2f6fff]" />
               Filters
-              <ChevronDown className="h-2.5 w-2.5 opacity-60" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-outline-button fiddler-split-button h-[28px] w-[32px] px-0 text-foreground"
+              title="Filter options"
+            >
+              <ChevronDown className="h-4 w-4 opacity-70" />
+            </Button>
+          </div>
+
+          <div className="fiddler-capture-mode-group">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-mode-button h-[30px] px-2.5 text-[15px] gap-2 text-foreground"
+            >
+              <span className="fiddler-toggle-dot" />
+              System Proxy
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
+              className="toolbar-button fiddler-mode-button fiddler-mode-button-active h-[30px] px-2.5 text-[15px] gap-2 text-foreground"
             >
-              <Globe className="h-3 w-3" />
+              <span className="fiddler-beta-badge">BETA</span>
+              <Network className="h-4 w-4 text-[#2f6fff]" />
+              Network Capture
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-mode-button h-[30px] px-2.5 text-[15px] gap-2 text-foreground"
+            >
+              <Globe className="h-4 w-4 text-[#2f6fff]" />
               Browser
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
+              className="toolbar-button fiddler-mode-button h-[30px] px-2.5 text-[15px] gap-2 text-foreground"
             >
-              <Terminal className="h-3 w-3" />
+              <Terminal className="h-4 w-4 text-[#2f6fff]" />
               Terminal
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleClear}
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
-            >
-              <Trash2 className="h-3 w-3" />
-              Clear
-              <ChevronDown className="h-2.5 w-2.5 opacity-60" />
-            </Button>
-          </div>
-
-          <Separator orientation="vertical" className="toolbar-divider" />
-
-          <div className="quick-search-field relative flex h-[21px] w-[236px] min-w-[160px] max-w-[24vw] items-center">
-            <Search className="pointer-events-none absolute left-2 h-3 w-3 text-muted-foreground/72" />
-            <Input
-              value={quickSearch}
-              onChange={(e) => onQuickSearchChange(e.target.value)}
-              placeholder="Quick Search"
-              className="quick-search-input h-[21px] rounded-[2px] border-border/80 bg-card/50 pl-6 pr-10 text-[10.5px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
-            />
-            <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
-              {quickSearch && (
-                <span className="tabular-nums">
-                  {filteredCount}/{totalCount}
-                </span>
-              )}
-              {quickSearch && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="toolbar-button h-5 w-5 p-0"
-                  onClick={() => onQuickSearchChange('')}
-                  title="Clear search"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <Separator orientation="vertical" className="toolbar-divider" />
-
-          <div className="toolbar-control-group fiddler-session-controls">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
-            >
-              <Save className="h-3 w-3" />
-              Save
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
-            >
-              <Share2 className="h-3 w-3" />
-              Share
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
-            >
-              <Columns3 className="h-3 w-3" />
-              Columns
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[21px] w-[24px] px-0 text-foreground"
-              title="Toggle layout"
-            >
-              <PanelRight className="h-3 w-3" />
             </Button>
           </div>
 
           <div className="flex-1" />
+
+          <div className="quick-search-field relative flex h-[30px] w-[34px] items-center focus-within:w-[190px]">
+            <Search className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground/78" />
+            <Input
+              value={quickSearch}
+              onChange={(e) => onQuickSearchChange(e.target.value)}
+              placeholder=""
+              aria-label="Quick Search"
+              className="quick-search-input h-[28px] rounded-[3px] border-transparent bg-transparent pl-8 pr-2 text-[12px] shadow-none placeholder:text-muted-foreground/58 focus-visible:border-border/80 focus-visible:bg-white focus-visible:ring-1"
+            />
+            {quickSearch && (
+              <span className="absolute right-2 text-[10px] tabular-nums text-muted-foreground/70">
+                {filteredCount}/{totalCount}
+              </span>
+            )}
+          </div>
+
+          <Separator orientation="vertical" className="toolbar-divider" />
+
+          <div className="toolbar-control-group fiddler-session-actions">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleClear}
+              className="toolbar-button fiddler-icon-button h-[30px] w-[36px] px-0 text-foreground"
+              title="Clear"
+            >
+              <Trash2 className="h-4 w-4 text-[#ef3f56]" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-icon-button h-[30px] w-[32px] px-0 text-foreground"
+              title="Clear options"
+            >
+              <ChevronDown className="h-4 w-4 opacity-70" />
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-icon-button h-[30px] w-[36px] px-0 text-foreground"
+              title="More"
+            >
+              <MoreHorizontal className="h-4 w-4 opacity-75" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>

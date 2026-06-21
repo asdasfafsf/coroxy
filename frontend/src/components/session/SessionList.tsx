@@ -32,6 +32,7 @@ import {
   Copy,
   Tag,
   MessageSquare,
+  Filter as FilterIcon,
 } from 'lucide-react';
 
 // Session may have runtime-added tags/comment fields from Go backend
@@ -99,7 +100,7 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 26;
+const ROW_HEIGHT = 30;
 
 type ColKey =
   | 'protocol'
@@ -131,7 +132,7 @@ interface ColDef {
 const COL_MIN_WIDTH = 40;
 
 const cellBase =
-  'px-2 text-foreground/88 text-[10.5px] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
+  'px-2 text-foreground/88 text-[12px] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
 
 const COL_DEFS: ColDef[] = [
   {
@@ -158,7 +159,7 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'host',
     label: 'Host',
-    defaultWidth: 190,
+    defaultWidth: 180,
     minWidth: 130,
     cellClass: 'truncate',
     render: (s) => s.target?.host || '-',
@@ -167,16 +168,16 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'method',
     label: 'Method',
-    defaultWidth: 68,
-    minWidth: 62,
+    defaultWidth: 88,
+    minWidth: 76,
     align: 'center',
     render: (s) => s.request?.method || '-',
   },
   {
     key: 'url',
     label: 'URL',
-    defaultWidth: 330,
-    minWidth: 220,
+    defaultWidth: 520,
+    minWidth: 280,
     cellClass: 'truncate',
     render: (s) => {
       const path = getPath(s.request?.url) || '';
@@ -187,8 +188,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'status',
     label: 'Status Code',
-    defaultWidth: 94,
-    minWidth: 86,
+    defaultWidth: 116,
+    minWidth: 104,
     align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
@@ -250,8 +251,6 @@ const COL_DEFS: ColDef[] = [
 ];
 
 const DEFAULT_ORDER: ColKey[] = [
-  'protocol',
-  'host',
   'url',
   'httpVersion',
   'tlsVersion',
@@ -261,6 +260,8 @@ const DEFAULT_ORDER: ColKey[] = [
   'contentType',
   'duration',
   'time',
+  'protocol',
+  'host',
 ];
 
 const DEFAULT_COL_WIDTHS: Record<ColKey, number> = COL_DEFS.reduce(
@@ -464,7 +465,7 @@ export function SessionList({
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols-v4');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v5');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -472,7 +473,7 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order-v4');
+      const stored = localStorage.getItem('coroxy-col-order-v5');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
       const known = new Set(DEFAULT_ORDER);
@@ -487,7 +488,7 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths-v4');
+      const stored = localStorage.getItem('coroxy-col-widths-v5');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
@@ -530,7 +531,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths-v4', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v5', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -627,7 +628,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths-v4', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v5', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -642,7 +643,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols-v4', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v5', JSON.stringify([...next]));
       return next;
     });
   };
@@ -691,7 +692,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order-v4', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v5', JSON.stringify(next));
       return next;
     });
   };
@@ -729,7 +730,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2 h-[21px] flex items-center text-left text-muted-foreground/78 font-normal text-[9.5px] border-b border-border/70 whitespace-nowrap';
+    'mac-table-header px-2 h-[30px] flex items-center text-left text-muted-foreground/86 font-normal text-[12px] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div
@@ -790,7 +791,10 @@ export function SessionList({
                       setDropTargetKey(null);
                     }}
                   >
-                    {col.label} <SortIcon col={col.key} />
+                    <span className="min-w-0 flex-1 truncate">
+                      {col.label} <SortIcon col={col.key} />
+                    </span>
+                    <FilterIcon className="ml-2 h-4 w-4 shrink-0 text-muted-foreground/82" />
                     {nextCol ? (
                       <span
                         draggable={false}
