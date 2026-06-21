@@ -165,9 +165,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'url',
     label: 'URL',
-    defaultWidth: 460,
+    defaultWidth: 560,
     minWidth: 240,
-    align: 'center',
     cellClass: 'truncate',
     render: (s) => {
       const host = s.target?.host || '';
@@ -233,7 +232,17 @@ const COL_DEFS: ColDef[] = [
   },
 ];
 
-const DEFAULT_ORDER: ColKey[] = COL_DEFS.map((c) => c.key);
+const DEFAULT_ORDER: ColKey[] = [
+  'url',
+  'status',
+  'method',
+  'protocol',
+  'type',
+  'duration',
+  'request',
+  'response',
+  'time',
+];
 
 const DEFAULT_COL_WIDTHS: Record<ColKey, number> = COL_DEFS.reduce(
   (acc, c) => {
@@ -418,7 +427,7 @@ export function SessionList({
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols-v2');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v3');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -426,7 +435,7 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order-v2');
+      const stored = localStorage.getItem('coroxy-col-order-v3');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
       const known = new Set(DEFAULT_ORDER);
@@ -441,7 +450,7 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths-v2');
+      const stored = localStorage.getItem('coroxy-col-widths-v3');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
@@ -484,7 +493,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v3', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -581,7 +590,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v3', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -596,7 +605,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols-v2', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v3', JSON.stringify([...next]));
       return next;
     });
   };
@@ -645,7 +654,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order-v2', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v3', JSON.stringify(next));
       return next;
     });
   };

@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { Plus, Radio, FolderOpen, Activity, Send, ShieldCheck } from 'lucide-react';
+import { Cloud, FolderOpen, FolderPlus, Radio, Share2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface SessionGroup {
@@ -26,24 +26,29 @@ export function SessionSidebar({
 
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className="fiddler-section-switcher">
-        <button className="fiddler-section-item fiddler-section-item-active" type="button">
-          <Activity className="h-3.5 w-3.5" />
-          <span>Traffic</span>
-        </button>
-        <button className="fiddler-section-item" type="button">
-          <Send className="h-3.5 w-3.5" />
-          <span>Composer</span>
-        </button>
-        <button className="fiddler-section-item" type="button">
-          <ShieldCheck className="h-3.5 w-3.5" />
-          <span>Rules</span>
-        </button>
+      <div className="snapshots-header">
+        <span>Snapshots</span>
+        <FolderPlus className="h-3.5 w-3.5" />
       </div>
       <ScrollArea className="flex-1">
-        <div className="px-2 pb-2 pt-2">
+        <div className="snapshot-tree">
+          <button className="snapshot-tree-item snapshot-tree-item-open" type="button">
+            <FolderOpen className="h-3.5 w-3.5" />
+            <span>My Snapshots</span>
+          </button>
+          <button className="snapshot-tree-item snapshot-tree-child" type="button">
+            <FolderOpen className="h-3.5 w-3.5" />
+            <span>New Folder</span>
+          </button>
+          <button className="snapshot-tree-item" type="button">
+            <Share2 className="h-3.5 w-3.5" />
+            <span>Shared with Me</span>
+          </button>
+        </div>
+
+        <div className="px-2 pb-2 pt-1">
           <div className="source-section-header">
-            <span>Sessions</span>
+            <span>Live Traffic</span>
             <span className="source-section-count">{totalCount}</span>
           </div>
 
@@ -93,8 +98,8 @@ export function SessionSidebar({
           className="source-footer-command w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground transition-colors"
           onClick={onGroupAdd}
         >
-          <Plus className="h-3.5 w-3.5" />
-          New Session
+          <Cloud className="h-3.5 w-3.5" />
+          AutoSaved
         </button>
       </div>
     </div>

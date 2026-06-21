@@ -21,6 +21,9 @@ import {
   ChevronDown,
   Plus,
   Search,
+  Terminal,
+  ToggleLeft,
+  Globe,
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -95,7 +98,26 @@ export function Toolbar({
 
         <Separator orientation="vertical" className="toolbar-divider" />
 
-        <div className="toolbar-control-group">
+        <div className="toolbar-control-group fiddler-live-controls">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="toolbar-button h-6 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <FilterIcon className="h-3.5 w-3.5" />
+            Filters
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            className="toolbar-button h-6 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <ToggleLeft className="h-3.5 w-3.5" />
+            System Proxy
+          </Button>
+
           <Button
             size="sm"
             variant={isRunning ? 'destructive' : 'default'}
@@ -111,14 +133,32 @@ export function Toolbar({
             ) : isRunning ? (
               <>
                 <Square className="h-3 w-3" />
-                Stop
+                Stop Capture
               </>
             ) : (
               <>
                 <Play className="h-3 w-3" />
-                Start
+                Network Capture
               </>
             )}
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            className="toolbar-button h-6 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            Browser
+          </Button>
+
+          <Button
+            size="sm"
+            variant="ghost"
+            className="toolbar-button h-6 px-2 text-[11.5px] gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Terminal className="h-3.5 w-3.5" />
+            Terminal
           </Button>
 
           <Button
@@ -135,7 +175,7 @@ export function Toolbar({
         <Separator orientation="vertical" className="toolbar-divider" />
 
         {/* Filter switcher */}
-        <div className="toolbar-control-group">
+        <div className="toolbar-control-group fiddler-filter-switcher">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button
