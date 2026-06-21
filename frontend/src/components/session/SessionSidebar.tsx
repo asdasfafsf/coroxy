@@ -22,28 +22,17 @@ export function SessionSidebar({
   onGroupChange,
   onGroupAdd,
 }: SessionSidebarProps) {
-  const activeGroup = groups.find((group) => group.id === activeGroupId) ?? groups[0];
   const totalCount = groups.reduce((sum, group) => sum + group.count, 0);
 
   return (
     <div className="flex flex-col h-full min-w-0">
       <ScrollArea className="flex-1">
-        <div className="px-2 pb-2 pt-3">
-          <div className="source-summary">
-            <div className="min-w-0">
-              <div className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-sidebar-foreground/45">
-                Active View
-              </div>
-              <div className="mt-0.5 truncate text-[12px] font-medium text-sidebar-foreground">
-                {activeGroup?.label ?? 'Sessions'}
-              </div>
-            </div>
-            <div className="source-summary-count">{totalCount}</div>
+        <div className="px-2 pb-2 pt-2">
+          <div className="source-section-header">
+            <span>Sessions</span>
+            <span className="source-section-count">{totalCount}</span>
           </div>
 
-          <div className="px-2.5 pb-1.5 pt-3 text-[9.5px] font-medium uppercase tracking-[0.08em] text-sidebar-foreground/45">
-            Sessions
-          </div>
           {groups.map((group) => (
             <button
               key={group.id}
