@@ -218,20 +218,6 @@ export function Toolbar({
         </div>
 
         <div className="flex-1" />
-
-        <div
-          className={cn(
-            'status-readout ml-1 flex h-6 items-center gap-1.5 px-2.5 text-[11px] font-medium',
-            isRunning
-              ? 'text-status-success border-status-success/22'
-              : 'text-muted-foreground border-border/64',
-          )}
-        >
-          {isRunning && (
-            <span className="w-1.5 h-1.5 rounded-full bg-status-success animate-pulse-dot" />
-          )}
-          <span>{isRunning ? 'Capturing' : 'Stopped'}</span>
-        </div>
       </div>
     </div>
   );
