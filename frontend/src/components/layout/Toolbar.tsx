@@ -86,7 +86,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="mac-toolbar flex h-8 items-center gap-1.5 border-b-0 px-2 py-0.5">
+      <div className="mac-toolbar flex h-8 items-center gap-1 border-b-0 px-2 py-0.5">
         <div className="toolbar-control-group">
           <Button
             size="sm"
@@ -124,12 +124,7 @@ export function Toolbar({
           </Button>
         </div>
 
-        <Separator orientation="vertical" className="h-5 bg-border/70" />
-
-        <div className="toolbar-section-label">
-          <span className={cn('toolbar-section-dot', isRunning && 'toolbar-section-dot-live')} />
-          <span>Traffic</span>
-        </div>
+        <Separator orientation="vertical" className="toolbar-divider" />
 
         {/* Filter switcher */}
         <div className="toolbar-control-group">
@@ -189,13 +184,15 @@ export function Toolbar({
           )}
         </div>
 
-        <div className="quick-search-field relative flex h-6 w-[260px] min-w-[180px] max-w-[34vw] items-center">
+        <Separator orientation="vertical" className="toolbar-divider" />
+
+        <div className="quick-search-field relative flex h-6 w-[280px] min-w-[190px] max-w-[36vw] items-center">
           <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/72" />
           <Input
             value={quickSearch}
             onChange={(e) => onQuickSearchChange(e.target.value)}
             placeholder="Find sessions"
-            className="h-6 rounded-[5px] border-border/80 bg-card/50 pl-7 pr-14 text-[11.5px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
+            className="quick-search-input h-6 rounded-[5px] border-border/80 bg-card/50 pl-7 pr-14 text-[11.5px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
           />
           <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
             {quickSearch && (
