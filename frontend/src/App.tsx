@@ -6,17 +6,6 @@ import {
   StartProxy,
   StopProxy,
   ClearSessions,
-  ExportSessionsHAR,
-  ExportSessionsJSON,
-  ImportSessionsHAR,
-  ImportSessionsSAZ,
-  EnableSystemProxy,
-  DisableSystemProxy,
-  IsSystemProxyActive,
-  SaveSessions,
-  LoadSessions,
-  SetThrottle,
-  ThrottleState,
 } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
@@ -24,7 +13,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
 import { SessionSidebar } from '@/components/session/SessionSidebar';
@@ -40,14 +28,7 @@ import { AboutDialog } from '@/components/tools/AboutDialog';
 import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
 import { useTheme } from '@/hooks/useTheme';
-import {
-  copyToClipboard,
-  copyUrl,
-  copyRequestHeaders,
-  copyResponseHeaders,
-  copyCurl,
-  copyResponseBody,
-} from '@/lib/copy';
+import { copyToClipboard, copyUrl } from '@/lib/copy';
 import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { evaluate, loadSavedFilters, saveSavedFilters, type SavedFilter } from '@/lib/filter';
@@ -76,12 +57,10 @@ function App() {
   }, [savedFilters]);
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
-  const [sysProxy, setSysProxy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTextWizard, setShowTextWizard] = useState(false);
-  const [marks, setMarks] = useState<Map<string, string>>(new Map());
-  const [throttlePreset, setThrottlePreset] = useState('off');
+  const [marks] = useState<Map<string, string>>(new Map());
 
   // ===== Sidebar width (manual drag resize) =====
   const SIDEBAR_MIN = 160;
@@ -147,14 +126,6 @@ function App() {
     Promise.resolve()
       .then(() => ProxyState())
       .then(setProxyState)
-      .catch(() => {});
-    Promise.resolve()
-      .then(() => IsSystemProxyActive())
-      .then(setSysProxy)
-      .catch(() => {});
-    Promise.resolve()
-      .then(() => ThrottleState())
-      .then((cfg) => setThrottlePreset(cfg.preset))
       .catch(() => {});
   }, []);
 
@@ -266,21 +237,6 @@ function App() {
     setActiveSessionId(null);
   }, []);
 
-  const handleMark = useCallback(
-    (color: string) => {
-      setMarks((prev) => {
-        const next = new Map(prev);
-        for (const id of selectedIds) next.set(id, color);
-        return next;
-      });
-    },
-    [selectedIds],
-  );
-
-  const handleUnmarkAll = useCallback(() => {
-    setMarks(new Map());
-  }, []);
-
   const handleDeleteSelected = useCallback(() => {
     if (selectedIds.size === 0) return;
     setSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)));
@@ -301,19 +257,6 @@ function App() {
     }
   }, [isRunning]);
 
-  const handleToggleSysProxy = useCallback(async () => {
-    try {
-      if (sysProxy) {
-        await DisableSystemProxy();
-      } else {
-        await EnableSystemProxy();
-      }
-      setSysProxy(!sysProxy);
-    } catch (e) {
-      toast.error('시스템 프록시 토글 실패', { description: String(e) });
-    }
-  }, [sysProxy]);
-
   const handleClear = useCallback(async () => {
     await ClearSessions();
     handleSessionsClear();
@@ -333,17 +276,6 @@ function App() {
     },
     [diffSessionA],
   );
-
-  const handleCompareFromMenu = useCallback(() => {
-    if (selectedIds.size !== 2) return;
-    const ids = [...selectedIds];
-    const a = sessions.find((s) => s.id === ids[0]);
-    const b = sessions.find((s) => s.id === ids[1]);
-    if (a && b) {
-      setDiffSessionA(a);
-      setDiffSessionB(b);
-    }
-  }, [selectedIds, sessions]);
 
   const handleComposerPrefill = useCallback((session: model.Session) => {
     const req = session.request;
@@ -451,93 +383,6 @@ function App() {
     <TooltipProvider>
       <div className="mac-app-shell h-screen text-foreground font-sans">
         <div className="coroxy-window flex h-full min-h-0 flex-col overflow-hidden">
-          <div
-            className="fiddler-app-bar flex h-8 shrink-0 items-center overflow-hidden"
-            style={{ ['WebkitAppRegion' as never]: 'drag' }}
-          >
-            <div className="fiddler-window-slot h-full shrink-0" style={{ width: sidebarWidth }} />
-            <AppMenubar
-              isRunning={isRunning}
-              sysProxy={sysProxy}
-              hasSelection={!!activeSession}
-              onToggleProxy={handleToggleProxy}
-              onToggleSysProxy={handleToggleSysProxy}
-              onClear={handleClear}
-              onExportHAR={() =>
-                ExportSessionsHAR().catch((e) =>
-                  toast.error('HAR export 실패', { description: String(e) }),
-                )
-              }
-              onExportJSON={() =>
-                ExportSessionsJSON().catch((e) =>
-                  toast.error('JSON export 실패', { description: String(e) }),
-                )
-              }
-              onImportHAR={() =>
-                ImportSessionsHAR().catch((e) =>
-                  toast.error('HAR import 실패', { description: String(e) }),
-                )
-              }
-              onImportSAZ={() =>
-                ImportSessionsSAZ().catch((e) =>
-                  toast.error('SAZ import 실패', { description: String(e) }),
-                )
-              }
-              onSettingsClick={() => setShowSettings(true)}
-              onRulesClick={() => setShowRules(true)}
-              onFiltersClick={() => {
-                setEditingFilterId(null);
-                setShowFilters(true);
-              }}
-              onComposerClick={() => setShowComposer(true)}
-              onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-              onCopyRequestHeaders={() =>
-                activeSession && copyToClipboard(copyRequestHeaders(activeSession))
-              }
-              onCopyResponseHeaders={() =>
-                activeSession && copyToClipboard(copyResponseHeaders(activeSession))
-              }
-              onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-              onCopyResponseBody={() =>
-                activeSession && copyToClipboard(copyResponseBody(activeSession))
-              }
-              onAboutClick={() => setShowAbout(true)}
-              onShortcutsClick={() => setShowShortcuts(true)}
-              onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
-              onDeleteSelected={handleDeleteSelected}
-              onTextWizardClick={() => setShowTextWizard(true)}
-              onCompareClick={handleCompareFromMenu}
-              selectedCount={selectedIds.size}
-              onMark={handleMark}
-              onUnmarkAll={handleUnmarkAll}
-              onSave={() =>
-                SaveSessions().catch((e) =>
-                  toast.error('세션 저장 실패', { description: String(e) }),
-                )
-              }
-              onLoad={() =>
-                LoadSessions().catch((e) =>
-                  toast.error('세션 불러오기 실패', { description: String(e) }),
-                )
-              }
-              throttlePreset={throttlePreset}
-              onThrottleChange={(preset) => {
-                SetThrottle(preset);
-                setThrottlePreset(preset);
-              }}
-            />
-            <div className="fiddler-capture-state ml-auto mr-3 flex h-6 items-center gap-2 rounded-[3px] px-2 text-[11px]">
-              <span
-                className={
-                  isRunning
-                    ? 'h-1.5 w-1.5 rounded-full bg-primary'
-                    : 'h-1.5 w-1.5 rounded-full bg-[color:var(--chrome-muted)]'
-                }
-              />
-              <span>{isRunning ? 'Capturing' : 'Capture paused'}</span>
-            </div>
-          </div>
-
           <div className="fiddler-workbench flex min-h-0 flex-1 overflow-hidden">
             <div
               className="mac-sidebar relative shrink-0 flex flex-col overflow-hidden border-r border-sidebar-border"
