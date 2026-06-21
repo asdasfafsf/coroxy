@@ -12,15 +12,16 @@ import {
   ArrowUpRight,
   ArrowDownLeft,
   MousePointerClick,
+  PanelRight,
 } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
 const TAB_TRIGGER_CLASS =
-  'text-[11px] h-6 px-2.5 rounded-md text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[0_1px_2px_oklch(0_0_0_/_10%),inset_0_0_0_1px_var(--border)]';
-const TAB_LIST_CLASS =
-  'bg-muted/42 border-b border-border/70 rounded-none h-8 px-1.5 backdrop-blur-xl';
+  'text-[11px] h-7 px-2.5 rounded-none border-r border-border/60 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
+const TAB_LIST_CLASS = 'bg-secondary/80 border-b border-border/80 rounded-none h-7 px-0';
+const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
 
 type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
 
@@ -31,19 +32,21 @@ interface InspectorProps {
 export function Inspector({ session }: InspectorProps) {
   if (!session) {
     return (
-      <div className="mac-inspector-pane flex h-full items-center justify-center px-6 text-muted-foreground">
-        <div className="empty-state-card">
-          <div className="empty-state-icon">
-            <MousePointerClick className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="text-[13px] font-semibold text-foreground/82">Select a session</div>
-            <div className="mt-1 text-xs text-muted-foreground">
-              Click a request in the session list to inspect it
-            </div>
-          </div>
-        </div>
-      </div>
+      <ResizablePanelGroup orientation="vertical" id="coroxy-inspector-empty" className="h-full">
+        <ResizablePanel defaultSize={50} minSize={20}>
+          <EmptyInspectorPane title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
+
+        <ResizablePanel defaultSize={50} minSize={20}>
+          <EmptyInspectorPane
+            title="Response"
+            icon={<ArrowDownLeft className="h-3 w-3" />}
+            showHint
+          />
+        </ResizablePanel>
+      </ResizablePanelGroup>
     );
   }
 
@@ -182,9 +185,59 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/34 text-foreground/84 text-[11px] font-semibold border-b border-border/70 mac-subtle-inset">
+    <div className="flex h-6 items-center gap-1.5 border-b border-border/80 bg-secondary/72 px-2.5 text-[10.5px] font-semibold text-foreground/84 mac-subtle-inset">
       <span className="text-primary">{icon}</span>
       {title}
+    </div>
+  );
+}
+
+function EmptyInspectorPane({
+  title,
+  icon,
+  showHint = false,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  showHint?: boolean;
+}) {
+  return (
+    <div className="mac-inspector-pane flex h-full flex-col">
+      <PaneHeader title={title} icon={icon} />
+      <div className={cn(TAB_LIST_CLASS, 'flex shrink-0 items-center overflow-hidden')}>
+        {INSPECTOR_TABS.map((tab, index) => (
+          <div
+            key={tab}
+            className={cn(
+              'flex h-full items-center border-r border-border/60 px-2.5 text-[11px] text-muted-foreground/56',
+              index === 0 && 'bg-card/44 text-foreground/64 shadow-[inset_0_-2px_0_var(--border)]',
+            )}
+          >
+            {tab}
+          </div>
+        ))}
+      </div>
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-6 text-muted-foreground">
+        {showHint && (
+          <div className="empty-state-card">
+            <div className="empty-state-icon">
+              <MousePointerClick className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-foreground/82">Select a session</div>
+              <div className="mt-1 text-xs text-muted-foreground">
+                Click a request in the session list to inspect it
+              </div>
+            </div>
+          </div>
+        )}
+        {!showHint && (
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground/62">
+            <PanelRight className="h-3.5 w-3.5" />
+            <span>Request inspectors will appear here</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
