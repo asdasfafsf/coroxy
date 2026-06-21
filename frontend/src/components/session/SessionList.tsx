@@ -99,7 +99,7 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 30;
+const ROW_HEIGHT = 26;
 
 type ColKey =
   | 'protocol'
@@ -131,21 +131,21 @@ interface ColDef {
 const COL_MIN_WIDTH = 40;
 
 const cellBase =
-  'px-2.5 text-foreground/88 text-[11.5px] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
+  'px-2 text-foreground/88 text-[10.5px] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
 
 const COL_DEFS: ColDef[] = [
   {
     key: 'protocol',
     label: 'Protocol',
-    defaultWidth: 86,
-    minWidth: 82,
+    defaultWidth: 76,
+    minWidth: 72,
     align: 'center',
     render: (s) => {
       const badge = protoBadge(s.protocol);
       return (
         <span
           className={cn(
-            'text-[10.5px] font-semibold px-1.5 py-0.5 rounded-md',
+            'text-[9.5px] font-semibold px-1 py-0.5 rounded-[2px]',
             badge.bg,
             badge.text,
           )}
@@ -158,7 +158,7 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'host',
     label: 'Host',
-    defaultWidth: 210,
+    defaultWidth: 190,
     minWidth: 130,
     cellClass: 'truncate',
     render: (s) => s.target?.host || '-',
@@ -167,16 +167,16 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'method',
     label: 'Method',
-    defaultWidth: 80,
-    minWidth: 72,
+    defaultWidth: 68,
+    minWidth: 62,
     align: 'center',
     render: (s) => s.request?.method || '-',
   },
   {
     key: 'url',
     label: 'URL',
-    defaultWidth: 360,
-    minWidth: 240,
+    defaultWidth: 330,
+    minWidth: 220,
     cellClass: 'truncate',
     render: (s) => {
       const path = getPath(s.request?.url) || '';
@@ -187,8 +187,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'status',
     label: 'Status Code',
-    defaultWidth: 104,
-    minWidth: 96,
+    defaultWidth: 94,
+    minWidth: 86,
     align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
@@ -197,8 +197,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'httpVersion',
     label: 'HTTP Version',
-    defaultWidth: 112,
-    minWidth: 104,
+    defaultWidth: 102,
+    minWidth: 94,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => s.request?.http_version || s.response?.http_version || '-',
@@ -206,8 +206,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'tlsVersion',
     label: 'TLS Version',
-    defaultWidth: 104,
-    minWidth: 98,
+    defaultWidth: 94,
+    minWidth: 88,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: () => '-',
@@ -215,8 +215,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'body',
     label: 'Body',
-    defaultWidth: 84,
-    minWidth: 64,
+    defaultWidth: 72,
+    minWidth: 58,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => formatBytes(s.response?.body_size || s.request?.body_size),
@@ -224,8 +224,8 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'contentType',
     label: 'Content-Type',
-    defaultWidth: 136,
-    minWidth: 118,
+    defaultWidth: 122,
+    minWidth: 108,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => s.response?.content_type || s.request?.content_type || '-',
@@ -233,16 +233,16 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'duration',
     label: 'Duration',
-    defaultWidth: 88,
-    minWidth: 88,
+    defaultWidth: 78,
+    minWidth: 74,
     align: 'center',
     render: (s) => formatDuration(s.duration),
   },
   {
     key: 'time',
     label: 'Time',
-    defaultWidth: 96,
-    minWidth: 56,
+    defaultWidth: 84,
+    minWidth: 54,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => formatTime(s.created_at),
@@ -729,7 +729,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2 h-[23px] flex items-center text-left text-muted-foreground/78 font-normal text-[10px] border-b border-border/70 whitespace-nowrap';
+    'mac-table-header px-2 h-[21px] flex items-center text-left text-muted-foreground/78 font-normal text-[9.5px] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div

@@ -39,7 +39,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="traffic-toolbar flex h-[58px] flex-col border-b-0">
+      <div className="traffic-toolbar flex h-[54px] flex-col border-b-0">
         <div className="traffic-tab-row">
           <div className="traffic-workspace-tab">
             <Eye className="h-[13px] w-[13px]" />
@@ -52,28 +52,28 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <FilterIcon className="h-[13px] w-[13px]" />
+              <FilterIcon className="h-3 w-3" />
               Filters
-              <ChevronDown className="h-[11px] w-[11px] opacity-60" />
+              <ChevronDown className="h-2.5 w-2.5 opacity-60" />
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Globe className="h-[13px] w-[13px]" />
+              <Globe className="h-3 w-3" />
               Browser
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Terminal className="h-[13px] w-[13px]" />
+              <Terminal className="h-3 w-3" />
               Terminal
             </Button>
 
@@ -81,23 +81,23 @@ export function Toolbar({
               size="sm"
               variant="ghost"
               onClick={handleClear}
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Trash2 className="h-[13px] w-[13px]" />
+              <Trash2 className="h-3 w-3" />
               Clear
-              <ChevronDown className="h-[11px] w-[11px] opacity-60" />
+              <ChevronDown className="h-2.5 w-2.5 opacity-60" />
             </Button>
           </div>
 
           <Separator orientation="vertical" className="toolbar-divider" />
 
-          <div className="quick-search-field relative flex h-[23px] w-[260px] min-w-[180px] max-w-[28vw] items-center">
-            <Search className="pointer-events-none absolute left-2.5 h-[13px] w-[13px] text-muted-foreground/72" />
+          <div className="quick-search-field relative flex h-[21px] w-[236px] min-w-[160px] max-w-[24vw] items-center">
+            <Search className="pointer-events-none absolute left-2 h-3 w-3 text-muted-foreground/72" />
             <Input
               value={quickSearch}
               onChange={(e) => onQuickSearchChange(e.target.value)}
               placeholder="Quick Search"
-              className="quick-search-input h-[23px] rounded-[2px] border-border/80 bg-card/50 pl-7 pr-12 text-[11px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
+              className="quick-search-input h-[21px] rounded-[2px] border-border/80 bg-card/50 pl-6 pr-10 text-[10.5px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
             />
             <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
               {quickSearch && (
@@ -125,37 +125,37 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Save className="h-[13px] w-[13px]" />
+              <Save className="h-3 w-3" />
               Save
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Share2 className="h-[13px] w-[13px]" />
+              <Share2 className="h-3 w-3" />
               Share
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] px-2 text-[11px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] px-1.5 text-[10.5px] gap-1 text-foreground"
             >
-              <Columns3 className="h-[13px] w-[13px]" />
+              <Columns3 className="h-3 w-3" />
               Columns
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[23px] w-[27px] px-0 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[21px] w-[24px] px-0 text-foreground"
               title="Toggle layout"
             >
-              <PanelRight className="h-[13px] w-[13px]" />
+              <PanelRight className="h-3 w-3" />
             </Button>
           </div>
 
