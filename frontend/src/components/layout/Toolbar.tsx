@@ -15,6 +15,7 @@ import {
   Play,
   Square,
   Trash2,
+  Activity,
   Filter as FilterIcon,
   Pencil,
   ChevronDown,
@@ -87,6 +88,13 @@ export function Toolbar({
   return (
     <div className="flex flex-col">
       <div className="traffic-toolbar flex h-9 items-center gap-1 border-b-0 px-2 py-1">
+        <div className="traffic-workspace-tab">
+          <Activity className="h-3.5 w-3.5" />
+          <span>Live Traffic</span>
+        </div>
+
+        <Separator orientation="vertical" className="toolbar-divider" />
+
         <div className="toolbar-control-group">
           <Button
             size="sm"

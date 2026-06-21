@@ -452,16 +452,10 @@ function App() {
       <div className="mac-app-shell h-screen text-foreground font-sans">
         <div className="coroxy-window flex h-full min-h-0 flex-col overflow-hidden">
           <div
-            className="fiddler-app-bar flex h-10 shrink-0 items-center overflow-hidden"
+            className="fiddler-app-bar flex h-8 shrink-0 items-center overflow-hidden"
             style={{ ['WebkitAppRegion' as never]: 'drag' }}
           >
-            <div
-              className="fiddler-brand flex h-full shrink-0 items-center gap-2 px-3"
-              style={{ width: sidebarWidth }}
-            >
-              <span className="fiddler-brand-mark" />
-              <span className="fiddler-brand-name">Coroxy</span>
-            </div>
+            <div className="fiddler-window-slot h-full shrink-0" style={{ width: sidebarWidth }} />
             <AppMenubar
               isRunning={isRunning}
               sysProxy={sysProxy}
