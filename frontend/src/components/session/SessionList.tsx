@@ -612,6 +612,17 @@ export function SessionList({
       .map((k) => colMap.get(k))
       .filter((c): c is ColDef => !!c && !hiddenCols.has(c.key));
   }, [colOrder, hiddenCols, colMap]);
+  const tableContentWidth = useMemo(
+    () => 40 + orderedCols.reduce((sum, col) => sum + (colWidths[col.key] ?? col.defaultWidth), 0),
+    [colWidths, orderedCols],
+  );
+  const gridLineOffsets = useMemo(() => {
+    let offset = 40;
+    return orderedCols.slice(0, -1).map((col) => {
+      offset += colWidths[col.key] ?? col.defaultWidth;
+      return offset;
+    });
+  }, [colWidths, orderedCols]);
 
   const sortedSessions = useMemo(() => {
     if (!sortKey) return sessions;
@@ -775,7 +786,19 @@ export function SessionList({
         {/* Rows — own ContextMenu for per-row actions */}
         <ContextMenu>
           <ContextMenuTrigger asChild>
-            <div className="flex-1 min-h-0">
+            <div
+              className="session-body relative flex-1 min-h-0"
+              style={{ width: tableContentWidth, minWidth: tableContentWidth }}
+            >
+              <div
+                className="session-body-grid"
+                style={{ width: tableContentWidth }}
+                aria-hidden="true"
+              >
+                {gridLineOffsets.map((offset) => (
+                  <span key={offset} style={{ left: offset }} />
+                ))}
+              </div>
               {sortedSessions.length === 0 ? (
                 <div
                   className="empty-table-state sticky left-0 flex h-full items-center justify-center px-6 py-16"
