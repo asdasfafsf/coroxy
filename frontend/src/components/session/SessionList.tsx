@@ -729,7 +729,7 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'mac-table-header px-2 h-6 flex items-center text-left text-muted-foreground/78 font-medium text-[10px] border-b border-border/70 whitespace-nowrap';
+    'mac-table-header px-2.5 h-[25px] flex items-center text-left text-muted-foreground/78 font-normal text-[11px] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div

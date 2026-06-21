@@ -358,6 +358,23 @@ body {
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 72%);
   }
 
+  .traffic-tab-row {
+    display: flex;
+    height: 31px;
+    align-items: stretch;
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
+    background: color-mix(in oklch, var(--card) 92%, white);
+  }
+
+  .traffic-command-row {
+    display: flex;
+    height: 37px;
+    align-items: center;
+    gap: 9px;
+    padding: 3px 8px;
+    background: linear-gradient(180deg, oklch(0.982 0.002 248), oklch(0.938 0.005 248));
+  }
+
   .traffic-toolbar .text-muted-foreground {
     color: var(--muted-foreground) !important;
   }
@@ -368,25 +385,22 @@ body {
 
   .traffic-workspace-tab {
     display: inline-flex;
-    height: 34px;
-    min-width: 158px;
+    height: 31px;
+    width: 160px;
     align-items: center;
-    gap: 7px;
-    border: 1px solid color-mix(in oklch, var(--border) 88%, transparent);
-    border-bottom-color: color-mix(in oklch, var(--fiddler-green) 58%, var(--border));
-    border-radius: 3px 3px 0 0;
-    padding: 0 12px;
+    gap: 8px;
+    border-right: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
+    border-radius: 0;
+    padding: 0 18px;
     color: color-mix(in oklch, var(--foreground) 88%, transparent);
     font-size: 15px;
-    font-weight: 620;
-    background: linear-gradient(180deg, white, color-mix(in oklch, var(--card) 92%, var(--muted)));
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 70%),
-      inset 0 -2px 0 var(--fiddler-green);
+    font-weight: 560;
+    background: color-mix(in oklch, var(--card) 96%, white);
+    box-shadow: inset 0 1px 0 oklch(1 0 0 / 70%);
   }
 
   .traffic-workspace-tab svg {
-    color: var(--fiddler-green);
+    color: color-mix(in oklch, var(--foreground) 78%, var(--fiddler-blue));
   }
 
   .mac-main-column {
@@ -460,7 +474,8 @@ body {
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 72%),
       0 1px 1px oklch(0 0 0 / 3%);
-    font-weight: 430;
+    font-weight: 400 !important;
+    line-height: 1;
   }
 
   .fiddler-outline-button:hover {
@@ -475,7 +490,7 @@ body {
     position: relative;
     display: inline-block;
     width: 38px;
-    height: 20px;
+    height: 18px;
     border: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
     border-radius: 999px;
     background: color-mix(in oklch, var(--muted) 84%, white);
@@ -487,8 +502,8 @@ body {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 999px;
     background: color-mix(in oklch, var(--muted-foreground) 72%, white);
     box-shadow: 0 1px 2px oklch(0 0 0 / 20%);
@@ -503,7 +518,7 @@ body {
   }
 
   .fiddler-switch-on::after {
-    left: 20px;
+    left: 22px;
     background: var(--fiddler-blue);
   }
 
@@ -529,6 +544,7 @@ body {
   }
 
   .quick-search-input {
+    font-size: 13px !important;
     color: var(--foreground);
     border-color: color-mix(in oklch, var(--border) 88%, transparent) !important;
     background: linear-gradient(
