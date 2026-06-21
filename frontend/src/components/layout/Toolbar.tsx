@@ -1,24 +1,24 @@
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
-import { ProxyState, StartProxy, StopProxy } from '../../../wailsjs/go/app/App';
+import { ClearSessions } from '../../../wailsjs/go/app/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import {
   ChevronDown,
-  CircleDot,
+  Columns3,
   Eye,
   Filter as FilterIcon,
   Globe,
+  PanelRight,
+  Save,
   Search,
-  Server,
-  Square,
+  Share2,
   Terminal,
+  Trash2,
   X,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ToolbarProps {
+  onSessionsClear: () => void;
   quickSearch: string;
   onQuickSearchChange: (value: string) => void;
   filteredCount: number;
@@ -26,38 +26,16 @@ interface ToolbarProps {
 }
 
 export function Toolbar({
+  onSessionsClear,
   quickSearch,
   onQuickSearchChange,
   filteredCount,
   totalCount,
 }: ToolbarProps) {
-  const [proxyState, setProxyState] = useState('stopped');
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    Promise.resolve()
-      .then(() => ProxyState())
-      .then(setProxyState)
-      .catch(() => {});
-  }, []);
-
-  const handleToggle = async () => {
-    setLoading(true);
-    try {
-      if (proxyState === 'running') {
-        await StopProxy();
-      } else {
-        await StartProxy();
-      }
-      setProxyState(await ProxyState());
-    } catch (err) {
-      toast.error('프록시 토글 실패', { description: String(err) });
-    } finally {
-      setLoading(false);
-    }
+  const handleClear = async () => {
+    await ClearSessions();
+    onSessionsClear();
   };
-
-  const isRunning = proxyState === 'running';
 
   return (
     <div className="flex flex-col">
@@ -84,54 +62,6 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleToggle}
-              disabled={loading}
-              className="toolbar-button fiddler-outline-button h-[25px] px-3 text-[13px] gap-2 text-foreground"
-            >
-              <span
-                className={cn(
-                  'fiddler-switch',
-                  isRunning && 'fiddler-switch-on',
-                  loading && 'opacity-60',
-                )}
-                aria-hidden="true"
-              />
-              System Proxy
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
-            >
-              <Server className="h-3.5 w-3.5" />
-              Reverse Proxy
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
-            >
-              {loading ? (
-                '...'
-              ) : isRunning ? (
-                <>
-                  <Square className="h-3 w-3" />
-                  Stop Capture
-                </>
-              ) : (
-                <>
-                  <CircleDot className="h-3.5 w-3.5" />
-                  Network Capture
-                  <span className="fiddler-beta-badge">BETA</span>
-                </>
-              )}
-            </Button>
-
-            <Button
-              size="sm"
-              variant="ghost"
               className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
             >
               <Globe className="h-3.5 w-3.5" />
@@ -146,6 +76,17 @@ export function Toolbar({
               <Terminal className="h-3.5 w-3.5" />
               Terminal
             </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleClear}
+              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clear
+              <ChevronDown className="h-3 w-3 opacity-60" />
+            </Button>
           </div>
 
           <Separator orientation="vertical" className="toolbar-divider" />
@@ -155,7 +96,7 @@ export function Toolbar({
             <Input
               value={quickSearch}
               onChange={(e) => onQuickSearchChange(e.target.value)}
-              placeholder="Find sessions"
+              placeholder="Quick Search"
               className="quick-search-input h-[25px] rounded-[5px] border-border/80 bg-card/50 pl-7 pr-14 text-[13px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
             />
             <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
@@ -176,6 +117,46 @@ export function Toolbar({
                 </Button>
               )}
             </div>
+          </div>
+
+          <Separator orientation="vertical" className="toolbar-divider" />
+
+          <div className="toolbar-control-group fiddler-session-controls">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
+            >
+              <Save className="h-3.5 w-3.5" />
+              Save
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Share
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-outline-button h-[25px] px-2.5 text-[13px] gap-1.5 text-foreground"
+            >
+              <Columns3 className="h-3.5 w-3.5" />
+              Columns
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              className="toolbar-button fiddler-outline-button h-[25px] w-[30px] px-0 text-foreground"
+              title="Toggle layout"
+            >
+              <PanelRight className="h-3.5 w-3.5" />
+            </Button>
           </div>
 
           <div className="flex-1" />

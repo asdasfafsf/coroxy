@@ -396,6 +396,7 @@ function App() {
 
             <div className="mac-main-column flex flex-col flex-1 min-w-0 overflow-hidden">
               <Toolbar
+                onSessionsClear={handleSessionsClear}
                 quickSearch={quickSearch}
                 onQuickSearchChange={setQuickSearch}
                 filteredCount={filteredSessions.length}
