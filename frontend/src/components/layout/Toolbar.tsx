@@ -61,7 +61,7 @@ export function Toolbar({
 
   return (
     <div className="flex flex-col">
-      <div className="traffic-toolbar flex h-[68px] flex-col border-b-0">
+      <div className="traffic-toolbar flex h-[120px] flex-col border-b-0">
         <div className="traffic-tab-row">
           <div className="traffic-workspace-tab">
             <Eye className="h-3.5 w-3.5" />
@@ -74,7 +74,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-1.5 text-muted-foreground hover:text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-3.5 text-[15px] gap-2 text-foreground"
             >
               <FilterIcon className="h-3.5 w-3.5" />
               Filters
@@ -86,7 +86,7 @@ export function Toolbar({
               variant="ghost"
               onClick={handleToggle}
               disabled={loading}
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-2 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-4 text-[15px] gap-2.5 text-foreground"
             >
               <span
                 className={cn(
@@ -102,7 +102,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-3.5 text-[15px] gap-2 text-foreground"
             >
               <Server className="h-3.5 w-3.5" />
               Reverse Proxy
@@ -111,7 +111,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-3.5 text-[15px] gap-2 text-foreground"
             >
               {loading ? (
                 '...'
@@ -132,7 +132,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-3.5 text-[15px] gap-2 text-foreground"
             >
               <Globe className="h-3.5 w-3.5" />
               Browser
@@ -141,7 +141,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-outline-button h-[30px] px-3 text-[14px] gap-1.5 text-foreground"
+              className="toolbar-button fiddler-outline-button h-[42px] px-3.5 text-[15px] gap-2 text-foreground"
             >
               <Terminal className="h-3.5 w-3.5" />
               Terminal
@@ -150,13 +150,13 @@ export function Toolbar({
 
           <Separator orientation="vertical" className="toolbar-divider" />
 
-          <div className="quick-search-field relative flex h-[30px] w-[280px] min-w-[190px] max-w-[30vw] items-center">
+          <div className="quick-search-field relative flex h-[42px] w-[300px] min-w-[190px] max-w-[30vw] items-center">
             <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/72" />
             <Input
               value={quickSearch}
               onChange={(e) => onQuickSearchChange(e.target.value)}
               placeholder="Find sessions"
-              className="quick-search-input h-[30px] rounded-[5px] border-border/80 bg-card/50 pl-7 pr-14 text-[13px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
+              className="quick-search-input h-[42px] rounded-[5px] border-border/80 bg-card/50 pl-8 pr-14 text-[15px] shadow-none placeholder:text-muted-foreground/58 focus-visible:ring-1"
             />
             <div className="absolute right-1.5 flex items-center gap-1 text-[10px] text-muted-foreground/70">
               {quickSearch && (

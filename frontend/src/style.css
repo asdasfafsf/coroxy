@@ -329,7 +329,7 @@ body {
   .toolbar-control-group {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -346,33 +346,34 @@ body {
   }
 
   .toolbar-divider {
-    height: 18px;
+    height: 38px;
     margin: 0 2px;
-    background: color-mix(in oklch, var(--border) 86%, transparent);
+    background: color-mix(in oklch, var(--border) 100%, transparent);
   }
 
   .traffic-toolbar {
     color: var(--muted-foreground);
-    background: linear-gradient(180deg, oklch(0.985 0.002 248), oklch(0.938 0.005 248));
-    border-bottom: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 72%);
+    background: #fff;
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
+    box-shadow: none;
   }
 
   .traffic-tab-row {
     display: flex;
-    height: 31px;
+    height: 60px;
     align-items: stretch;
-    border-bottom: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
-    background: color-mix(in oklch, var(--card) 92%, white);
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
+    background: #fff;
   }
 
   .traffic-command-row {
     display: flex;
-    height: 37px;
+    height: 60px;
     align-items: center;
-    gap: 9px;
-    padding: 3px 8px;
-    background: linear-gradient(180deg, oklch(0.982 0.002 248), oklch(0.938 0.005 248));
+    gap: 10px;
+    padding: 9px 24px;
+    background: #fff;
+    transform: none;
   }
 
   .traffic-toolbar .text-muted-foreground {
@@ -385,22 +386,26 @@ body {
 
   .traffic-workspace-tab {
     display: inline-flex;
-    height: 31px;
-    width: 160px;
+    height: 60px;
+    width: 164px;
     align-items: center;
-    gap: 8px;
-    border-right: 1px solid color-mix(in oklch, var(--border) 86%, transparent);
+    gap: 9px;
+    border-top: 3px solid oklch(0.6 0.22 260);
+    border-right: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
+    border-left: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
     border-radius: 0;
-    padding: 0 18px;
-    color: color-mix(in oklch, var(--foreground) 88%, transparent);
-    font-size: 15px;
-    font-weight: 560;
-    background: color-mix(in oklch, var(--card) 96%, white);
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 70%);
+    margin-left: 14px;
+    padding: 0 11px;
+    color: #111827;
+    font-size: 19px;
+    font-weight: 400;
+    background: #fff;
+    box-shadow: none;
+    white-space: nowrap;
   }
 
   .traffic-workspace-tab svg {
-    color: color-mix(in oklch, var(--foreground) 78%, var(--fiddler-blue));
+    color: #4b5563;
   }
 
   .mac-main-column {
@@ -465,45 +470,35 @@ body {
 
   .fiddler-outline-button {
     position: relative;
-    border: 1px solid color-mix(in oklch, var(--border) 88%, transparent) !important;
-    background: linear-gradient(
-      180deg,
-      white,
-      color-mix(in oklch, var(--card) 92%, var(--secondary))
-    ) !important;
-    box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 72%),
-      0 1px 1px oklch(0 0 0 / 3%);
+    border: 1px solid #cfd8e6 !important;
+    background: #f8fafc !important;
+    box-shadow: none;
     font-weight: 400 !important;
     line-height: 1;
   }
 
   .fiddler-outline-button:hover {
-    background: linear-gradient(
-      180deg,
-      white,
-      color-mix(in oklch, var(--muted) 82%, var(--card))
-    ) !important;
+    background: #f3f6fb !important;
   }
 
   .fiddler-switch {
     position: relative;
     display: inline-block;
-    width: 38px;
-    height: 18px;
-    border: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
+    width: 40px;
+    height: 22px;
+    border: 1px solid #c4ccd8;
     border-radius: 999px;
-    background: color-mix(in oklch, var(--muted) 84%, white);
+    background: #edf1f5;
     box-shadow: inset 0 1px 2px oklch(0 0 0 / 10%);
   }
 
   .fiddler-switch::after {
     content: '';
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 12px;
-    height: 12px;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
     border-radius: 999px;
     background: color-mix(in oklch, var(--muted-foreground) 72%, white);
     box-shadow: 0 1px 2px oklch(0 0 0 / 20%);
@@ -518,13 +513,13 @@ body {
   }
 
   .fiddler-switch-on::after {
-    left: 22px;
+    left: 21px;
     background: var(--fiddler-blue);
   }
 
   .fiddler-beta-badge {
     position: absolute;
-    top: -10px;
+    top: -11px;
     right: 7px;
     display: inline-flex;
     height: 14px;
@@ -536,7 +531,7 @@ body {
     font-size: 9px;
     font-weight: 760;
     line-height: 1;
-    background: color-mix(in oklch, var(--fiddler-amber) 28%, white);
+    background: #fff3c4;
   }
 
   .quick-search-field {
@@ -544,17 +539,11 @@ body {
   }
 
   .quick-search-input {
-    font-size: 13px !important;
+    font-size: 15px !important;
     color: var(--foreground);
-    border-color: color-mix(in oklch, var(--border) 88%, transparent) !important;
-    background: linear-gradient(
-      180deg,
-      white,
-      color-mix(in oklch, var(--card) 88%, var(--secondary))
-    ) !important;
-    box-shadow:
-      inset 0 1px 2px oklch(0 0 0 / 6%),
-      inset 0 1px 0 oklch(1 0 0 / 54%);
+    border-color: #cfd8e6 !important;
+    background: #fff !important;
+    box-shadow: none;
   }
 
   .quick-search-input::placeholder {
