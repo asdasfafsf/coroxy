@@ -5,23 +5,19 @@ import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/componen
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { decodeBody, formatBytes } from '@/lib/format';
-import {
-  ChevronRight,
-  Copy,
-  Check,
-  ArrowUpRight,
-  ArrowDownLeft,
-  MousePointerClick,
-  PanelRight,
-} from 'lucide-react';
+import { ChevronRight, Copy, Check, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
 const TAB_TRIGGER_CLASS =
-  'text-[11px] h-7 px-2.5 rounded-none border-r border-border/60 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
-const TAB_LIST_CLASS = 'bg-secondary/80 border-b border-border/80 rounded-none h-7 px-0';
+  'h-7 rounded-none border-r border-border/70 px-2.5 text-[11px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
+const TAB_LIST_CLASS = 'inspector-tab-strip h-7 rounded-none border-b border-border/80 px-0';
 const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
+const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
+  Request: ['Method', 'URL', 'Host', 'Headers'],
+  Response: ['Status', 'Type', 'Size', 'Timing'],
+};
 
 type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
 
@@ -185,9 +181,9 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex h-6 items-center gap-1.5 border-b border-border/80 bg-secondary/72 px-2.5 text-[10.5px] font-semibold text-foreground/84 mac-subtle-inset">
-      <span className="text-primary">{icon}</span>
-      {title}
+    <div className="inspector-pane-header flex h-7 items-center gap-1.5 border-b border-border/80 px-2.5 text-[11px] font-semibold text-foreground/86">
+      <span className="inspector-pane-icon">{icon}</span>
+      <span>{title}</span>
     </div>
   );
 }
@@ -201,6 +197,8 @@ function EmptyInspectorPane({
   icon?: React.ReactNode;
   showHint?: boolean;
 }) {
+  const fields = EMPTY_INSPECTOR_FIELDS[title] ?? EMPTY_INSPECTOR_FIELDS.Request;
+
   return (
     <div className="mac-inspector-pane flex h-full flex-col">
       <PaneHeader title={title} icon={icon} />
@@ -209,32 +207,40 @@ function EmptyInspectorPane({
           <div
             key={tab}
             className={cn(
-              'flex h-full items-center border-r border-border/60 px-2.5 text-[11px] text-muted-foreground/56',
-              index === 0 && 'bg-card/44 text-foreground/64 shadow-[inset_0_-2px_0_var(--border)]',
+              'flex h-full items-center border-r border-border/70 px-2.5 text-[11px] text-muted-foreground/58',
+              index === 0 && 'bg-card/64 text-foreground/72 shadow-[inset_0_-2px_0_var(--border)]',
             )}
           >
             {tab}
           </div>
         ))}
       </div>
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-6 text-muted-foreground">
+      <div className="inspector-empty-canvas min-h-0 flex-1">
+        <div className="inspector-empty-status">
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/36" />
+          <span>{showHint ? 'No response selected' : 'No request selected'}</span>
+        </div>
+
+        <div className="inspector-empty-grid" aria-hidden="true">
+          {fields.map((field, index) => (
+            <div className="inspector-empty-row" key={field}>
+              <span>{field}</span>
+              <span
+                className={cn(
+                  'inspector-empty-line',
+                  index === 1 && 'w-[72%]',
+                  index === 2 && 'w-[46%]',
+                  index === 3 && 'w-[58%]',
+                )}
+              />
+            </div>
+          ))}
+        </div>
+
         {showHint && (
-          <div className="empty-state-card">
-            <div className="empty-state-icon">
-              <MousePointerClick className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="text-[13px] font-semibold text-foreground/82">Select a session</div>
-              <div className="mt-1 text-xs text-muted-foreground">
-                Click a request in the session list to inspect it
-              </div>
-            </div>
-          </div>
-        )}
-        {!showHint && (
-          <div className="flex items-center gap-2 text-[11px] text-muted-foreground/62">
-            <PanelRight className="h-3.5 w-3.5" />
-            <span>Request inspectors will appear here</span>
+          <div className="inspector-empty-footer">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary/56" />
+            <span>Session details idle</span>
           </div>
         )}
       </div>

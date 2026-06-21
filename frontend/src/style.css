@@ -514,6 +514,96 @@ body {
       inset 1px 0 0 color-mix(in oklch, var(--border) 30%, transparent);
   }
 
+  .inspector-pane-header {
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 86%, white), var(--secondary)),
+      var(--secondary);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 34%),
+      inset 0 -1px 0 color-mix(in oklch, var(--border) 92%, transparent);
+  }
+
+  .inspector-pane-icon {
+    display: grid;
+    width: 15px;
+    height: 15px;
+    place-items: center;
+    color: var(--primary);
+  }
+
+  .inspector-tab-strip {
+    background:
+      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 76%, white), var(--secondary)),
+      var(--secondary);
+  }
+
+  .inspector-empty-canvas {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 11px 12px;
+    color: var(--muted-foreground);
+  }
+
+  .inspector-empty-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 22px;
+    color: color-mix(in oklch, var(--muted-foreground) 78%, transparent);
+    font-size: 11px;
+    font-weight: 560;
+  }
+
+  .inspector-empty-grid {
+    margin-top: 5px;
+    overflow: hidden;
+    border: 1px solid color-mix(in oklch, var(--border) 60%, transparent);
+    border-radius: 4px;
+    background: color-mix(in oklch, var(--card) 76%, transparent);
+  }
+
+  .inspector-empty-row {
+    display: grid;
+    grid-template-columns: minmax(74px, 22%) 1fr;
+    min-height: 25px;
+    align-items: center;
+    border-bottom: 1px solid color-mix(in oklch, var(--border) 44%, transparent);
+    font-size: 11px;
+  }
+
+  .inspector-empty-row:last-child {
+    border-bottom: 0;
+  }
+
+  .inspector-empty-row > span:first-child {
+    height: 100%;
+    padding: 6px 8px;
+    border-right: 1px solid color-mix(in oklch, var(--border) 50%, transparent);
+    color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
+    background: color-mix(in oklch, var(--secondary) 58%, transparent);
+  }
+
+  .inspector-empty-line {
+    display: block;
+    width: 62%;
+    height: 6px;
+    margin-left: 9px;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted-foreground) 13%, transparent);
+  }
+
+  .inspector-empty-footer {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: color-mix(in oklch, var(--muted-foreground) 68%, transparent);
+    font-size: 11px;
+  }
+
   .empty-table-state {
     background:
       linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 18%, transparent)),
