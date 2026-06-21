@@ -74,9 +74,9 @@ export function SessionSidebar({
         </div>
       </ScrollArea>
 
-      <div className="border-t border-sidebar-border/80 p-2">
+      <div className="source-sidebar-footer">
         <button
-          className="source-list-item w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground hover:text-foreground hover:bg-sidebar-accent/60 transition-colors"
+          className="source-footer-command w-full flex items-center gap-2 px-2 py-1.5 text-[11px] text-muted-foreground transition-colors"
           onClick={onGroupAdd}
         >
           <Plus className="h-3.5 w-3.5" />

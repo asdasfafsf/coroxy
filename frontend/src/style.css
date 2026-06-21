@@ -376,6 +376,10 @@ body {
     border-radius: 5px;
   }
 
+  .source-list-item:hover {
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--sidebar-border) 58%, transparent);
+  }
+
   .source-section-header {
     display: flex;
     align-items: center;
@@ -406,10 +410,34 @@ body {
   }
 
   .source-list-item-active {
-    background: color-mix(in oklch, var(--primary) 14%, var(--sidebar-accent));
+    background:
+      linear-gradient(90deg, color-mix(in oklch, var(--primary) 16%, transparent), transparent 72%),
+      color-mix(in oklch, var(--sidebar-accent) 88%, var(--sidebar));
     box-shadow:
-      inset 0 0 0 1px color-mix(in oklch, var(--primary) 20%, var(--sidebar-border)),
-      inset 2px 0 0 color-mix(in oklch, var(--primary) 72%, transparent);
+      inset 0 0 0 1px color-mix(in oklch, var(--primary) 18%, var(--sidebar-border)),
+      inset 2px 0 0 color-mix(in oklch, var(--primary) 68%, transparent);
+  }
+
+  .source-sidebar-footer {
+    padding: 7px 8px;
+    border-top: 1px solid color-mix(in oklch, var(--sidebar-border) 78%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--sidebar) 92%, transparent),
+      color-mix(in oklch, var(--sidebar-accent) 32%, var(--sidebar))
+    );
+  }
+
+  .source-footer-command {
+    height: 25px;
+    border-radius: 5px;
+    color: color-mix(in oklch, var(--sidebar-foreground) 64%, transparent);
+  }
+
+  .source-footer-command:hover {
+    color: color-mix(in oklch, var(--sidebar-foreground) 88%, transparent);
+    background: color-mix(in oklch, var(--sidebar-accent) 70%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--sidebar-border) 64%, transparent);
   }
 
   .mac-table-header {
