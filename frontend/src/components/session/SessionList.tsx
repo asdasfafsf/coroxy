@@ -781,16 +781,22 @@ export function SessionList({
                   className="empty-table-state sticky left-0 flex h-full items-center justify-center px-6 py-16"
                   style={{ width: listWidth || '100%' }}
                 >
-                  <div className="empty-state-card">
-                    <div className="empty-state-icon">
+                  <div className="empty-state-card session-empty-state-card">
+                    <div className="empty-state-icon session-empty-state-icon">
                       <Inbox className="h-6 w-6" />
                     </div>
-                    <div>
-                      <div className="text-[13px] font-semibold text-foreground/82">
-                        No sessions captured
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-[12px] font-semibold text-foreground/82">
+                        <span>No sessions captured</span>
+                        <span className="session-empty-pill">Idle</span>
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
                         Start the proxy to begin capturing traffic
+                      </div>
+                      <div className="session-empty-meter" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
                       </div>
                     </div>
                   </div>

@@ -606,12 +606,12 @@ body {
 
   .empty-table-state {
     background:
-      linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 18%, transparent)),
+      linear-gradient(180deg, transparent, color-mix(in oklch, var(--background) 12%, transparent)),
       repeating-linear-gradient(
         0deg,
         transparent 0,
         transparent 30px,
-        color-mix(in oklch, var(--border) 30%, transparent) 31px
+        color-mix(in oklch, var(--border) 24%, transparent) 31px
       );
   }
 
@@ -644,6 +644,50 @@ body {
   .empty-state-icon svg {
     width: 15px !important;
     height: 15px !important;
+  }
+
+  .session-empty-state-card {
+    min-width: 292px;
+    padding: 7px 9px;
+    border-color: color-mix(in oklch, var(--border) 54%, transparent);
+    background: color-mix(in oklch, var(--card) 72%, transparent);
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 22%),
+      0 1px 2px oklch(0 0 0 / 3%);
+  }
+
+  .session-empty-state-icon {
+    width: 26px;
+    height: 26px;
+    color: color-mix(in oklch, var(--primary) 82%, var(--foreground));
+    background: color-mix(in oklch, var(--primary) 7%, var(--card));
+  }
+
+  .session-empty-pill {
+    display: inline-flex;
+    height: 16px;
+    align-items: center;
+    border: 1px solid color-mix(in oklch, var(--border) 72%, transparent);
+    border-radius: 4px;
+    padding: 0 5px;
+    color: color-mix(in oklch, var(--muted-foreground) 78%, transparent);
+    font-size: 9.5px;
+    font-weight: 650;
+    line-height: 1;
+    background: color-mix(in oklch, var(--secondary) 72%, transparent);
+  }
+
+  .session-empty-meter {
+    display: grid;
+    grid-template-columns: 42% 28% 18%;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .session-empty-meter span {
+    height: 3px;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted-foreground) 13%, transparent);
   }
 
   .inspector-code-surface {
