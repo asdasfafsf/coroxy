@@ -61,14 +61,15 @@ function App() {
 
   // ===== Sidebar width (manual drag resize) =====
   const SIDEBAR_MIN = 132;
+  const SIDEBAR_DEFAULT = 148;
   const SIDEBAR_MAX = 320;
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
       const stored = localStorage.getItem('coroxy-sidebar-width-v2');
-      const n = stored ? parseInt(stored, 10) : 148;
-      return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : 148;
+      const n = stored ? parseInt(stored, 10) : SIDEBAR_DEFAULT;
+      return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : SIDEBAR_DEFAULT;
     } catch {
-      return 148;
+      return SIDEBAR_DEFAULT;
     }
   });
   const sidebarResizing = useRef(false);
