@@ -17,7 +17,6 @@ import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
 import { SessionSidebar } from '@/components/session/SessionSidebar';
 import { Inspector } from '@/components/session/Inspector';
-import { StatusBar } from '@/components/layout/StatusBar';
 import { Settings } from '@/components/tools/Settings';
 import { RuleEditor } from '@/components/tools/RuleEditor';
 import { FilterPanel } from '@/components/tools/FilterPanel';
@@ -27,14 +26,12 @@ import { SessionDiff } from '@/components/tools/SessionDiff';
 import { AboutDialog } from '@/components/tools/AboutDialog';
 import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
-import { useTheme } from '@/hooks/useTheme';
 import { copyToClipboard, copyUrl } from '@/lib/copy';
 import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { evaluate, loadSavedFilters, saveSavedFilters, type SavedFilter } from '@/lib/filter';
 
 function App() {
-  const { theme, setTheme } = useTheme();
   const [sessions, setSessions] = useState<model.Session[]>([]);
   const [proxyState, setProxyState] = useState('stopped');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -476,21 +473,6 @@ function App() {
                   />
                 </div>
               )}
-              <StatusBar
-                sessionCount={sessions.length}
-                selectedCount={selectedIds.size}
-                isRunning={isRunning}
-                theme={theme}
-                onThemeChange={setTheme}
-                totalRequestBytes={sessions.reduce(
-                  (sum, s) => sum + (s.request?.body_size || 0),
-                  0,
-                )}
-                totalResponseBytes={sessions.reduce(
-                  (sum, s) => sum + (s.response?.body_size || 0),
-                  0,
-                )}
-              />
             </div>
           </div>
         </div>

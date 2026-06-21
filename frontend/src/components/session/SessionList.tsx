@@ -32,7 +32,6 @@ import {
   Copy,
   Tag,
   MessageSquare,
-  Inbox,
 } from 'lucide-react';
 
 // Session may have runtime-added tags/comment fields from Go backend
@@ -810,16 +809,9 @@ export function SessionList({
               </div>
               {sortedSessions.length === 0 ? (
                 <div
-                  className="empty-table-state sticky left-0 h-full px-3 py-3"
+                  className="empty-table-state sticky left-0 h-full"
                   style={{ width: listWidth || '100%' }}
-                >
-                  <div className="session-empty-banner">
-                    <Inbox className="h-3.5 w-3.5" />
-                    <span>No sessions captured</span>
-                    <span className="session-empty-banner-separator" />
-                    <span>Start capture to populate the Live Traffic grid</span>
-                  </div>
-                </div>
+                />
               ) : (
                 <List
                   rowHeight={ROW_HEIGHT}
