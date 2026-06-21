@@ -345,6 +345,15 @@ body {
     );
   }
 
+  .statusbar-segment {
+    display: inline-flex;
+    height: 100%;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    white-space: nowrap;
+  }
+
   .source-list-item {
     border-radius: 5px;
   }
