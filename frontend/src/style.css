@@ -329,12 +329,12 @@ body {
   .toolbar-control-group {
     display: inline-flex;
     align-items: center;
-    gap: 1px;
-    padding: 1px;
-    border: 1px solid color-mix(in oklch, var(--border) 78%, transparent);
-    border-radius: 4px;
-    background: color-mix(in oklch, var(--card) 84%, var(--secondary));
-    box-shadow: inset 0 1px 0 oklch(1 0 0 / 34%);
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .fiddler-live-controls {
@@ -368,16 +368,16 @@ body {
 
   .traffic-workspace-tab {
     display: inline-flex;
-    height: 26px;
-    min-width: 126px;
+    height: 34px;
+    min-width: 158px;
     align-items: center;
     gap: 7px;
     border: 1px solid color-mix(in oklch, var(--border) 88%, transparent);
     border-bottom-color: color-mix(in oklch, var(--fiddler-green) 58%, var(--border));
     border-radius: 3px 3px 0 0;
-    padding: 0 9px;
+    padding: 0 12px;
     color: color-mix(in oklch, var(--foreground) 88%, transparent);
-    font-size: 11.5px;
+    font-size: 15px;
     font-weight: 620;
     background: linear-gradient(180deg, white, color-mix(in oklch, var(--card) 92%, var(--muted)));
     box-shadow:
@@ -441,12 +441,87 @@ body {
   }
 
   .toolbar-button {
-    border-radius: 3px;
+    border-radius: 5px;
     box-shadow: none;
   }
 
   .toolbar-button:hover {
     background: color-mix(in oklch, var(--muted) 72%, transparent);
+  }
+
+  .fiddler-outline-button {
+    position: relative;
+    border: 1px solid color-mix(in oklch, var(--border) 88%, transparent) !important;
+    background: linear-gradient(
+      180deg,
+      white,
+      color-mix(in oklch, var(--card) 92%, var(--secondary))
+    ) !important;
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 72%),
+      0 1px 1px oklch(0 0 0 / 3%);
+    font-weight: 430;
+  }
+
+  .fiddler-outline-button:hover {
+    background: linear-gradient(
+      180deg,
+      white,
+      color-mix(in oklch, var(--muted) 82%, var(--card))
+    ) !important;
+  }
+
+  .fiddler-switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+    border: 1px solid color-mix(in oklch, var(--border) 92%, transparent);
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted) 84%, white);
+    box-shadow: inset 0 1px 2px oklch(0 0 0 / 10%);
+  }
+
+  .fiddler-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 999px;
+    background: color-mix(in oklch, var(--muted-foreground) 72%, white);
+    box-shadow: 0 1px 2px oklch(0 0 0 / 20%);
+    transition:
+      left 0.16s ease,
+      background 0.16s ease;
+  }
+
+  .fiddler-switch-on {
+    background: color-mix(in oklch, var(--fiddler-blue) 18%, white);
+    border-color: color-mix(in oklch, var(--fiddler-blue) 62%, var(--border));
+  }
+
+  .fiddler-switch-on::after {
+    left: 20px;
+    background: var(--fiddler-blue);
+  }
+
+  .fiddler-beta-badge {
+    position: absolute;
+    top: -10px;
+    right: 7px;
+    display: inline-flex;
+    height: 14px;
+    align-items: center;
+    border: 1px solid color-mix(in oklch, var(--fiddler-amber) 82%, black);
+    border-radius: 999px;
+    padding: 0 4px;
+    color: color-mix(in oklch, var(--fiddler-amber) 62%, black);
+    font-size: 9px;
+    font-weight: 760;
+    line-height: 1;
+    background: color-mix(in oklch, var(--fiddler-amber) 28%, white);
   }
 
   .quick-search-field {

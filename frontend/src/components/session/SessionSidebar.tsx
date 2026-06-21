@@ -1,17 +1,7 @@
 import { Cloud, FolderOpen, FolderPlus, Share2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface SessionGroup {
-  id: string;
-  label: string;
-  count: number;
-  filterName?: string | null;
-}
-
 interface SessionSidebarProps {
-  groups: SessionGroup[];
-  activeGroupId: string;
-  onGroupChange: (groupId: string) => void;
   onGroupAdd: () => void;
 }
 

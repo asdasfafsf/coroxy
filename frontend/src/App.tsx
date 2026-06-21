@@ -385,21 +385,7 @@ function App() {
               className="mac-sidebar relative shrink-0 flex flex-col overflow-hidden border-r border-sidebar-border"
               style={{ width: sidebarWidth }}
             >
-              <SessionSidebar
-                groups={sessionTabs.map((t) => {
-                  const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
-                  const f = fid ? savedFilters.find((sf) => sf.id === fid) : null;
-                  return {
-                    id: t.id,
-                    label: t.label,
-                    count: t.id === activeTabId ? filteredSessions.length : 0,
-                    filterName: f?.name ?? null,
-                  };
-                })}
-                activeGroupId={activeTabId}
-                onGroupChange={setActiveTabId}
-                onGroupAdd={handleTabAdd}
-              />
+              <SessionSidebar onGroupAdd={handleTabAdd} />
               <div
                 onMouseDown={handleSidebarResizeStart}
                 className="absolute -right-1.5 top-0 bottom-0 w-3 cursor-col-resize bg-transparent transition-colors z-10 after:absolute after:inset-y-3 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-primary/45 active:after:bg-primary/70"
@@ -410,24 +396,6 @@ function App() {
 
             <div className="mac-main-column flex flex-col flex-1 min-w-0 overflow-hidden">
               <Toolbar
-                onSessionsClear={handleSessionsClear}
-                savedFilters={savedFilters}
-                activeFilterId={activeFilter?.id ?? null}
-                onSelectFilter={(fid) => {
-                  setSessionTabs((prev) =>
-                    prev.map((t) =>
-                      t.id === activeTabId ? { ...t, filterId: fid ?? 'default' } : t,
-                    ),
-                  );
-                }}
-                onNewFilter={() => {
-                  setEditingFilterId(null);
-                  setShowFilters(true);
-                }}
-                onEditActiveFilter={() => {
-                  setEditingFilterId(activeFilter?.id ?? null);
-                  setShowFilters(true);
-                }}
                 quickSearch={quickSearch}
                 onQuickSearchChange={setQuickSearch}
                 filteredCount={filteredSessions.length}

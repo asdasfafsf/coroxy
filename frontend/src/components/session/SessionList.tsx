@@ -3,7 +3,7 @@ import { List } from 'react-window';
 import { model } from '../../../wailsjs/go/models';
 import { TagSession, CommentSession } from '../../../wailsjs/go/app/App';
 import { cn } from '@/lib/utils';
-import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
+import { formatTime, formatDuration, formatBytes, getPath } from '@/lib/format';
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -103,12 +103,14 @@ const ROW_HEIGHT = 30;
 
 type ColKey =
   | 'protocol'
+  | 'host'
   | 'method'
   | 'url'
   | 'status'
-  | 'type'
-  | 'request'
-  | 'response'
+  | 'httpVersion'
+  | 'tlsVersion'
+  | 'body'
+  | 'contentType'
   | 'duration'
   | 'time';
 
@@ -134,9 +136,9 @@ const cellBase =
 const COL_DEFS: ColDef[] = [
   {
     key: 'protocol',
-    label: 'Proto',
-    defaultWidth: 72,
-    minWidth: 64,
+    label: 'Protocol',
+    defaultWidth: 86,
+    minWidth: 82,
     align: 'center',
     render: (s) => {
       const badge = protoBadge(s.protocol);
@@ -154,6 +156,15 @@ const COL_DEFS: ColDef[] = [
     },
   },
   {
+    key: 'host',
+    label: 'Host',
+    defaultWidth: 210,
+    minWidth: 130,
+    cellClass: 'truncate',
+    render: (s) => s.target?.host || '-',
+    rowTitle: (s) => s.target?.host || undefined,
+  },
+  {
     key: 'method',
     label: 'Method',
     defaultWidth: 80,
@@ -164,53 +175,60 @@ const COL_DEFS: ColDef[] = [
   {
     key: 'url',
     label: 'URL',
-    defaultWidth: 560,
+    defaultWidth: 360,
     minWidth: 240,
     cellClass: 'truncate',
     render: (s) => {
-      const host = s.target?.host || '';
       const path = getPath(s.request?.url) || '';
-      const text = host + path;
-      return text || s.request?.url || '-';
+      return path || s.request?.url || '-';
     },
     rowTitle: (s) => s.request?.url || undefined,
   },
   {
     key: 'status',
-    label: 'Status',
-    defaultWidth: 72,
-    minWidth: 68,
+    label: 'Status Code',
+    defaultWidth: 104,
+    minWidth: 96,
     align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
     ),
   },
   {
-    key: 'request',
-    label: 'Request',
-    defaultWidth: 96,
-    minWidth: 80,
+    key: 'httpVersion',
+    label: 'HTTP Version',
+    defaultWidth: 112,
+    minWidth: 104,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => formatBytes(s.request?.body_size),
+    render: (s) => s.request?.http_version || s.response?.http_version || '-',
   },
   {
-    key: 'response',
-    label: 'Response',
-    defaultWidth: 96,
-    minWidth: 92,
+    key: 'tlsVersion',
+    label: 'TLS Version',
+    defaultWidth: 104,
+    minWidth: 98,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => formatBytes(s.response?.body_size),
+    render: () => '-',
   },
   {
-    key: 'type',
-    label: 'Type',
-    defaultWidth: 96,
-    minWidth: 56,
+    key: 'body',
+    label: 'Body',
+    defaultWidth: 84,
+    minWidth: 64,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => shortContentType(s.response?.content_type),
+    render: (s) => formatBytes(s.response?.body_size || s.request?.body_size),
+  },
+  {
+    key: 'contentType',
+    label: 'Content-Type',
+    defaultWidth: 136,
+    minWidth: 118,
+    align: 'center',
+    cellClass: 'text-muted-foreground',
+    render: (s) => s.response?.content_type || s.request?.content_type || '-',
   },
   {
     key: 'duration',
@@ -232,14 +250,16 @@ const COL_DEFS: ColDef[] = [
 ];
 
 const DEFAULT_ORDER: ColKey[] = [
+  'protocol',
+  'host',
   'url',
+  'httpVersion',
+  'tlsVersion',
   'status',
   'method',
-  'protocol',
-  'type',
+  'body',
+  'contentType',
   'duration',
-  'request',
-  'response',
   'time',
 ];
 
@@ -301,6 +321,8 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
     switch (key) {
       case 'protocol':
         return m * (a.protocol || '').localeCompare(b.protocol || '');
+      case 'host':
+        return m * (a.target?.host || '').localeCompare(b.target?.host || '');
       case 'method':
         return m * (a.request?.method || '').localeCompare(b.request?.method || '');
       case 'url':
@@ -312,12 +334,28 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
         );
       case 'status':
         return m * ((a.response?.status_code || 0) - (b.response?.status_code || 0));
-      case 'type':
-        return m * (a.response?.content_type || '').localeCompare(b.response?.content_type || '');
-      case 'request':
-        return m * ((a.request?.body_size || 0) - (b.request?.body_size || 0));
-      case 'response':
-        return m * ((a.response?.body_size || 0) - (b.response?.body_size || 0));
+      case 'httpVersion':
+        return (
+          m *
+          (a.request?.http_version || a.response?.http_version || '').localeCompare(
+            b.request?.http_version || b.response?.http_version || '',
+          )
+        );
+      case 'tlsVersion':
+        return 0;
+      case 'body':
+        return (
+          m *
+          ((a.response?.body_size || a.request?.body_size || 0) -
+            (b.response?.body_size || b.request?.body_size || 0))
+        );
+      case 'contentType':
+        return (
+          m *
+          (a.response?.content_type || a.request?.content_type || '').localeCompare(
+            b.response?.content_type || b.request?.content_type || '',
+          )
+        );
       case 'duration':
         return m * ((a.duration || 0) - (b.duration || 0));
       case 'time':
@@ -426,7 +464,7 @@ export function SessionList({
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols-v3');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v4');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -434,7 +472,7 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order-v3');
+      const stored = localStorage.getItem('coroxy-col-order-v4');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
       const known = new Set(DEFAULT_ORDER);
@@ -449,7 +487,7 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths-v3');
+      const stored = localStorage.getItem('coroxy-col-widths-v4');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
@@ -492,7 +530,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths-v3', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v4', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -589,7 +627,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths-v3', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v4', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -604,7 +642,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols-v3', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v4', JSON.stringify([...next]));
       return next;
     });
   };
@@ -653,7 +691,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order-v3', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v4', JSON.stringify(next));
       return next;
     });
   };
