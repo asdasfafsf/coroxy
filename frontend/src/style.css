@@ -135,12 +135,12 @@ body {
   --ds-control-radius: 4px;
   --ds-radius-tight: 2px;
   --ds-active-group-radius: 4px;
-  --ds-toolbar-height: 56px;
+  --ds-toolbar-height: 57px;
   --ds-toolbar-tab-height: 26px;
-  --ds-toolbar-command-height: 30px;
-  --ds-toolbar-control-height: 24px;
-  --ds-sidebar-width: 148px;
-  --ds-sidebar-header-height: 30px;
+  --ds-toolbar-command-height: 31px;
+  --ds-toolbar-control-height: 25px;
+  --ds-sidebar-width: 156px;
+  --ds-sidebar-header-height: 29px;
   --ds-sidebar-row-height: 22px;
   --ds-grid-header-height: 26px;
   --ds-grid-row-height: 27px;
@@ -562,7 +562,7 @@ body {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     height: var(--ds-toolbar-command-height);
     border: 0;
     border-radius: 0;
@@ -604,8 +604,8 @@ body {
   }
 
   .fiddler-toggle-dot {
-    width: 14px;
-    height: 14px;
+    width: 13px;
+    height: 13px;
     border: 1px solid var(--ds-border-strong);
     border-radius: 999px;
     background: linear-gradient(180deg, #9aa4b2, #7d8796);

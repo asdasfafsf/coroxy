@@ -794,7 +794,7 @@ export function SessionList({
                     <span className="min-w-0 flex-1 truncate">
                       {col.label} <SortIcon col={col.key} />
                     </span>
-                    <FilterIcon className="ml-2 h-4 w-4 shrink-0 text-muted-foreground/82" />
+                    <FilterIcon className="ml-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/82" />
                     {nextCol ? (
                       <span
                         draggable={false}

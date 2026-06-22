@@ -60,12 +60,12 @@ function App() {
   const [marks] = useState<Map<string, string>>(new Map());
 
   // ===== Sidebar width (manual drag resize) =====
-  const SIDEBAR_MIN = 132;
-  const SIDEBAR_DEFAULT = 148;
+  const SIDEBAR_MIN = 140;
+  const SIDEBAR_DEFAULT = 156;
   const SIDEBAR_MAX = 320;
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-sidebar-width-v2');
+      const stored = localStorage.getItem('coroxy-sidebar-width-v3');
       const n = stored ? parseInt(stored, 10) : SIDEBAR_DEFAULT;
       return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : SIDEBAR_DEFAULT;
     } catch {
@@ -85,7 +85,7 @@ function App() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       try {
-        localStorage.setItem('coroxy-sidebar-width-v2', String(sidebarWidth));
+        localStorage.setItem('coroxy-sidebar-width-v3', String(sidebarWidth));
       } catch {
         // ignore quota/storage errors
       }
