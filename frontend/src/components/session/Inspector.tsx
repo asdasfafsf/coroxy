@@ -13,6 +13,7 @@ import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 const TAB_TRIGGER_CLASS =
   'h-7 rounded-none border-r border-border/70 px-2.5 text-[11px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
 const TAB_LIST_CLASS = 'inspector-tab-strip h-7 rounded-none border-b border-border/80 px-0';
+const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'];
 const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
 const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
   Request: ['Method', 'URL', 'Host', 'Headers'],
@@ -26,26 +27,56 @@ interface InspectorProps {
 }
 
 export function Inspector({ session }: InspectorProps) {
-  if (!session) {
-    return (
-      <ResizablePanelGroup orientation="vertical" id="coroxy-inspector-empty" className="h-full">
-        <ResizablePanel defaultSize={50} minSize={20}>
-          <EmptyInspectorPane title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
-        </ResizablePanel>
+  return (
+    <div className="inspector-workbench flex h-full min-h-0 flex-col">
+      <InspectorModeStrip />
+      <div className="min-h-0 flex-1">
+        {session ? <ActiveInspector session={session} /> : <EmptyInspector />}
+      </div>
+    </div>
+  );
+}
 
-        <ResizableHandle withHandle />
+function InspectorModeStrip() {
+  return (
+    <div className="inspector-mode-strip" role="tablist" aria-label="Inspector tools">
+      {INSPECTOR_MODES.map((mode, index) => (
+        <button
+          key={mode}
+          type="button"
+          className={cn('inspector-mode-tab', index === 0 && 'inspector-mode-tab-active')}
+          aria-selected={index === 0}
+          role="tab"
+          tabIndex={index === 0 ? 0 : -1}
+        >
+          {mode}
+        </button>
+      ))}
+    </div>
+  );
+}
 
-        <ResizablePanel defaultSize={50} minSize={20}>
-          <EmptyInspectorPane
-            title="Response"
-            icon={<ArrowDownLeft className="h-3 w-3" />}
-            showHint
-          />
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    );
-  }
+function EmptyInspector() {
+  return (
+    <ResizablePanelGroup orientation="vertical" id="coroxy-inspector-empty" className="h-full">
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <EmptyInspectorPane title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
+      </ResizablePanel>
 
+      <ResizableHandle withHandle />
+
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <EmptyInspectorPane
+          title="Response"
+          icon={<ArrowDownLeft className="h-3 w-3" />}
+          showHint
+        />
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}
+
+function ActiveInspector({ session }: { session: model.Session }) {
   return (
     <ResizablePanelGroup orientation="vertical" id="coroxy-inspector" className="h-full">
       {/* Request Pane */}
