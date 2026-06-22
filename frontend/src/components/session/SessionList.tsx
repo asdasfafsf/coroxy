@@ -100,7 +100,7 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 30;
+const ROW_HEIGHT = 27;
 
 type ColKey =
   | 'protocol'
@@ -465,7 +465,7 @@ export function SessionList({
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols-v5');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v6');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -473,7 +473,7 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order-v5');
+      const stored = localStorage.getItem('coroxy-col-order-v6');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
       const known = new Set(DEFAULT_ORDER);
@@ -488,7 +488,7 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths-v5');
+      const stored = localStorage.getItem('coroxy-col-widths-v6');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
@@ -531,7 +531,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths-v5', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v6', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -628,7 +628,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths-v5', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v6', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -643,7 +643,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols-v5', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v6', JSON.stringify([...next]));
       return next;
     });
   };
@@ -692,7 +692,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order-v5', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v6', JSON.stringify(next));
       return next;
     });
   };

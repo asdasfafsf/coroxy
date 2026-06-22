@@ -79,9 +79,9 @@ export function Toolbar({
               variant="ghost"
               className="toolbar-button fiddler-mode-button fiddler-mode-button-active h-[var(--ds-toolbar-control-height)] px-2.5 text-[var(--ds-toolbar-mode-font-size)] gap-2 text-foreground"
             >
-              <span className="fiddler-beta-badge">BETA</span>
               <Network className="fiddler-accent-icon h-4 w-4" />
               Network Capture
+              <span className="fiddler-beta-badge">BETA</span>
             </Button>
 
             <Button

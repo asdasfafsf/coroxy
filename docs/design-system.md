@@ -38,15 +38,15 @@ Runtime design tokens live in `frontend/src/style.css` under the `--ds-*` namesp
 
 | Token | Value | Use |
 | --- | ---: | --- |
-| `--ds-toolbar-height` | `62px` | Full Live Traffic header |
+| `--ds-toolbar-height` | `56px` | Full Live Traffic header |
 | `--ds-toolbar-tab-height` | `26px` | Tab strip |
-| `--ds-toolbar-command-height` | `36px` | Command row and capture group |
-| `--ds-toolbar-control-height` | `30px` | Primary toolbar controls |
+| `--ds-toolbar-command-height` | `30px` | Command row and capture group |
+| `--ds-toolbar-control-height` | `24px` | Primary toolbar controls |
 | `--ds-sidebar-width` | `148px` | Default snapshots panel width |
 | `--ds-sidebar-header-height` | `30px` | Snapshots header |
 | `--ds-sidebar-row-height` | `22px` | Sidebar tree rows |
-| `--ds-grid-header-height` | `30px` | Session grid header |
-| `--ds-grid-row-height` | `30px` | Session grid rows |
+| `--ds-grid-header-height` | `26px` | Session grid header |
+| `--ds-grid-row-height` | `27px` | Session grid rows |
 
 ## Typography
 
@@ -64,7 +64,8 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 
 - The top toolbar is a two-row Live Traffic header: tab strip above, command row below.
 - Keep `App.tsx`'s `SIDEBAR_DEFAULT` aligned with `--ds-sidebar-width`.
-- Capture modes are grouped in one blue outlined cluster.
+- Capture modes should read as flat segmented toolbar buttons; only the active mode gets a restrained blue accent. Avoid thick toy-like group outlines.
+- `BETA` markers should be inline chips, not floating decorative badges.
 - Save/share/column/layout-like actions should collapse into compact right-side icon controls when possible.
 - Session grid defaults to Fiddler-like order: `#`, `URL`, `HTTP Version`, `TLS Version`, `Status Code`, `Method`, then supporting metadata.
 - Grid columns should show filter affordances in the header.

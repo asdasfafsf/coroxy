@@ -118,7 +118,7 @@ body {
   --ds-surface-base: #fff;
   --ds-surface-sidebar: #eef1f5;
   --ds-surface-table: #f7f8fa;
-  --ds-surface-table-header: #f8fafc;
+  --ds-surface-table-header: #f7f8fa;
   --ds-surface-hover: #f3f6fb;
   --ds-surface-active: #f7fbff;
   --ds-surface-selected: #e8f0ff;
@@ -134,21 +134,21 @@ body {
   --ds-beta-bg: #fff3c4;
   --ds-control-radius: 4px;
   --ds-radius-tight: 2px;
-  --ds-active-group-radius: 8px;
-  --ds-toolbar-height: 62px;
+  --ds-active-group-radius: 4px;
+  --ds-toolbar-height: 56px;
   --ds-toolbar-tab-height: 26px;
-  --ds-toolbar-command-height: 36px;
-  --ds-toolbar-control-height: 30px;
+  --ds-toolbar-command-height: 30px;
+  --ds-toolbar-control-height: 24px;
   --ds-sidebar-width: 148px;
   --ds-sidebar-header-height: 30px;
   --ds-sidebar-row-height: 22px;
-  --ds-grid-header-height: 30px;
-  --ds-grid-row-height: 30px;
-  --ds-grid-font-size: 12px;
+  --ds-grid-header-height: 26px;
+  --ds-grid-row-height: 27px;
+  --ds-grid-font-size: 11px;
   --ds-sidebar-font-size: 11px;
   --ds-tab-font-size: 11px;
-  --ds-toolbar-font-size: 14px;
-  --ds-toolbar-mode-font-size: 15px;
+  --ds-toolbar-font-size: 11.5px;
+  --ds-toolbar-mode-font-size: 12px;
 }
 
 .dark {
@@ -195,7 +195,7 @@ body {
   --ds-surface-base: oklch(0.255 0.008 255);
   --ds-surface-sidebar: oklch(0.285 0.008 255);
   --ds-surface-table: oklch(0.24 0.007 255);
-  --ds-surface-table-header: oklch(0.3 0.008 255);
+  --ds-surface-table-header: oklch(0.29 0.008 255);
   --ds-surface-hover: oklch(0.34 0.01 255);
   --ds-surface-active: oklch(0.32 0.022 252);
   --ds-surface-selected: oklch(0.34 0.04 252);
@@ -434,8 +434,8 @@ body {
     display: flex;
     height: var(--ds-toolbar-command-height);
     align-items: center;
-    gap: 8px;
-    padding: 3px 10px 4px 14px;
+    gap: 7px;
+    padding: 3px 10px 3px 14px;
     background: var(--ds-surface-app);
     transform: none;
   }
@@ -562,22 +562,28 @@ body {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     height: var(--ds-toolbar-command-height);
-    border: 3px solid var(--ds-accent-blue);
-    border-radius: var(--ds-active-group-radius);
-    padding: 3px 5px;
-    background: var(--ds-surface-app);
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .fiddler-mode-button {
     position: relative;
     border: 1px solid var(--ds-border-subtle) !important;
-    background: var(--ds-surface-base) !important;
+    background: color-mix(in oklch, var(--ds-surface-base) 82%, var(--ds-surface-app)) !important;
     color: var(--ds-text) !important;
     font-size: var(--ds-toolbar-mode-font-size) !important;
     font-weight: 400 !important;
     line-height: 1;
+  }
+
+  .fiddler-mode-button svg {
+    width: 13px !important;
+    height: 13px !important;
   }
 
   .fiddler-mode-button:hover {
@@ -587,15 +593,19 @@ body {
   .fiddler-mode-button-active {
     border-color: color-mix(
       in oklch,
-      var(--ds-accent-blue) 28%,
+      var(--ds-accent-blue) 64%,
       var(--ds-border-subtle)
     ) !important;
-    background: var(--ds-surface-active) !important;
+    color: color-mix(in oklch, var(--ds-accent-blue) 72%, var(--ds-text)) !important;
+    background: color-mix(in oklch, var(--ds-accent-blue) 7%, var(--ds-surface-base)) !important;
+    box-shadow:
+      inset 0 1px 0 oklch(1 0 0 / 70%),
+      inset 0 -2px 0 color-mix(in oklch, var(--ds-accent-blue) 48%, transparent);
   }
 
   .fiddler-toggle-dot {
-    width: 17px;
-    height: 17px;
+    width: 14px;
+    height: 14px;
     border: 1px solid var(--ds-border-strong);
     border-radius: 999px;
     background: linear-gradient(180deg, #9aa4b2, #7d8796);
@@ -656,18 +666,15 @@ body {
   }
 
   .fiddler-beta-badge {
-    position: absolute;
-    top: -10px;
-    right: 10px;
     display: inline-flex;
     height: 12px;
     align-items: center;
     border: 1px solid color-mix(in oklch, var(--fiddler-amber) 82%, black);
     border-radius: 999px;
-    padding: 0 5px;
+    padding: 0 3px;
     color: color-mix(in oklch, var(--fiddler-amber) 62%, black);
-    font-size: 8px;
-    font-weight: 760;
+    font-size: 7px;
+    font-weight: 720;
     line-height: 1;
     background: var(--ds-beta-bg);
   }
@@ -835,9 +842,9 @@ body {
     font-size: var(--ds-grid-font-size);
     background: var(--ds-surface-table-header);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 76%),
-      inset -1px 0 0 color-mix(in oklch, var(--border) 94%, transparent),
-      inset 0 -1px 0 color-mix(in oklch, var(--border) 100%, transparent);
+      inset 0 1px 0 oklch(1 0 0 / 64%),
+      inset -1px 0 0 var(--ds-grid-line-strong),
+      inset 0 -1px 0 var(--ds-grid-line-strong);
   }
 
   .mac-table-header:first-child {
