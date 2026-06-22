@@ -149,6 +149,7 @@ body {
   --ds-tab-font-size: 11px;
   --ds-toolbar-font-size: 11.5px;
   --ds-toolbar-mode-font-size: 12px;
+  --ds-window-titlebar-height: 28px;
 }
 
 .dark {
@@ -303,6 +304,11 @@ body {
 @layer components {
   .mac-app-shell {
     background: var(--chrome);
+  }
+
+  .wails-runtime .mac-app-shell {
+    box-sizing: border-box;
+    padding-top: var(--ds-window-titlebar-height);
   }
 
   .coroxy-window {
