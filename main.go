@@ -115,8 +115,8 @@ func main() {
 			a,
 		},
 		Mac: &mac.Options{
-			TitleBar:   mac.TitleBarHiddenInset(),
-			Appearance: mac.NSAppearanceNameDarkAqua,
+			TitleBar:   mac.TitleBarDefault(),
+			Appearance: mac.NSAppearanceNameAqua,
 			About: &mac.AboutInfo{
 				Title:   "Coroxy",
 				Message: "Local Network Debugging Proxy",
