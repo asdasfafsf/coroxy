@@ -116,22 +116,22 @@ body {
 
   --ds-surface-app: #fbfcfe;
   --ds-surface-base: #fff;
-  --ds-surface-sidebar: #eef1f5;
-  --ds-surface-table: #f7f8fa;
-  --ds-surface-table-header: #f7f8fa;
-  --ds-surface-hover: #f3f6fb;
-  --ds-surface-active: #f7fbff;
+  --ds-surface-sidebar: #edf0f4;
+  --ds-surface-table: #f8f9fb;
+  --ds-surface-table-header: #eef1f5;
+  --ds-surface-hover: #eef3fa;
+  --ds-surface-active: #f2f6fb;
   --ds-surface-selected: #e8f0ff;
   --ds-surface-row-active: #dceaff;
-  --ds-border-subtle: #d6dde8;
-  --ds-border-strong: #c8d0dc;
-  --ds-grid-line: color-mix(in oklch, var(--border) 34%, transparent);
-  --ds-grid-line-strong: color-mix(in oklch, var(--border) 74%, transparent);
+  --ds-border-subtle: #d1d8e2;
+  --ds-border-strong: #bec8d5;
+  --ds-grid-line: color-mix(in oklch, var(--border) 42%, transparent);
+  --ds-grid-line-strong: color-mix(in oklch, var(--border) 86%, transparent);
   --ds-text: #1f2937;
   --ds-icon-muted: #4b5563;
   --ds-accent-blue: #2f6fff;
   --ds-danger: #ef3f56;
-  --ds-beta-bg: #fff3c4;
+  --ds-beta-bg: #f7e7a6;
   --ds-control-radius: 4px;
   --ds-radius-tight: 2px;
   --ds-active-group-radius: 4px;
@@ -427,7 +427,7 @@ body {
     display: flex;
     height: var(--ds-toolbar-tab-height);
     align-items: stretch;
-    border-bottom: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
+    border-bottom: 1px solid var(--ds-border-strong);
     background: var(--ds-surface-app);
   }
 
@@ -452,18 +452,18 @@ body {
   .traffic-workspace-tab {
     display: inline-flex;
     height: var(--ds-toolbar-tab-height);
-    width: 124px;
+    width: 118px;
     align-items: center;
     gap: 5px;
     border-top: 2px solid var(--ds-accent-blue);
-    border-right: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
-    border-left: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
+    border-right: 1px solid var(--ds-border-strong);
+    border-left: 1px solid var(--ds-border-strong);
     border-radius: 0;
-    margin-left: 10px;
+    margin-left: 8px;
     padding: 0 8px;
     color: var(--ds-text);
     font-size: var(--ds-tab-font-size);
-    font-weight: 400;
+    font-weight: 520;
     background: var(--ds-surface-base);
     box-shadow: none;
     white-space: nowrap;
@@ -536,7 +536,7 @@ body {
   .fiddler-outline-button {
     position: relative;
     border: 1px solid var(--ds-border-subtle) !important;
-    background: var(--ds-surface-base) !important;
+    background: color-mix(in oklch, var(--ds-surface-base) 74%, var(--ds-surface-app)) !important;
     box-shadow: none;
     font-size: var(--ds-toolbar-font-size) !important;
     font-weight: 400 !important;
@@ -575,7 +575,7 @@ body {
   .fiddler-mode-button {
     position: relative;
     border: 1px solid var(--ds-border-subtle) !important;
-    background: color-mix(in oklch, var(--ds-surface-base) 82%, var(--ds-surface-app)) !important;
+    background: color-mix(in oklch, var(--ds-surface-base) 70%, var(--ds-surface-app)) !important;
     color: var(--ds-text) !important;
     font-size: var(--ds-toolbar-mode-font-size) !important;
     font-weight: 400 !important;
@@ -594,14 +594,14 @@ body {
   .fiddler-mode-button-active {
     border-color: color-mix(
       in oklch,
-      var(--ds-accent-blue) 64%,
+      var(--ds-accent-blue) 42%,
       var(--ds-border-subtle)
     ) !important;
-    color: color-mix(in oklch, var(--ds-accent-blue) 72%, var(--ds-text)) !important;
-    background: color-mix(in oklch, var(--ds-accent-blue) 7%, var(--ds-surface-base)) !important;
+    color: var(--ds-text) !important;
+    background: color-mix(in oklch, var(--ds-accent-blue) 5%, var(--ds-surface-base)) !important;
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 70%),
-      inset 0 -2px 0 color-mix(in oklch, var(--ds-accent-blue) 48%, transparent);
+      inset 0 1px 0 oklch(1 0 0 / 72%),
+      inset 0 -1px 0 color-mix(in oklch, var(--ds-accent-blue) 52%, transparent);
   }
 
   .fiddler-toggle-dot {
@@ -671,11 +671,11 @@ body {
     height: 12px;
     align-items: center;
     border: 1px solid color-mix(in oklch, var(--fiddler-amber) 82%, black);
-    border-radius: 999px;
+    border-radius: 2px;
     padding: 0 3px;
     color: color-mix(in oklch, var(--fiddler-amber) 62%, black);
-    font-size: 7px;
-    font-weight: 720;
+    font-size: 6.8px;
+    font-weight: 680;
     line-height: 1;
     background: var(--ds-beta-bg);
   }
@@ -727,9 +727,9 @@ body {
     justify-content: space-between;
     border-bottom: 1px solid color-mix(in oklch, var(--sidebar-border) 86%, transparent);
     padding: 0 8px;
-    color: color-mix(in oklch, var(--sidebar-foreground) 92%, transparent);
+    color: color-mix(in oklch, var(--sidebar-foreground) 86%, transparent);
     font-size: var(--ds-sidebar-font-size);
-    font-weight: 620;
+    font-weight: 560;
     background: var(--ds-surface-sidebar);
   }
 
@@ -843,7 +843,7 @@ body {
     font-size: var(--ds-grid-font-size);
     background: var(--ds-surface-table-header);
     box-shadow:
-      inset 0 1px 0 oklch(1 0 0 / 64%),
+      inset 0 1px 0 oklch(1 0 0 / 58%),
       inset -1px 0 0 var(--ds-grid-line-strong),
       inset 0 -1px 0 var(--ds-grid-line-strong);
   }
