@@ -306,11 +306,6 @@ body {
     background: var(--chrome);
   }
 
-  .wails-runtime .mac-app-shell {
-    box-sizing: border-box;
-    padding-top: var(--ds-window-titlebar-height);
-  }
-
   .coroxy-window {
     border: 0;
     border-radius: 0;
@@ -350,8 +345,13 @@ body {
   }
 
   .mac-sidebar {
+    box-sizing: border-box;
     background: var(--ds-surface-sidebar);
     color: var(--sidebar-foreground);
+  }
+
+  .wails-runtime .mac-sidebar {
+    padding-top: var(--ds-window-titlebar-height);
   }
 
   .mac-titlebar {

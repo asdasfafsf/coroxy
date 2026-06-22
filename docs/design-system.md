@@ -47,7 +47,7 @@ Runtime design tokens live in `frontend/src/style.css` under the `--ds-*` namesp
 | `--ds-sidebar-row-height` | `22px` | Sidebar tree rows |
 | `--ds-grid-header-height` | `26px` | Session grid header |
 | `--ds-grid-row-height` | `27px` | Session grid rows |
-| `--ds-window-titlebar-height` | `28px` | Wails/macOS hidden titlebar safe area |
+| `--ds-window-titlebar-height` | `28px` | Wails/macOS hidden titlebar safe area above the sidebar |
 
 ## Typography
 
@@ -64,7 +64,7 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 ## Component Rules
 
 - The top toolbar is a two-row Live Traffic header: tab strip above, command row below.
-- Wails/macOS runtime must reserve the hidden titlebar safe area before the workbench starts; browser preview should not get that padding.
+- Wails/macOS runtime reserves the hidden titlebar safe area only above the sidebar. The main traffic workbench should still start at the top edge so a blank titlebar band is not introduced.
 - Keep `App.tsx`'s `SIDEBAR_DEFAULT` aligned with `--ds-sidebar-width`.
 - When default layout dimensions change, bump the matching localStorage version so stale user defaults do not mask the new baseline.
 - Capture modes should read as flat segmented toolbar buttons; only the active mode gets a restrained blue accent. Avoid thick toy-like group outlines.
