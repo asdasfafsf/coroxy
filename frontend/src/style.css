@@ -121,8 +121,12 @@ body {
   --ds-surface-table-header: #f8fafc;
   --ds-surface-hover: #f3f6fb;
   --ds-surface-active: #f7fbff;
+  --ds-surface-selected: #e8f0ff;
+  --ds-surface-row-active: #dceaff;
   --ds-border-subtle: #d6dde8;
   --ds-border-strong: #c8d0dc;
+  --ds-grid-line: color-mix(in oklch, var(--border) 34%, transparent);
+  --ds-grid-line-strong: color-mix(in oklch, var(--border) 74%, transparent);
   --ds-text: #1f2937;
   --ds-icon-muted: #4b5563;
   --ds-accent-blue: #2f6fff;
@@ -194,8 +198,12 @@ body {
   --ds-surface-table-header: oklch(0.3 0.008 255);
   --ds-surface-hover: oklch(0.34 0.01 255);
   --ds-surface-active: oklch(0.32 0.022 252);
+  --ds-surface-selected: oklch(0.34 0.04 252);
+  --ds-surface-row-active: oklch(0.38 0.055 252);
   --ds-border-subtle: oklch(1 0 0 / 17%);
   --ds-border-strong: oklch(1 0 0 / 25%);
+  --ds-grid-line: oklch(1 0 0 / 10%);
+  --ds-grid-line-strong: oklch(1 0 0 / 18%);
   --ds-text: oklch(0.91 0.004 255);
   --ds-icon-muted: oklch(0.74 0.008 255);
   --ds-accent-blue: oklch(0.68 0.16 252);
@@ -872,7 +880,7 @@ body {
     top: 0;
     bottom: 0;
     width: 1px;
-    background: color-mix(in oklch, var(--border) 34%, transparent);
+    background: var(--ds-grid-line);
   }
 
   .session-body > :not(.session-body-grid) {
@@ -881,7 +889,7 @@ body {
   }
 
   .session-row:hover {
-    background: color-mix(in oklch, var(--muted) 64%, var(--card));
+    background: var(--ds-surface-hover);
   }
 
   .session-col-resize {
@@ -938,13 +946,17 @@ body {
   }
 
   .mac-row-selected {
-    background: color-mix(in oklch, var(--primary) 20%, var(--card));
+    background: var(--ds-surface-selected);
   }
 
   .mac-row-active {
     background:
-      linear-gradient(90deg, color-mix(in oklch, var(--primary) 30%, transparent), transparent 48%),
-      color-mix(in oklch, var(--primary) 22%, var(--card));
+      linear-gradient(
+        90deg,
+        color-mix(in oklch, var(--ds-accent-blue) 18%, transparent),
+        transparent 48%
+      ),
+      var(--ds-surface-row-active);
   }
 
   .mac-inspector-pane {
@@ -1060,7 +1072,7 @@ body {
       0deg,
       transparent 0,
       transparent 29px,
-      color-mix(in oklch, var(--border) 18%, transparent) 30px
+      var(--ds-grid-line) 30px
     );
   }
 

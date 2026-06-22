@@ -19,6 +19,8 @@ Runtime design tokens live in `frontend/src/style.css` under the `--ds-*` namesp
 | `--ds-surface-table-header` | Session grid header |
 | `--ds-surface-hover` | Button and sidebar hover states |
 | `--ds-surface-active` | Active capture mode or selected tool surfaces |
+| `--ds-surface-selected` | Selected rows |
+| `--ds-surface-row-active` | Keyboard/current active row |
 
 ## Borders And Accents
 
@@ -26,6 +28,8 @@ Runtime design tokens live in `frontend/src/style.css` under the `--ds-*` namesp
 | --- | --- |
 | `--ds-border-subtle` | Default button, input, grid borders |
 | `--ds-border-strong` | Split buttons, toggles, stronger dividers |
+| `--ds-grid-line` | Body grid row and column lines |
+| `--ds-grid-line-strong` | Stronger workbench separators |
 | `--ds-accent-blue` | Live Traffic tab accent, capture mode focus group, capture icons |
 | `--ds-danger` | Clear/delete actions |
 | `--ds-beta-bg` | Small beta badge background |
@@ -64,6 +68,8 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 - Save/share/column/layout-like actions should collapse into compact right-side icon controls when possible.
 - Session grid defaults to Fiddler-like order: `#`, `URL`, `HTTP Version`, `TLS Version`, `Status Code`, `Method`, then supporting metadata.
 - Grid columns should show filter affordances in the header.
+- Empty grid backgrounds still use visible row and column rhythm. Avoid blank hero-style empty states in Live Traffic.
+- Selection and active-row states must use `--ds-surface-selected` and `--ds-surface-row-active`, not generic primary blends.
 - Sidebars are flat workbench panels, not cards.
 - Border radius is restrained: `--ds-control-radius` for controls, `--ds-radius-tight` for tree rows and dense fields.
 - Do not introduce new hard-coded colors for workbench primitives unless a new `--ds-*` token is added first.
