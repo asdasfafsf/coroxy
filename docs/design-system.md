@@ -72,6 +72,7 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 - Save/share/column/layout-like actions should collapse into compact right-side icon controls when possible.
 - Live Traffic keeps the Inspectors rail visible beside the session grid, even with no selected session. Idle request/response placeholders are preferred over a table-only canvas.
 - The Inspectors rail starts with a compact tool strip (`Inspectors`, `Rules`, `Overview`) before the request/response split. Keep this as a workbench navigation surface, not a decorative header.
+- The Inspectors rail uses a pixel-based width with bounded resizing. Avoid percent-based persisted split state for this surface; it can make the rail collapse or dominate the grid after app/HMR changes.
 - Session grid defaults to Fiddler-like order: `#`, `URL`, `HTTP Version`, `TLS Version`, `Status Code`, `Method`, then supporting metadata.
 - Grid columns should show filter affordances in the header.
 - Empty grid backgrounds still use visible row and column rhythm. Avoid blank hero-style empty states in Live Traffic.

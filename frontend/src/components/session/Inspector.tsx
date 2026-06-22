@@ -11,8 +11,9 @@ import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
 const TAB_TRIGGER_CLASS =
-  'h-7 rounded-none border-r border-border/70 px-2.5 text-[11px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
-const TAB_LIST_CLASS = 'inspector-tab-strip h-7 rounded-none border-b border-border/80 px-0';
+  'h-[var(--ds-inspector-tab-height)] rounded-none border-r border-border/70 px-2.5 text-[10.5px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
+const TAB_LIST_CLASS =
+  'inspector-tab-strip h-[var(--ds-inspector-tab-height)] rounded-none border-b border-border/80 px-0';
 const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'];
 const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
 const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
@@ -66,11 +67,7 @@ function EmptyInspector() {
       <ResizableHandle withHandle />
 
       <ResizablePanel defaultSize={50} minSize={20}>
-        <EmptyInspectorPane
-          title="Response"
-          icon={<ArrowDownLeft className="h-3 w-3" />}
-          showHint
-        />
+        <EmptyInspectorPane title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
       </ResizablePanel>
     </ResizablePanelGroup>
   );
@@ -212,22 +209,14 @@ function ActiveInspector({ session }: { session: model.Session }) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="inspector-pane-header flex h-7 items-center gap-1.5 border-b border-border/80 px-2.5 text-[11px] font-semibold text-foreground/86">
+    <div className="inspector-pane-header flex h-[var(--ds-inspector-pane-height)] items-center gap-1.5 border-b border-border/80 px-2.5 text-[10.5px] font-semibold text-foreground/86">
       <span className="inspector-pane-icon">{icon}</span>
       <span>{title}</span>
     </div>
   );
 }
 
-function EmptyInspectorPane({
-  title,
-  icon,
-  showHint = false,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-  showHint?: boolean;
-}) {
+function EmptyInspectorPane({ title, icon }: { title: string; icon?: React.ReactNode }) {
   const fields = EMPTY_INSPECTOR_FIELDS[title] ?? EMPTY_INSPECTOR_FIELDS.Request;
 
   return (
@@ -238,7 +227,7 @@ function EmptyInspectorPane({
           <div
             key={tab}
             className={cn(
-              'flex h-full items-center border-r border-border/70 px-2.5 text-[11px] text-muted-foreground/58',
+              'flex h-full items-center border-r border-border/70 px-2.5 text-[10.5px] text-muted-foreground/58',
               index === 0 && 'bg-card/64 text-foreground/72 shadow-[inset_0_-2px_0_var(--border)]',
             )}
           >
@@ -249,31 +238,17 @@ function EmptyInspectorPane({
       <div className="inspector-empty-canvas min-h-0 flex-1">
         <div className="inspector-empty-status">
           <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/36" />
-          <span>{showHint ? 'No response selected' : 'No request selected'}</span>
+          <span>No {title.toLowerCase()} selected</span>
         </div>
 
         <div className="inspector-empty-grid" aria-hidden="true">
-          {fields.map((field, index) => (
+          {fields.map((field) => (
             <div className="inspector-empty-row" key={field}>
               <span>{field}</span>
-              <span
-                className={cn(
-                  'inspector-empty-line',
-                  index === 1 && 'w-[72%]',
-                  index === 2 && 'w-[46%]',
-                  index === 3 && 'w-[58%]',
-                )}
-              />
+              <span />
             </div>
           ))}
         </div>
-
-        {showHint && (
-          <div className="inspector-empty-footer">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary/56" />
-            <span>Session details idle</span>
-          </div>
-        )}
       </div>
     </div>
   );

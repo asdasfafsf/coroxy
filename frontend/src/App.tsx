@@ -12,7 +12,6 @@ import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Toolbar } from '@/components/layout/Toolbar';
 import { SessionList } from '@/components/session/SessionList';
 import { SessionSidebar } from '@/components/session/SessionSidebar';
@@ -73,6 +72,7 @@ function App() {
     }
   });
   const sidebarResizing = useRef(false);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!sidebarResizing.current) return;
@@ -100,6 +100,55 @@ function App() {
   const handleSidebarResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     sidebarResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
+  // ===== Inspector rail width (manual drag resize) =====
+  const INSPECTOR_MIN = 300;
+  const INSPECTOR_DEFAULT = 368;
+  const INSPECTOR_MAX = 520;
+  const [inspectorWidth, setInspectorWidth] = useState<number>(() => {
+    try {
+      const stored = localStorage.getItem('coroxy-inspector-width-v2');
+      const n = stored ? parseInt(stored, 10) : INSPECTOR_DEFAULT;
+      return Number.isFinite(n)
+        ? Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, n))
+        : INSPECTOR_DEFAULT;
+    } catch {
+      return INSPECTOR_DEFAULT;
+    }
+  });
+  const inspectorResizing = useRef(false);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!inspectorResizing.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const maxForWindow = Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, rect.width * 0.42));
+      const next = Math.max(INSPECTOR_MIN, Math.min(maxForWindow, rect.right - e.clientX));
+      setInspectorWidth(next);
+    };
+    const onUp = () => {
+      if (!inspectorResizing.current) return;
+      inspectorResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem('coroxy-inspector-width-v2', String(inspectorWidth));
+      } catch {
+        // ignore quota/storage errors
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [inspectorWidth]);
+  const handleInspectorResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    inspectorResizing.current = true;
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
   }, []);
@@ -403,8 +452,8 @@ function App() {
                 filteredCount={filteredSessions.length}
                 totalCount={sessions.length}
               />
-              <ResizablePanelGroup orientation="horizontal" className="main-workspace flex-1">
-                <ResizablePanel defaultSize={68} minSize={42}>
+              <div ref={workspaceRef} className="main-workspace flex min-h-0 flex-1">
+                <div className="min-w-0 flex-1">
                   <SessionList
                     sessions={filteredSessions}
                     selectedIds={selectedIds}
@@ -416,17 +465,18 @@ function App() {
                     diffPending={!!diffSessionA && !diffSessionB}
                     marks={marks}
                   />
-                </ResizablePanel>
-                <ResizableHandle
-                  withHandle
-                  className="bg-transparent hover:bg-transparent active:bg-transparent data-[panel-resize-handle-active]:bg-transparent"
+                </div>
+                <div
+                  onMouseDown={handleInspectorResizeStart}
+                  className="workbench-inspector-resizer"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize inspector rail"
                 />
-                <ResizablePanel defaultSize={32} minSize={26}>
-                  <div className="h-full overflow-hidden">
-                    <Inspector session={activeSession} />
-                  </div>
-                </ResizablePanel>
-              </ResizablePanelGroup>
+                <div className="h-full shrink-0 overflow-hidden" style={{ width: inspectorWidth }}>
+                  <Inspector session={activeSession} />
+                </div>
+              </div>
             </div>
           </div>
         </div>
