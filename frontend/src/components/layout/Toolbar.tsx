@@ -20,6 +20,7 @@ interface ToolbarProps {
   onQuickSearchChange: (value: string) => void;
   filteredCount: number;
   totalCount: number;
+  isRunning: boolean;
 }
 
 export function Toolbar({
@@ -28,6 +29,7 @@ export function Toolbar({
   onQuickSearchChange,
   filteredCount,
   totalCount,
+  isRunning,
 }: ToolbarProps) {
   const handleClear = async () => {
     await ClearSessions();
@@ -104,6 +106,12 @@ export function Toolbar({
           </div>
 
           <div className="flex-1" />
+
+          <div className="traffic-toolbar-status" aria-label="Capture status">
+            <span className={isRunning ? 'traffic-status-dot-live' : 'traffic-status-dot'} />
+            <span>{isRunning ? 'Live' : 'Idle'}</span>
+            <span className="traffic-toolbar-count">{filteredCount}</span>
+          </div>
 
           <div className="quick-search-field relative flex h-[var(--ds-toolbar-control-height)] w-[34px] items-center focus-within:w-[190px]">
             <Search className="pointer-events-none absolute left-2.5 h-3.5 w-3.5 text-muted-foreground/78" />

@@ -63,6 +63,7 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 ## Component Rules
 
 - The top toolbar is a two-row Live Traffic header: tab strip above, command row below.
+- The bottom status bar is part of the workbench, not decorative chrome. It should show proxy state, session count, selection, and traffic byte totals.
 - The desktop app uses the native macOS titlebar. Do not add Wails-only titlebar padding in the frontend unless the Wails titlebar mode changes.
 - Design changes must be verified in the actual Wails desktop app, not only in the browser preview. Browser preview is useful for fast iteration, but app screenshots are the acceptance surface.
 - Keep `App.tsx`'s `SIDEBAR_DEFAULT` aligned with `--ds-sidebar-width`.

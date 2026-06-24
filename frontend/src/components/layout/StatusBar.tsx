@@ -14,8 +14,8 @@ interface StatusBarProps {
   sessionCount: number;
   selectedCount: number;
   isRunning: boolean;
-  theme: Theme;
-  onThemeChange: (theme: Theme) => void;
+  theme?: Theme;
+  onThemeChange?: (theme: Theme) => void;
   totalRequestBytes: number;
   totalResponseBytes: number;
 }
@@ -29,7 +29,7 @@ export function StatusBar({
   totalRequestBytes,
   totalResponseBytes,
 }: StatusBarProps) {
-  const nextTheme = THEME_NEXT[theme];
+  const nextTheme = theme ? THEME_NEXT[theme] : 'system';
   const requestBytes = totalRequestBytes > 0 ? formatBytes(totalRequestBytes) : '0 B';
   const responseBytes = totalResponseBytes > 0 ? formatBytes(totalResponseBytes) : '0 B';
 
@@ -76,27 +76,28 @@ export function StatusBar({
 
       <span className="flex-1" />
 
-      {/* Theme toggle — simple cycle button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="toolbar-button mr-1 h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
-            onClick={() => onThemeChange(nextTheme)}
-          >
-            {theme === 'light' ? (
-              <Sun className="h-3 w-3" />
-            ) : theme === 'dark' ? (
-              <Moon className="h-3 w-3" />
-            ) : (
-              <Monitor className="h-3 w-3" />
-            )}
-            <span>{THEME_LABEL[theme]}</span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">Click to switch to {THEME_LABEL[nextTheme]}</TooltipContent>
-      </Tooltip>
+      {theme && onThemeChange && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="toolbar-button mr-1 h-5 gap-1 px-1.5 text-[10px] text-muted-foreground hover:text-foreground"
+              onClick={() => onThemeChange(nextTheme)}
+            >
+              {theme === 'light' ? (
+                <Sun className="h-3 w-3" />
+              ) : theme === 'dark' ? (
+                <Moon className="h-3 w-3" />
+              ) : (
+                <Monitor className="h-3 w-3" />
+              )}
+              <span>{THEME_LABEL[theme]}</span>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Click to switch to {THEME_LABEL[nextTheme]}</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 }

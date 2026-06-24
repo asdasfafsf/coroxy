@@ -13,6 +13,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import { Toolbar } from '@/components/layout/Toolbar';
+import { StatusBar } from '@/components/layout/StatusBar';
 import { SessionList } from '@/components/session/SessionList';
 import { SessionSidebar } from '@/components/session/SessionSidebar';
 import { Inspector } from '@/components/session/Inspector';
@@ -201,6 +202,19 @@ function App() {
   }, []);
 
   const isRunning = proxyState === 'running';
+
+  const trafficTotals = useMemo(
+    () =>
+      sessions.reduce(
+        (acc, session) => {
+          acc.requestBytes += session.request?.body_size || 0;
+          acc.responseBytes += session.response?.body_size || 0;
+          return acc;
+        },
+        { requestBytes: 0, responseBytes: 0 },
+      ),
+    [sessions],
+  );
 
   const activeFilter = useMemo<SavedFilter | null>(() => {
     const tab = sessionTabs.find((t) => t.id === activeTabId);
@@ -454,6 +468,7 @@ function App() {
                 onQuickSearchChange={setQuickSearch}
                 filteredCount={filteredSessions.length}
                 totalCount={sessions.length}
+                isRunning={isRunning}
               />
               <div ref={workspaceRef} className="main-workspace flex min-h-0 flex-1">
                 <div className="min-w-0 flex-1">
@@ -480,6 +495,13 @@ function App() {
                   <Inspector session={activeSession} />
                 </div>
               </div>
+              <StatusBar
+                sessionCount={sessions.length}
+                selectedCount={selectedIds.size}
+                isRunning={isRunning}
+                totalRequestBytes={trafficTotals.requestBytes}
+                totalResponseBytes={trafficTotals.responseBytes}
+              />
             </div>
           </div>
         </div>
