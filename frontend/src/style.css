@@ -1103,14 +1103,31 @@ body {
     padding: 8px 10px;
   }
 
-  .inspector-mode-note {
-    display: flex;
+  .inspector-mode-summary {
+    display: grid;
+    grid-template-columns: minmax(82px, 28%) minmax(0, 1fr);
     min-height: 22px;
     align-items: center;
     border-bottom: 1px solid color-mix(in oklch, var(--border) 42%, transparent);
     color: color-mix(in oklch, var(--muted-foreground) 78%, transparent);
     font-size: 10.5px;
     font-weight: 560;
+  }
+
+  .inspector-mode-summary > span {
+    overflow: hidden;
+    padding: 4px 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .inspector-mode-summary > span:first-child {
+    color: color-mix(in oklch, var(--muted-foreground) 72%, transparent);
+  }
+
+  .inspector-mode-summary > span:last-child {
+    color: color-mix(in oklch, var(--foreground) 82%, transparent);
+    font-weight: 620;
   }
 
   .inspector-mode-table {

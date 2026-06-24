@@ -72,23 +72,20 @@ function InspectorModeStrip({
 
 function RulesMode({ session }: { session: model.Session | null }) {
   const ruleRows = [
-    ['Breakpoints', session ? 'Ready for selected session' : 'Waiting for a session'],
-    [
-      'Composer',
-      session?.request?.method
-        ? `${session.request.method} request can be reused`
-        : 'No request selected',
-    ],
-    ['Filters', 'Applied through Live Traffic tabs'],
-    ['Diff', session ? 'Available from session row actions' : 'Select a session to compare'],
+    ['Target', session?.target?.host || '-'],
+    ['Method', session?.request?.method || '-'],
+    ['Breakpoint', session ? 'Eligible' : 'Idle'],
+    ['Composer', session?.request?.method || '-'],
+    ['Diff', session ? 'Ready' : 'Idle'],
   ];
 
   return (
     <div className="inspector-side-mode">
       <PaneHeader title="Rules" />
       <div className="inspector-mode-body">
-        <div className="inspector-mode-note">
-          Rules and breakpoints stay attached to the traffic workflow.
+        <div className="inspector-mode-summary">
+          <span>Context</span>
+          <span>{session ? 'Selected session' : 'No selection'}</span>
         </div>
         <div className="inspector-mode-table">
           {ruleRows.map(([label, value]) => (
@@ -114,18 +111,19 @@ function OverviewMode({ session }: { session: model.Session | null }) {
         ['Response Body', formatBytes(session.response?.body_size || 0)],
       ]
     : [
-        ['Selection', 'No session selected'],
-        ['Inspectors', 'Request and response panes are idle'],
-        ['Rules', 'Select a session to enable contextual actions'],
-        ['Overview', 'Traffic summary will appear here'],
+        ['Selection', 'None'],
+        ['Request', 'Idle'],
+        ['Response', 'Idle'],
+        ['Body', '0 B'],
       ];
 
   return (
     <div className="inspector-side-mode">
       <PaneHeader title="Overview" />
       <div className="inspector-mode-body">
-        <div className="inspector-mode-note">
-          {session ? 'Selected session summary' : 'Live Traffic summary'}
+        <div className="inspector-mode-summary">
+          <span>{session ? 'Session' : 'Traffic'}</span>
+          <span>{session?.id || 'Idle'}</span>
         </div>
         <div className="inspector-mode-table">
           {overviewRows.map(([label, value]) => (
