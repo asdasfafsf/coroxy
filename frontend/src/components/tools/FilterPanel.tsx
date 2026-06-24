@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -131,9 +132,12 @@ function FilterPanelInner({ open, onOpenChange, initial, onSave, onDelete }: Fil
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="workbench-dialog-content max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Filter editor</DialogTitle>
+          <DialogTitle>Filters</DialogTitle>
+          <DialogDescription className="sr-only">
+            Create or edit the active session filter.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="flex items-center gap-2">
@@ -193,6 +197,14 @@ function FilterPanelInner({ open, onOpenChange, initial, onSave, onDelete }: Fil
               Delete
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onOpenChange(false)}
+            className="gap-1.5"
+          >
+            Cancel
+          </Button>
           <Button
             variant="outline"
             size="sm"

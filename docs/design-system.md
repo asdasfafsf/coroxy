@@ -69,6 +69,8 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 - Keep `App.tsx`'s `SIDEBAR_DEFAULT` aligned with `--ds-sidebar-width`.
 - When default layout dimensions change, bump the matching localStorage version so stale user defaults do not mask the new baseline.
 - Capture modes should read as flat segmented toolbar buttons; only the active mode gets a restrained blue accent. Avoid thick toy-like group outlines.
+- Top toolbar controls must be wired to real workbench actions when those actions already exist. Avoid visual-only command buttons.
+- Unavailable capture modes should look intentionally disabled, not like active fake controls.
 - `BETA` markers should be inline chips, not floating decorative badges.
 - Save/share/column/layout-like actions should collapse into compact right-side icon controls when possible.
 - Live Traffic keeps the Inspectors rail visible beside the session grid, even with no selected session. Idle request/response placeholders are preferred over a table-only canvas.
@@ -81,5 +83,6 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 - Empty grid backgrounds still use visible row and column rhythm. Avoid blank hero-style empty states in Live Traffic.
 - Selection and active-row states must use `--ds-surface-selected` and `--ds-surface-row-active`, not generic primary blends.
 - Sidebars are flat workbench panels, not cards.
+- Tool dialogs and sheets should keep the same workbench density: compact titles, restrained radius, flat chrome, and explicit close/cancel actions.
 - Border radius is restrained: `--ds-control-radius` for controls, `--ds-radius-tight` for tree rows and dense fields.
 - Do not introduce new hard-coded colors for workbench primitives unless a new `--ds-*` token is added first.

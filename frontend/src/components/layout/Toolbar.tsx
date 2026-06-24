@@ -16,6 +16,9 @@ import {
 
 interface ToolbarProps {
   onSessionsClear: () => void;
+  onFiltersOpen: () => void;
+  onProxyToggle: () => void;
+  onRulesOpen: () => void;
   quickSearch: string;
   onQuickSearchChange: (value: string) => void;
   filteredCount: number;
@@ -25,6 +28,9 @@ interface ToolbarProps {
 
 export function Toolbar({
   onSessionsClear,
+  onFiltersOpen,
+  onProxyToggle,
+  onRulesOpen,
   quickSearch,
   onQuickSearchChange,
   filteredCount,
@@ -51,6 +57,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
+              onClick={onFiltersOpen}
               className="toolbar-button fiddler-outline-button h-[calc(var(--ds-toolbar-control-height)-2px)] px-2 text-[var(--ds-toolbar-font-size)] gap-1.5 text-foreground"
             >
               <FilterIcon className="fiddler-accent-icon h-3.5 w-3.5" />
@@ -59,6 +66,7 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
+              onClick={onFiltersOpen}
               className="toolbar-button fiddler-outline-button fiddler-split-button h-[calc(var(--ds-toolbar-control-height)-2px)] w-[32px] px-0 text-foreground"
               title="Filter options"
             >
@@ -70,16 +78,20 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-mode-button h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              onClick={onProxyToggle}
+              className={`toolbar-button fiddler-mode-button h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground ${isRunning ? 'fiddler-proxy-button-active' : ''}`}
+              title={isRunning ? 'Stop System Proxy' : 'Start System Proxy'}
             >
-              <span className="fiddler-toggle-dot" />
+              <span className={isRunning ? 'fiddler-toggle-dot-live' : 'fiddler-toggle-dot'} />
               System Proxy
             </Button>
 
             <Button
               size="sm"
               variant="ghost"
+              aria-pressed="true"
               className="toolbar-button fiddler-mode-button fiddler-mode-button-active h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              title="Network Capture is the current capture surface"
             >
               <Network className="fiddler-accent-icon h-3.5 w-3.5" />
               Network Capture
@@ -89,7 +101,9 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-mode-button h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              disabled
+              className="toolbar-button fiddler-mode-button fiddler-mode-button-disabled h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              title="Browser capture is not available yet"
             >
               <Globe className="fiddler-accent-icon h-3.5 w-3.5" />
               Browser
@@ -98,7 +112,9 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
-              className="toolbar-button fiddler-mode-button h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              disabled
+              className="toolbar-button fiddler-mode-button fiddler-mode-button-disabled h-[var(--ds-toolbar-control-height)] px-2 text-[var(--ds-toolbar-mode-font-size)] gap-1.5 text-foreground"
+              title="Terminal capture is not available yet"
             >
               <Terminal className="fiddler-accent-icon h-3.5 w-3.5" />
               Terminal
@@ -154,8 +170,9 @@ export function Toolbar({
             <Button
               size="sm"
               variant="ghost"
+              onClick={onRulesOpen}
               className="toolbar-button fiddler-icon-button h-[var(--ds-toolbar-control-height)] w-[32px] px-0 text-foreground"
-              title="More"
+              title="Rules"
             >
               <MoreHorizontal className="h-3.5 w-3.5 opacity-75" />
             </Button>
