@@ -114,20 +114,20 @@ body {
   --status-info: oklch(0.58 0.15 238);
   --status-purple: oklch(0.56 0.16 292);
 
-  --ds-surface-app: #fbfcfe;
-  --ds-surface-base: #fff;
-  --ds-surface-sidebar: #edf0f4;
-  --ds-surface-table: #f8f9fb;
-  --ds-surface-table-header: #eef1f5;
-  --ds-surface-hover: #eef3fa;
-  --ds-surface-active: #f2f6fb;
+  --ds-surface-app: #f4f6f9;
+  --ds-surface-base: #fafbfd;
+  --ds-surface-sidebar: #e9edf3;
+  --ds-surface-table: #f7f9fc;
+  --ds-surface-table-header: #e8edf4;
+  --ds-surface-hover: #e9f0f8;
+  --ds-surface-active: #edf3fb;
   --ds-surface-selected: #e8f0ff;
   --ds-surface-row-active: #dceaff;
-  --ds-border-subtle: #d1d8e2;
-  --ds-border-strong: #bec8d5;
-  --ds-grid-line: color-mix(in oklch, var(--border) 42%, transparent);
-  --ds-grid-line-strong: color-mix(in oklch, var(--border) 86%, transparent);
-  --ds-text: #1f2937;
+  --ds-border-subtle: #c7d0dc;
+  --ds-border-strong: #aeb9c8;
+  --ds-grid-line: color-mix(in oklch, var(--border) 50%, transparent);
+  --ds-grid-line-strong: color-mix(in oklch, var(--border) 92%, transparent);
+  --ds-text: #1d2733;
   --ds-icon-muted: #4b5563;
   --ds-accent-blue: #2f6fff;
   --ds-danger: #ef3f56;
@@ -135,23 +135,23 @@ body {
   --ds-control-radius: 4px;
   --ds-radius-tight: 2px;
   --ds-active-group-radius: 4px;
-  --ds-toolbar-height: 57px;
-  --ds-toolbar-tab-height: 26px;
-  --ds-toolbar-command-height: 31px;
+  --ds-toolbar-height: 55px;
+  --ds-toolbar-tab-height: 25px;
+  --ds-toolbar-command-height: 30px;
   --ds-toolbar-control-height: 24px;
   --ds-sidebar-width: 156px;
   --ds-sidebar-header-height: 29px;
   --ds-sidebar-row-height: 22px;
-  --ds-grid-header-height: 26px;
-  --ds-grid-row-height: 27px;
+  --ds-grid-header-height: 25px;
+  --ds-grid-row-height: 25px;
   --ds-grid-font-size: 11px;
   --ds-sidebar-font-size: 11px;
   --ds-tab-font-size: 11px;
   --ds-toolbar-font-size: 11px;
   --ds-toolbar-mode-font-size: 11px;
-  --ds-inspector-tool-height: 25px;
+  --ds-inspector-tool-height: 24px;
   --ds-inspector-pane-height: 24px;
-  --ds-inspector-tab-height: 25px;
+  --ds-inspector-tab-height: 24px;
 }
 
 .dark {
@@ -423,7 +423,7 @@ body {
     color: var(--muted-foreground);
     background: var(--ds-surface-app);
     border-bottom: 1px solid color-mix(in oklch, var(--border) 100%, transparent);
-    box-shadow: none;
+    box-shadow: inset 0 -1px 0 oklch(1 0 0 / 62%);
   }
 
   .traffic-tab-row {
@@ -431,7 +431,7 @@ body {
     height: var(--ds-toolbar-tab-height);
     align-items: stretch;
     border-bottom: 1px solid var(--ds-border-strong);
-    background: var(--ds-surface-app);
+    background: linear-gradient(180deg, #f9fafc, var(--ds-surface-app));
   }
 
   .traffic-command-row {
@@ -440,7 +440,7 @@ body {
     align-items: center;
     gap: 6px;
     padding: 3px 9px 3px 13px;
-    background: var(--ds-surface-app);
+    background: linear-gradient(180deg, var(--ds-surface-app), #eef2f7);
     transform: none;
   }
 
@@ -539,7 +539,7 @@ body {
   .fiddler-outline-button {
     position: relative;
     border: 1px solid color-mix(in oklch, var(--ds-border-subtle) 72%, transparent) !important;
-    background: color-mix(in oklch, var(--ds-surface-base) 42%, var(--ds-surface-app)) !important;
+    background: linear-gradient(180deg, #fbfcfe, #eef2f7) !important;
     box-shadow: none;
     font-size: var(--ds-toolbar-font-size) !important;
     font-weight: 400 !important;
@@ -566,7 +566,7 @@ body {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 0;
     height: var(--ds-toolbar-command-height);
     border: 0;
     border-radius: 0;
@@ -578,7 +578,8 @@ body {
   .fiddler-mode-button {
     position: relative;
     border: 1px solid color-mix(in oklch, var(--ds-border-subtle) 70%, transparent) !important;
-    background: color-mix(in oklch, var(--ds-surface-base) 40%, var(--ds-surface-app)) !important;
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, #fbfcfe, #eef2f7) !important;
     color: var(--ds-text) !important;
     font-size: var(--ds-toolbar-mode-font-size) !important;
     font-weight: 400 !important;
@@ -594,6 +595,20 @@ body {
     background: color-mix(in oklch, var(--ds-surface-hover) 72%, var(--ds-surface-app)) !important;
   }
 
+  .fiddler-capture-mode-group .fiddler-mode-button + .fiddler-mode-button {
+    margin-left: -1px;
+  }
+
+  .fiddler-capture-mode-group .fiddler-mode-button:first-child {
+    border-top-left-radius: var(--ds-radius-tight) !important;
+    border-bottom-left-radius: var(--ds-radius-tight) !important;
+  }
+
+  .fiddler-capture-mode-group .fiddler-mode-button:last-child {
+    border-top-right-radius: var(--ds-radius-tight) !important;
+    border-bottom-right-radius: var(--ds-radius-tight) !important;
+  }
+
   .fiddler-mode-button-active {
     border-color: color-mix(
       in oklch,
@@ -601,7 +616,11 @@ body {
       var(--ds-border-subtle)
     ) !important;
     color: var(--ds-text) !important;
-    background: color-mix(in oklch, var(--ds-accent-blue) 5%, var(--ds-surface-base)) !important;
+    background: linear-gradient(
+      180deg,
+      color-mix(in oklch, var(--ds-accent-blue) 8%, white),
+      color-mix(in oklch, var(--ds-accent-blue) 9%, var(--ds-surface-app))
+    ) !important;
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 56%),
       inset 0 -2px 0 color-mix(in oklch, var(--ds-accent-blue) 58%, transparent);
@@ -618,7 +637,7 @@ body {
 
   .fiddler-icon-button {
     border: 1px solid color-mix(in oklch, var(--ds-border-subtle) 66%, transparent) !important;
-    background: color-mix(in oklch, var(--ds-surface-base) 38%, var(--ds-surface-app)) !important;
+    background: linear-gradient(180deg, #fbfcfe, #eef2f7) !important;
   }
 
   .fiddler-icon-button:hover {
@@ -760,7 +779,7 @@ body {
   }
 
   .snapshot-tree-item svg {
-    color: color-mix(in oklch, var(--fiddler-blue) 82%, var(--muted-foreground));
+    color: color-mix(in oklch, var(--sidebar-foreground) 58%, var(--fiddler-blue));
   }
 
   .snapshot-tree-item:hover {
@@ -769,8 +788,9 @@ body {
   }
 
   .snapshot-tree-item-open {
-    font-weight: 620;
+    font-weight: 650;
     color: var(--sidebar-foreground);
+    background: color-mix(in oklch, var(--sidebar-accent) 72%, transparent);
   }
 
   .snapshot-tree-child {
@@ -844,7 +864,8 @@ body {
   .mac-table-header {
     height: var(--ds-grid-header-height);
     font-size: var(--ds-grid-font-size);
-    background: var(--ds-surface-table-header);
+    color: color-mix(in oklch, var(--foreground) 84%, transparent);
+    background: linear-gradient(180deg, #f4f7fb, var(--ds-surface-table-header));
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 58%),
       inset -1px 0 0 var(--ds-grid-line-strong),
@@ -993,8 +1014,8 @@ body {
 
   .inspector-workbench {
     min-width: 0;
-    background: color-mix(in oklch, var(--card) 98%, white);
-    box-shadow: inset 1px 0 0 color-mix(in oklch, var(--border) 88%, transparent);
+    background: var(--ds-surface-table);
+    box-shadow: inset 1px 0 0 var(--ds-grid-line-strong);
   }
 
   .inspector-mode-strip {
@@ -1004,13 +1025,13 @@ body {
     align-items: stretch;
     border-top: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
     border-bottom: 1px solid var(--ds-border-strong);
-    background: var(--ds-surface-table-header);
+    background: linear-gradient(180deg, #f7f9fc, var(--ds-surface-table-header));
     box-shadow: inset 0 1px 0 oklch(1 0 0 / 46%);
   }
 
   .inspector-mode-tab {
     display: inline-flex;
-    min-width: 78px;
+    min-width: 82px;
     align-items: center;
     justify-content: center;
     border-right: 1px solid color-mix(in oklch, var(--border) 82%, transparent);
@@ -1037,7 +1058,7 @@ body {
         transparent 29px,
         color-mix(in oklch, var(--border) 5%, transparent) 30px
       ),
-      color-mix(in oklch, var(--card) 98%, white);
+      var(--ds-surface-table);
     box-shadow:
       inset 0 1px 0 oklch(1 0 0 / 24%),
       inset 1px 0 0 color-mix(in oklch, var(--border) 78%, transparent);
@@ -1063,9 +1084,12 @@ body {
 
   .inspector-tab-strip {
     height: var(--ds-inspector-tab-height);
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--secondary) 62%, white), var(--secondary)),
-      var(--secondary);
+    background: linear-gradient(180deg, #f1f4f8, #e7edf4), var(--secondary);
+    scrollbar-width: none;
+  }
+
+  .inspector-tab-strip::-webkit-scrollbar {
+    display: none;
   }
 
   .inspector-empty-canvas {
@@ -1122,15 +1146,15 @@ body {
     background:
       linear-gradient(90deg, color-mix(in oklch, var(--border) 28%, transparent), transparent 72%) 0
         100% / 100% 1px no-repeat,
-      color-mix(in oklch, var(--card) 88%, transparent);
+      color-mix(in oklch, var(--ds-surface-base) 68%, transparent);
   }
 
   .empty-table-state {
     background: repeating-linear-gradient(
       0deg,
       transparent 0,
-      transparent 29px,
-      var(--ds-grid-line) 30px
+      transparent calc(var(--ds-grid-row-height) - 1px),
+      var(--ds-grid-line) var(--ds-grid-row-height)
     );
   }
 

@@ -100,7 +100,7 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 27;
+const ROW_HEIGHT = 25;
 
 type ColKey =
   | 'protocol'

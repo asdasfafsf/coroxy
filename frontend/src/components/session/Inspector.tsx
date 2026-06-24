@@ -11,9 +11,9 @@ import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
 const TAB_TRIGGER_CLASS =
-  'h-[var(--ds-inspector-tab-height)] rounded-none border-r border-border/70 px-2.5 text-[10.5px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
+  'h-[var(--ds-inspector-tab-height)] shrink-0 rounded-none border-r border-border/70 px-2 text-[10px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
 const TAB_LIST_CLASS =
-  'inspector-tab-strip h-[var(--ds-inspector-tab-height)] rounded-none border-b border-border/80 px-0';
+  'inspector-tab-strip h-[var(--ds-inspector-tab-height)] rounded-none border-b border-border/80 px-0 overflow-x-auto overflow-y-hidden';
 const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'];
 const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
 const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
@@ -222,12 +222,12 @@ function EmptyInspectorPane({ title, icon }: { title: string; icon?: React.React
   return (
     <div className="mac-inspector-pane flex h-full flex-col">
       <PaneHeader title={title} icon={icon} />
-      <div className={cn(TAB_LIST_CLASS, 'flex shrink-0 items-center overflow-hidden')}>
+      <div className={cn(TAB_LIST_CLASS, 'flex shrink-0 items-center')}>
         {INSPECTOR_TABS.map((tab, index) => (
           <div
             key={tab}
             className={cn(
-              'flex h-full items-center border-r border-border/70 px-2.5 text-[10.5px] text-muted-foreground/58',
+              'flex h-full shrink-0 items-center border-r border-border/70 px-2 text-[10px] text-muted-foreground/58',
               index === 0 && 'bg-card/64 text-foreground/72 shadow-[inset_0_-2px_0_var(--border)]',
             )}
           >

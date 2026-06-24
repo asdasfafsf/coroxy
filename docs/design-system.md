@@ -38,15 +38,15 @@ Runtime design tokens live in `frontend/src/style.css` under the `--ds-*` namesp
 
 | Token | Value | Use |
 | --- | ---: | --- |
-| `--ds-toolbar-height` | `57px` | Full Live Traffic header |
-| `--ds-toolbar-tab-height` | `26px` | Tab strip |
-| `--ds-toolbar-command-height` | `31px` | Command row and capture group |
-| `--ds-toolbar-control-height` | `25px` | Primary toolbar controls |
+| `--ds-toolbar-height` | `55px` | Full Live Traffic header |
+| `--ds-toolbar-tab-height` | `25px` | Tab strip |
+| `--ds-toolbar-command-height` | `30px` | Command row and capture group |
+| `--ds-toolbar-control-height` | `24px` | Primary toolbar controls |
 | `--ds-sidebar-width` | `156px` | Default snapshots panel width |
 | `--ds-sidebar-header-height` | `29px` | Snapshots header |
 | `--ds-sidebar-row-height` | `22px` | Sidebar tree rows |
-| `--ds-grid-header-height` | `26px` | Session grid header |
-| `--ds-grid-row-height` | `27px` | Session grid rows |
+| `--ds-grid-header-height` | `25px` | Session grid header |
+| `--ds-grid-row-height` | `25px` | Session grid rows |
 
 ## Typography
 
@@ -72,7 +72,8 @@ Use system UI first: `-apple-system`, `BlinkMacSystemFont`, `SF Pro Text`, then 
 - Save/share/column/layout-like actions should collapse into compact right-side icon controls when possible.
 - Live Traffic keeps the Inspectors rail visible beside the session grid, even with no selected session. Idle request/response placeholders are preferred over a table-only canvas.
 - The Inspectors rail starts with a compact tool strip (`Inspectors`, `Rules`, `Overview`) before the request/response split. Keep this as a workbench navigation surface, not a decorative header.
-- The Inspectors rail uses a pixel-based width with bounded resizing. Avoid percent-based persisted split state for this surface; it can make the rail collapse or dominate the grid after app/HMR changes.
+- The Inspectors rail uses a pixel-based width with bounded resizing and a versioned storage key. Avoid percent-based persisted split state for this surface; it can make the rail collapse or dominate the grid after app/HMR changes.
+- Inspector tabs should stay compact and horizontally scroll instead of clipping labels when the rail is narrow.
 - Session grid defaults to Fiddler-like order: `#`, `URL`, `HTTP Version`, `TLS Version`, `Status Code`, `Method`, then supporting metadata.
 - Grid columns should show filter affordances in the header.
 - Empty grid backgrounds still use visible row and column rhythm. Avoid blank hero-style empty states in Live Traffic.

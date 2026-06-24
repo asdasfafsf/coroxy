@@ -105,18 +105,21 @@ function App() {
   }, []);
 
   // ===== Inspector rail width (manual drag resize) =====
-  const INSPECTOR_MIN = 300;
-  const INSPECTOR_DEFAULT = 368;
-  const INSPECTOR_MAX = 520;
+  const INSPECTOR_MIN = 340;
+  const INSPECTOR_MAX = 560;
+  const getDefaultInspectorWidth = () => {
+    const workspaceWidth =
+      typeof window === 'undefined' ? 1180 : Math.max(760, window.innerWidth - SIDEBAR_DEFAULT);
+    return Math.round(Math.max(INSPECTOR_MIN, Math.min(430, workspaceWidth * 0.32)));
+  };
   const [inspectorWidth, setInspectorWidth] = useState<number>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-inspector-width-v2');
-      const n = stored ? parseInt(stored, 10) : INSPECTOR_DEFAULT;
-      return Number.isFinite(n)
-        ? Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, n))
-        : INSPECTOR_DEFAULT;
+      const fallback = getDefaultInspectorWidth();
+      const stored = localStorage.getItem('coroxy-inspector-width-v3');
+      const n = stored ? parseInt(stored, 10) : fallback;
+      return Number.isFinite(n) ? Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, n)) : fallback;
     } catch {
-      return INSPECTOR_DEFAULT;
+      return getDefaultInspectorWidth();
     }
   });
   const inspectorResizing = useRef(false);
@@ -124,7 +127,7 @@ function App() {
     const onMove = (e: MouseEvent) => {
       if (!inspectorResizing.current || !workspaceRef.current) return;
       const rect = workspaceRef.current.getBoundingClientRect();
-      const maxForWindow = Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, rect.width * 0.42));
+      const maxForWindow = Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, rect.width * 0.44));
       const next = Math.max(INSPECTOR_MIN, Math.min(maxForWindow, rect.right - e.clientX));
       setInspectorWidth(next);
     };
@@ -134,7 +137,7 @@ function App() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       try {
-        localStorage.setItem('coroxy-inspector-width-v2', String(inspectorWidth));
+        localStorage.setItem('coroxy-inspector-width-v3', String(inspectorWidth));
       } catch {
         // ignore quota/storage errors
       }
