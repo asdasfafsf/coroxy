@@ -80,7 +80,7 @@ function applyTransform(input: string, transform: Transform): string {
   }
 }
 
-function hashHex(input: string, _algo: string): string {
+function hashHex(input: string, algo: string): string {
   // Web Crypto API is async, use simple sync hash for display
   // For production, use crypto.subtle.digest
   let hash = 0;
@@ -90,7 +90,7 @@ function hashHex(input: string, _algo: string): string {
     hash |= 0;
   }
   // Return a placeholder — real hash needs async
-  return `(Use browser console: crypto.subtle.digest('SHA-256', ...) for real hash)\nSimple hash: ${Math.abs(hash).toString(16).padStart(8, '0')}`;
+  return `(Use browser console: crypto.subtle.digest('${algo.toUpperCase()}', ...) for real hash)\nSimple hash: ${Math.abs(hash).toString(16).padStart(8, '0')}`;
 }
 
 export function TextWizard({ open, onOpenChange }: TextWizardProps) {

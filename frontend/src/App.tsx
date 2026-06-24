@@ -6,30 +6,17 @@ import {
   StartProxy,
   StopProxy,
   ClearSessions,
-  ExportSessionsHAR,
-  ExportSessionsJSON,
-  ImportSessionsHAR,
-  ImportSessionsSAZ,
-  EnableSystemProxy,
-  DisableSystemProxy,
-  IsSystemProxyActive,
-  SaveSessions,
-  LoadSessions,
-  SetThrottle,
-  ThrottleState,
 } from '../wailsjs/go/app/App';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import { model } from '../wailsjs/go/models';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { AppMenubar } from '@/components/layout/AppMenubar';
 import { Toolbar } from '@/components/layout/Toolbar';
+import { StatusBar } from '@/components/layout/StatusBar';
 import { SessionList } from '@/components/session/SessionList';
 import { SessionSidebar } from '@/components/session/SessionSidebar';
 import { Inspector } from '@/components/session/Inspector';
-import { StatusBar } from '@/components/layout/StatusBar';
 import { Settings } from '@/components/tools/Settings';
 import { RuleEditor } from '@/components/tools/RuleEditor';
 import { FilterPanel } from '@/components/tools/FilterPanel';
@@ -39,21 +26,12 @@ import { SessionDiff } from '@/components/tools/SessionDiff';
 import { AboutDialog } from '@/components/tools/AboutDialog';
 import { ShortcutsDialog } from '@/components/tools/ShortcutsDialog';
 import { TextWizard } from '@/components/tools/TextWizard';
-import { useTheme } from '@/hooks/useTheme';
-import {
-  copyToClipboard,
-  copyUrl,
-  copyRequestHeaders,
-  copyResponseHeaders,
-  copyCurl,
-  copyResponseBody,
-} from '@/lib/copy';
+import { copyToClipboard, copyUrl } from '@/lib/copy';
 import { decodeBody } from '@/lib/format';
 import { useHotkeys } from '@/hooks/useHotkeys';
 import { evaluate, loadSavedFilters, saveSavedFilters, type SavedFilter } from '@/lib/filter';
 
 function App() {
-  const { theme, setTheme } = useTheme();
   const [sessions, setSessions] = useState<model.Session[]>([]);
   const [proxyState, setProxyState] = useState('stopped');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -70,31 +48,32 @@ function App() {
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() => loadSavedFilters());
   const [showFilters, setShowFilters] = useState(false);
   const [editingFilterId, setEditingFilterId] = useState<string | null>(null);
+  const [quickSearch, setQuickSearch] = useState('');
   useEffect(() => {
     saveSavedFilters(savedFilters);
   }, [savedFilters]);
   const [diffSessionA, setDiffSessionA] = useState<model.Session | null>(null);
   const [diffSessionB, setDiffSessionB] = useState<model.Session | null>(null);
-  const [sysProxy, setSysProxy] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showTextWizard, setShowTextWizard] = useState(false);
-  const [marks, setMarks] = useState<Map<string, string>>(new Map());
-  const [throttlePreset, setThrottlePreset] = useState('off');
+  const [marks] = useState<Map<string, string>>(new Map());
 
   // ===== Sidebar width (manual drag resize) =====
-  const SIDEBAR_MIN = 160;
-  const SIDEBAR_MAX = 400;
+  const SIDEBAR_MIN = 140;
+  const SIDEBAR_DEFAULT = 156;
+  const SIDEBAR_MAX = 320;
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-sidebar-width');
-      const n = stored ? parseInt(stored, 10) : 200;
-      return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : 200;
+      const stored = localStorage.getItem('coroxy-sidebar-width-v3');
+      const n = stored ? parseInt(stored, 10) : SIDEBAR_DEFAULT;
+      return Number.isFinite(n) ? Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, n)) : SIDEBAR_DEFAULT;
     } catch {
-      return 200;
+      return SIDEBAR_DEFAULT;
     }
   });
   const sidebarResizing = useRef(false);
+  const workspaceRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     const onMove = (e: MouseEvent) => {
       if (!sidebarResizing.current) return;
@@ -107,7 +86,7 @@ function App() {
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
       try {
-        localStorage.setItem('coroxy-sidebar-width', String(sidebarWidth));
+        localStorage.setItem('coroxy-sidebar-width-v3', String(sidebarWidth));
       } catch {
         // ignore quota/storage errors
       }
@@ -126,6 +105,58 @@ function App() {
     document.body.style.userSelect = 'none';
   }, []);
 
+  // ===== Inspector rail width (manual drag resize) =====
+  const INSPECTOR_MIN = 340;
+  const INSPECTOR_MAX = 560;
+  const getDefaultInspectorWidth = () => {
+    const workspaceWidth =
+      typeof window === 'undefined' ? 1180 : Math.max(760, window.innerWidth - SIDEBAR_DEFAULT);
+    return Math.round(Math.max(INSPECTOR_MIN, Math.min(430, workspaceWidth * 0.32)));
+  };
+  const [inspectorWidth, setInspectorWidth] = useState<number>(() => {
+    try {
+      const fallback = getDefaultInspectorWidth();
+      const stored = localStorage.getItem('coroxy-inspector-width-v3');
+      const n = stored ? parseInt(stored, 10) : fallback;
+      return Number.isFinite(n) ? Math.max(INSPECTOR_MIN, Math.min(INSPECTOR_MAX, n)) : fallback;
+    } catch {
+      return getDefaultInspectorWidth();
+    }
+  });
+  const inspectorResizing = useRef(false);
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!inspectorResizing.current || !workspaceRef.current) return;
+      const rect = workspaceRef.current.getBoundingClientRect();
+      const maxForWindow = Math.min(INSPECTOR_MAX, Math.max(INSPECTOR_MIN, rect.width * 0.44));
+      const next = Math.max(INSPECTOR_MIN, Math.min(maxForWindow, rect.right - e.clientX));
+      setInspectorWidth(next);
+    };
+    const onUp = () => {
+      if (!inspectorResizing.current) return;
+      inspectorResizing.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      try {
+        localStorage.setItem('coroxy-inspector-width-v3', String(inspectorWidth));
+      } catch {
+        // ignore quota/storage errors
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [inspectorWidth]);
+  const handleInspectorResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    inspectorResizing.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, []);
+
   // Multi-session tabs
   const [sessionTabs, setSessionTabs] = useState([
     { id: 'default', label: 'All Traffic', filterId: 'default' },
@@ -139,17 +170,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    Sessions()
+    Promise.resolve()
+      .then(() => Sessions())
       .then((s) => setSessions(s || []))
       .catch(() => {});
-    ProxyState()
+    Promise.resolve()
+      .then(() => ProxyState())
       .then(setProxyState)
-      .catch(() => {});
-    IsSystemProxyActive()
-      .then(setSysProxy)
-      .catch(() => {});
-    ThrottleState()
-      .then((cfg) => setThrottlePreset(cfg.preset))
       .catch(() => {});
   }, []);
 
@@ -166,7 +193,8 @@ function App() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      ProxyState()
+      Promise.resolve()
+        .then(() => ProxyState())
         .then(setProxyState)
         .catch(() => {});
     }, 2000);
@@ -175,6 +203,19 @@ function App() {
 
   const isRunning = proxyState === 'running';
 
+  const trafficTotals = useMemo(
+    () =>
+      sessions.reduce(
+        (acc, session) => {
+          acc.requestBytes += session.request?.body_size || 0;
+          acc.responseBytes += session.response?.body_size || 0;
+          return acc;
+        },
+        { requestBytes: 0, responseBytes: 0 },
+      ),
+    [sessions],
+  );
+
   const activeFilter = useMemo<SavedFilter | null>(() => {
     const tab = sessionTabs.find((t) => t.id === activeTabId);
     if (!tab || !tab.filterId || tab.filterId === 'default') return null;
@@ -182,9 +223,30 @@ function App() {
   }, [sessionTabs, activeTabId, savedFilters]);
 
   const filteredSessions = useMemo(() => {
-    if (!activeFilter) return sessions;
-    return sessions.filter((s) => evaluate(activeFilter, s));
-  }, [sessions, activeFilter]);
+    const filterMatched = activeFilter
+      ? sessions.filter((s) => evaluate(activeFilter, s))
+      : sessions;
+    const query = quickSearch.trim().toLowerCase();
+    if (!query) return filterMatched;
+
+    return filterMatched.filter((s) => {
+      const haystack = [
+        s.protocol,
+        s.state,
+        s.target?.host,
+        s.request?.method,
+        s.request?.url,
+        s.request?.content_type,
+        s.response?.status_code != null ? String(s.response.status_code) : '',
+        s.response?.status_text,
+        s.response?.content_type,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [sessions, activeFilter, quickSearch]);
 
   // Active session for Inspector (last clicked)
   const activeSession = useMemo(() => {
@@ -239,21 +301,6 @@ function App() {
     setActiveSessionId(null);
   }, []);
 
-  const handleMark = useCallback(
-    (color: string) => {
-      setMarks((prev) => {
-        const next = new Map(prev);
-        for (const id of selectedIds) next.set(id, color);
-        return next;
-      });
-    },
-    [selectedIds],
-  );
-
-  const handleUnmarkAll = useCallback(() => {
-    setMarks(new Map());
-  }, []);
-
   const handleDeleteSelected = useCallback(() => {
     if (selectedIds.size === 0) return;
     setSessions((prev) => prev.filter((s) => !selectedIds.has(s.id)));
@@ -274,19 +321,6 @@ function App() {
     }
   }, [isRunning]);
 
-  const handleToggleSysProxy = useCallback(async () => {
-    try {
-      if (sysProxy) {
-        await DisableSystemProxy();
-      } else {
-        await EnableSystemProxy();
-      }
-      setSysProxy(!sysProxy);
-    } catch (e) {
-      toast.error('시스템 프록시 토글 실패', { description: String(e) });
-    }
-  }, [sysProxy]);
-
   const handleClear = useCallback(async () => {
     await ClearSessions();
     handleSessionsClear();
@@ -306,17 +340,6 @@ function App() {
     },
     [diffSessionA],
   );
-
-  const handleCompareFromMenu = useCallback(() => {
-    if (selectedIds.size !== 2) return;
-    const ids = [...selectedIds];
-    const a = sessions.find((s) => s.id === ids[0]);
-    const b = sessions.find((s) => s.id === ids[1]);
-    if (a && b) {
-      setDiffSessionA(a);
-      setDiffSessionB(b);
-    }
-  }, [selectedIds, sessions]);
 
   const handleComposerPrefill = useCallback((session: model.Session) => {
     const req = session.request;
@@ -375,7 +398,7 @@ function App() {
           key: 'f',
           mod: true,
           handler: () =>
-            document.querySelector<HTMLInputElement>('[placeholder*="filter" i]')?.focus(),
+            document.querySelector<HTMLInputElement>('[placeholder*="find sessions" i]')?.focus(),
         },
         {
           key: 'a',
@@ -422,163 +445,68 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-background text-foreground font-sans">
-        {/* ===== Left sidebar — session groups (draggable width) ===== */}
-        <div
-          className="relative border-r border-border shrink-0 flex flex-col overflow-hidden"
-          style={{ width: sidebarWidth }}
-        >
-          {/* macOS traffic lights (TitleBarHiddenInset) 영역 확보 + 창 드래그 */}
-          <div
-            className="h-7 shrink-0 bg-background"
-            style={{ ['WebkitAppRegion' as never]: 'drag' }}
-          />
-          <SessionSidebar
-            groups={sessionTabs.map((t) => {
-              const fid = t.filterId && t.filterId !== 'default' ? t.filterId : null;
-              const f = fid ? savedFilters.find((sf) => sf.id === fid) : null;
-              return {
-                id: t.id,
-                label: t.label,
-                count: t.id === activeTabId ? filteredSessions.length : 0,
-                filterName: f?.name ?? null,
-              };
-            })}
-            activeGroupId={activeTabId}
-            onGroupChange={setActiveTabId}
-            onGroupAdd={handleTabAdd}
-          />
-          {/* Drag handle — overlaps right edge border, subtle default + primary on hover */}
-          <div
-            onMouseDown={handleSidebarResizeStart}
-            className="absolute -right-0.5 top-0 bottom-0 w-1 cursor-col-resize bg-border/40 hover:bg-primary/70 active:bg-primary transition-colors z-10"
-            role="separator"
-            aria-orientation="vertical"
-          />
-        </div>
-
-        {/* ===== Right main column ===== */}
-        <div className="flex flex-col flex-1 min-w-0">
-          {/* Menubar */}
-          <AppMenubar
-            isRunning={isRunning}
-            sysProxy={sysProxy}
-            hasSelection={!!activeSession}
-            onToggleProxy={handleToggleProxy}
-            onToggleSysProxy={handleToggleSysProxy}
-            onClear={handleClear}
-            onExportHAR={() =>
-              ExportSessionsHAR().catch((e) =>
-                toast.error('HAR export 실패', { description: String(e) }),
-              )
-            }
-            onExportJSON={() =>
-              ExportSessionsJSON().catch((e) =>
-                toast.error('JSON export 실패', { description: String(e) }),
-              )
-            }
-            onImportHAR={() =>
-              ImportSessionsHAR().catch((e) =>
-                toast.error('HAR import 실패', { description: String(e) }),
-              )
-            }
-            onImportSAZ={() =>
-              ImportSessionsSAZ().catch((e) =>
-                toast.error('SAZ import 실패', { description: String(e) }),
-              )
-            }
-            onSettingsClick={() => setShowSettings(true)}
-            onRulesClick={() => setShowRules(true)}
-            onFiltersClick={() => {
-              setEditingFilterId(null);
-              setShowFilters(true);
-            }}
-            onComposerClick={() => setShowComposer(true)}
-            onCopyUrl={() => activeSession && copyToClipboard(copyUrl(activeSession))}
-            onCopyRequestHeaders={() =>
-              activeSession && copyToClipboard(copyRequestHeaders(activeSession))
-            }
-            onCopyResponseHeaders={() =>
-              activeSession && copyToClipboard(copyResponseHeaders(activeSession))
-            }
-            onCopyCurl={() => activeSession && copyToClipboard(copyCurl(activeSession))}
-            onCopyResponseBody={() =>
-              activeSession && copyToClipboard(copyResponseBody(activeSession))
-            }
-            onAboutClick={() => setShowAbout(true)}
-            onShortcutsClick={() => setShowShortcuts(true)}
-            onSelectAll={() => setSelectedIds(new Set(filteredSessions.map((s) => s.id)))}
-            onDeleteSelected={handleDeleteSelected}
-            onTextWizardClick={() => setShowTextWizard(true)}
-            onCompareClick={handleCompareFromMenu}
-            selectedCount={selectedIds.size}
-            onMark={handleMark}
-            onUnmarkAll={handleUnmarkAll}
-            onSave={() =>
-              SaveSessions().catch((e) => toast.error('세션 저장 실패', { description: String(e) }))
-            }
-            onLoad={() =>
-              LoadSessions().catch((e) =>
-                toast.error('세션 불러오기 실패', { description: String(e) }),
-              )
-            }
-            throttlePreset={throttlePreset}
-            onThrottleChange={(preset) => {
-              SetThrottle(preset);
-              setThrottlePreset(preset);
-            }}
-          />
-          {/* Toolbar */}
-          <Toolbar
-            onSessionsClear={handleSessionsClear}
-            savedFilters={savedFilters}
-            activeFilterId={activeFilter?.id ?? null}
-            onSelectFilter={(fid) => {
-              setSessionTabs((prev) =>
-                prev.map((t) => (t.id === activeTabId ? { ...t, filterId: fid ?? 'default' } : t)),
-              );
-            }}
-            onNewFilter={() => {
-              setEditingFilterId(null);
-              setShowFilters(true);
-            }}
-            onEditActiveFilter={() => {
-              setEditingFilterId(activeFilter?.id ?? null);
-              setShowFilters(true);
-            }}
-          />
-          {/* Request table + Inspector — vertical split */}
-          <ResizablePanelGroup orientation="vertical" className="flex-1">
-            <ResizablePanel defaultSize={45} minSize={20}>
-              <SessionList
-                sessions={filteredSessions}
-                selectedIds={selectedIds}
-                activeId={activeSessionId}
-                onSelect={handleSelect}
-                onReplay={handleReplay}
-                onComposerPrefill={handleComposerPrefill}
-                onDiff={handleDiff}
-                diffPending={!!diffSessionA && !diffSessionB}
-                marks={marks}
+      <div className="mac-app-shell h-screen text-foreground font-sans">
+        <div className="coroxy-window flex h-full min-h-0 flex-col overflow-hidden">
+          <div className="fiddler-workbench flex min-h-0 flex-1 overflow-hidden">
+            <div
+              className="mac-sidebar relative shrink-0 flex flex-col overflow-hidden border-r border-sidebar-border"
+              style={{ width: sidebarWidth }}
+            >
+              <SessionSidebar onGroupAdd={handleTabAdd} />
+              <div
+                onMouseDown={handleSidebarResizeStart}
+                className="absolute -right-1.5 top-0 bottom-0 w-3 cursor-col-resize bg-transparent transition-colors z-10 after:absolute after:inset-y-3 after:left-1/2 after:w-px after:-translate-x-1/2 after:rounded-full after:bg-transparent hover:after:bg-primary/45 active:after:bg-primary/70"
+                role="separator"
+                aria-orientation="vertical"
               />
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={55} minSize={20}>
-              <div className="h-full bg-card overflow-hidden">
-                <Inspector session={activeSession} />
+            </div>
+
+            <div className="mac-main-column flex flex-col flex-1 min-w-0 overflow-hidden">
+              <Toolbar
+                onSessionsClear={handleSessionsClear}
+                onFiltersOpen={() => setShowFilters(true)}
+                onProxyToggle={handleToggleProxy}
+                onRulesOpen={() => setShowRules(true)}
+                quickSearch={quickSearch}
+                onQuickSearchChange={setQuickSearch}
+                filteredCount={filteredSessions.length}
+                totalCount={sessions.length}
+                isRunning={isRunning}
+              />
+              <div ref={workspaceRef} className="main-workspace flex min-h-0 flex-1">
+                <div className="min-w-0 flex-1">
+                  <SessionList
+                    sessions={filteredSessions}
+                    selectedIds={selectedIds}
+                    activeId={activeSessionId}
+                    onSelect={handleSelect}
+                    onReplay={handleReplay}
+                    onComposerPrefill={handleComposerPrefill}
+                    onDiff={handleDiff}
+                    diffPending={!!diffSessionA && !diffSessionB}
+                    marks={marks}
+                  />
+                </div>
+                <div
+                  onMouseDown={handleInspectorResizeStart}
+                  className="workbench-inspector-resizer"
+                  role="separator"
+                  aria-orientation="vertical"
+                  aria-label="Resize inspector rail"
+                />
+                <div className="h-full shrink-0 overflow-hidden" style={{ width: inspectorWidth }}>
+                  <Inspector session={activeSession} />
+                </div>
               </div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
-          {/* StatusBar inside main column */}
-          <StatusBar
-            sessionCount={sessions.length}
-            selectedCount={selectedIds.size}
-            isRunning={isRunning}
-            theme={theme}
-            onThemeChange={setTheme}
-            totalRequestBytes={sessions.reduce((sum, s) => sum + (s.request?.body_size || 0), 0)}
-            totalResponseBytes={sessions.reduce((sum, s) => sum + (s.response?.body_size || 0), 0)}
-          />
+              <StatusBar
+                sessionCount={sessions.length}
+                selectedCount={selectedIds.size}
+                isRunning={isRunning}
+                totalRequestBytes={trafficTotals.requestBytes}
+                totalResponseBytes={trafficTotals.responseBytes}
+              />
+            </div>
+          </div>
         </div>
       </div>
 

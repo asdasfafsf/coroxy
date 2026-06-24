@@ -4,8 +4,8 @@ type Theme = 'system' | 'dark' | 'light';
 
 const STORAGE_KEY = 'coroxy-theme';
 
-const DARK_BG = { r: 20, g: 20, b: 26 };
-const LIGHT_BG = { r: 245, g: 244, b: 243 };
+const DARK_BG = { r: 27, g: 28, b: 33 };
+const LIGHT_BG = { r: 242, g: 243, b: 246 };
 
 function getSystemTheme(): 'dark' | 'light' {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

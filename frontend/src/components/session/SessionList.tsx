@@ -3,7 +3,7 @@ import { List } from 'react-window';
 import { model } from '../../../wailsjs/go/models';
 import { TagSession, CommentSession } from '../../../wailsjs/go/app/App';
 import { cn } from '@/lib/utils';
-import { formatTime, formatDuration, formatBytes, shortContentType, getPath } from '@/lib/format';
+import { formatTime, formatDuration, formatBytes, getPath } from '@/lib/format';
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -32,7 +32,7 @@ import {
   Copy,
   Tag,
   MessageSquare,
-  Inbox,
+  Filter as FilterIcon,
 } from 'lucide-react';
 
 // Session may have runtime-added tags/comment fields from Go backend
@@ -100,16 +100,18 @@ function protoBadge(protocol: string): { bg: string; text: string } {
   }
 }
 
-const ROW_HEIGHT = 28;
+const ROW_HEIGHT = 25;
 
 type ColKey =
   | 'protocol'
+  | 'host'
   | 'method'
   | 'url'
   | 'status'
-  | 'type'
-  | 'request'
-  | 'response'
+  | 'httpVersion'
+  | 'tlsVersion'
+  | 'body'
+  | 'contentType'
   | 'duration'
   | 'time';
 
@@ -130,20 +132,24 @@ interface ColDef {
 const COL_MIN_WIDTH = 40;
 
 const cellBase =
-  'px-2.5 text-foreground text-[13px] whitespace-nowrap overflow-hidden text-ellipsis';
+  'px-2 text-foreground/88 text-[var(--ds-grid-font-size)] font-normal whitespace-nowrap overflow-hidden text-ellipsis';
 
 const COL_DEFS: ColDef[] = [
   {
     key: 'protocol',
-    label: 'Proto',
-    defaultWidth: 72,
-    minWidth: 64,
+    label: 'Protocol',
+    defaultWidth: 76,
+    minWidth: 72,
     align: 'center',
     render: (s) => {
       const badge = protoBadge(s.protocol);
       return (
         <span
-          className={cn('text-[11px] font-semibold px-1.5 py-0.5 rounded-sm', badge.bg, badge.text)}
+          className={cn(
+            'text-[9.5px] font-semibold px-1 py-0.5 rounded-[2px]',
+            badge.bg,
+            badge.text,
+          )}
         >
           {s.protocol}
         </span>
@@ -151,85 +157,112 @@ const COL_DEFS: ColDef[] = [
     },
   },
   {
+    key: 'host',
+    label: 'Host',
+    defaultWidth: 180,
+    minWidth: 130,
+    cellClass: 'truncate',
+    render: (s) => s.target?.host || '-',
+    rowTitle: (s) => s.target?.host || undefined,
+  },
+  {
     key: 'method',
     label: 'Method',
-    defaultWidth: 80,
-    minWidth: 72,
+    defaultWidth: 88,
+    minWidth: 76,
     align: 'center',
     render: (s) => s.request?.method || '-',
   },
   {
     key: 'url',
     label: 'URL',
-    defaultWidth: 460,
-    minWidth: 240,
-    align: 'center',
+    defaultWidth: 520,
+    minWidth: 280,
     cellClass: 'truncate',
     render: (s) => {
-      const host = s.target?.host || '';
       const path = getPath(s.request?.url) || '';
-      const text = host + path;
-      return text || s.request?.url || '-';
+      return path || s.request?.url || '-';
     },
     rowTitle: (s) => s.request?.url || undefined,
   },
   {
     key: 'status',
-    label: 'Status',
-    defaultWidth: 72,
-    minWidth: 68,
+    label: 'Status Code',
+    defaultWidth: 116,
+    minWidth: 104,
     align: 'center',
     render: (s) => (
       <span className={statusClass(s.response?.status_code)}>{s.response?.status_code || '-'}</span>
     ),
   },
   {
-    key: 'request',
-    label: 'Request',
-    defaultWidth: 96,
-    minWidth: 80,
+    key: 'httpVersion',
+    label: 'HTTP Version',
+    defaultWidth: 102,
+    minWidth: 94,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => formatBytes(s.request?.body_size),
+    render: (s) => s.request?.http_version || s.response?.http_version || '-',
   },
   {
-    key: 'response',
-    label: 'Response',
-    defaultWidth: 96,
-    minWidth: 92,
+    key: 'tlsVersion',
+    label: 'TLS Version',
+    defaultWidth: 94,
+    minWidth: 88,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => formatBytes(s.response?.body_size),
+    render: () => '-',
   },
   {
-    key: 'type',
-    label: 'Type',
-    defaultWidth: 96,
-    minWidth: 56,
+    key: 'body',
+    label: 'Body',
+    defaultWidth: 72,
+    minWidth: 58,
     align: 'center',
     cellClass: 'text-muted-foreground',
-    render: (s) => shortContentType(s.response?.content_type),
+    render: (s) => formatBytes(s.response?.body_size || s.request?.body_size),
+  },
+  {
+    key: 'contentType',
+    label: 'Content-Type',
+    defaultWidth: 122,
+    minWidth: 108,
+    align: 'center',
+    cellClass: 'text-muted-foreground',
+    render: (s) => s.response?.content_type || s.request?.content_type || '-',
   },
   {
     key: 'duration',
     label: 'Duration',
-    defaultWidth: 88,
-    minWidth: 88,
+    defaultWidth: 78,
+    minWidth: 74,
     align: 'center',
     render: (s) => formatDuration(s.duration),
   },
   {
     key: 'time',
     label: 'Time',
-    defaultWidth: 96,
-    minWidth: 56,
+    defaultWidth: 84,
+    minWidth: 54,
     align: 'center',
     cellClass: 'text-muted-foreground',
     render: (s) => formatTime(s.created_at),
   },
 ];
 
-const DEFAULT_ORDER: ColKey[] = COL_DEFS.map((c) => c.key);
+const DEFAULT_ORDER: ColKey[] = [
+  'url',
+  'httpVersion',
+  'tlsVersion',
+  'status',
+  'method',
+  'body',
+  'contentType',
+  'duration',
+  'time',
+  'protocol',
+  'host',
+];
 
 const DEFAULT_COL_WIDTHS: Record<ColKey, number> = COL_DEFS.reduce(
   (acc, c) => {
@@ -247,6 +280,32 @@ const COL_MIN_MAP: Record<ColKey, number> = COL_DEFS.reduce(
   {} as Record<ColKey, number>,
 );
 
+function resizeColWidths(
+  prev: Record<ColKey, number>,
+  key: ColKey,
+  startWidth: number,
+  delta: number,
+  nextKey: ColKey | null,
+  startNextWidth: number | null,
+): Record<ColKey, number> {
+  const colMin = COL_MIN_MAP[key] ?? COL_MIN_WIDTH;
+  if (!nextKey || startNextWidth == null) {
+    const next = Math.max(colMin, startWidth + delta);
+    return prev[key] === next ? prev : { ...prev, [key]: next };
+  }
+
+  const nextMin = COL_MIN_MAP[nextKey] ?? COL_MIN_WIDTH;
+  const maxShrink = startWidth - colMin;
+  const maxGrow = startNextWidth - nextMin;
+  const clampedDelta = Math.max(-maxShrink, Math.min(delta, maxGrow));
+  const nextWidth = startWidth + clampedDelta;
+  const nextNeighborWidth = startNextWidth - clampedDelta;
+
+  return prev[key] === nextWidth && prev[nextKey] === nextNeighborWidth
+    ? prev
+    : { ...prev, [key]: nextWidth, [nextKey]: nextNeighborWidth };
+}
+
 function alignClass(a?: ColAlign): string {
   if (a === 'center') return 'text-center';
   if (a === 'right') return 'text-right';
@@ -263,6 +322,8 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
     switch (key) {
       case 'protocol':
         return m * (a.protocol || '').localeCompare(b.protocol || '');
+      case 'host':
+        return m * (a.target?.host || '').localeCompare(b.target?.host || '');
       case 'method':
         return m * (a.request?.method || '').localeCompare(b.request?.method || '');
       case 'url':
@@ -274,12 +335,28 @@ function sortSessions(sessions: model.Session[], key: SortKey, dir: SortDir): mo
         );
       case 'status':
         return m * ((a.response?.status_code || 0) - (b.response?.status_code || 0));
-      case 'type':
-        return m * (a.response?.content_type || '').localeCompare(b.response?.content_type || '');
-      case 'request':
-        return m * ((a.request?.body_size || 0) - (b.request?.body_size || 0));
-      case 'response':
-        return m * ((a.response?.body_size || 0) - (b.response?.body_size || 0));
+      case 'httpVersion':
+        return (
+          m *
+          (a.request?.http_version || a.response?.http_version || '').localeCompare(
+            b.request?.http_version || b.response?.http_version || '',
+          )
+        );
+      case 'tlsVersion':
+        return 0;
+      case 'body':
+        return (
+          m *
+          ((a.response?.body_size || a.request?.body_size || 0) -
+            (b.response?.body_size || b.request?.body_size || 0))
+        );
+      case 'contentType':
+        return (
+          m *
+          (a.response?.content_type || a.request?.content_type || '').localeCompare(
+            b.response?.content_type || b.request?.content_type || '',
+          )
+        );
       case 'duration':
         return m * ((a.duration || 0) - (b.duration || 0));
       case 'time':
@@ -333,11 +410,10 @@ function SessionRow(
     <div
       style={style}
       className={cn(
-        'relative flex items-center cursor-pointer border-b border-border/20 transition-colors',
-        !isSelected && !isActive && 'hover:bg-muted/60',
+        'session-row relative flex items-center cursor-pointer transition-colors',
         !isSelected && !isActive && rowTintClass(session),
-        isSelected && !isActive && 'bg-primary/20 hover:bg-primary/25',
-        isActive && 'bg-primary/30 hover:bg-primary/35 text-foreground',
+        isSelected && !isActive && 'mac-row-selected',
+        isActive && 'mac-row-active text-foreground',
       )}
       onClick={(e) =>
         onSelect(session, { shiftKey: e.shiftKey, metaKey: e.metaKey, ctrlKey: e.ctrlKey })
@@ -345,7 +421,7 @@ function SessionRow(
       onContextMenu={() => onContextSession(session)}
     >
       {isActive && (
-        <span className="absolute inset-y-0 left-0 w-[3px] bg-primary pointer-events-none" />
+        <span className="absolute inset-y-[5px] left-1.5 w-0.5 rounded-full bg-primary pointer-events-none" />
       )}
       <div className={cn(cellBase, 'w-10 text-muted-foreground shrink-0 flex items-center gap-1')}>
         {markColor && (
@@ -354,22 +430,11 @@ function SessionRow(
         {index + 1}
       </div>
       {orderedCols.map((col) => {
-        const isUrl = col.key === 'url';
         return (
           <div
             key={col.key}
-            className={cn(
-              cellBase,
-              col.cellClass,
-              alignClass(col.align),
-              'border-r border-border/20',
-              !isUrl && 'shrink-0',
-            )}
-            style={
-              isUrl
-                ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
-                : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
-            }
+            className={cn(cellBase, col.cellClass, alignClass(col.align), 'shrink-0')}
+            style={{ width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }}
             title={col.rowTitle?.(session)}
           >
             {col.render(session)}
@@ -395,13 +460,12 @@ export function SessionList({
   const containerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const [listHeight, setListHeight] = useState(400);
-  const URL_MIN = 240;
-  const INDEX_COL = 40;
+  const [listWidth, setListWidth] = useState(0);
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [hiddenCols, setHiddenCols] = useState<Set<string>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-hidden-cols-v2');
+      const stored = localStorage.getItem('coroxy-hidden-cols-v6');
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch {
       return new Set();
@@ -409,7 +473,7 @@ export function SessionList({
   });
   const [colOrder, setColOrder] = useState<ColKey[]>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-order-v2');
+      const stored = localStorage.getItem('coroxy-col-order-v6');
       if (!stored) return DEFAULT_ORDER;
       const parsed = JSON.parse(stored) as string[];
       const known = new Set(DEFAULT_ORDER);
@@ -424,7 +488,7 @@ export function SessionList({
   const [dropTargetKey, setDropTargetKey] = useState<ColKey | null>(null);
   const [colWidths, setColWidths] = useState<Record<ColKey, number>>(() => {
     try {
-      const stored = localStorage.getItem('coroxy-col-widths-v2');
+      const stored = localStorage.getItem('coroxy-col-widths-v6');
       if (!stored) return { ...DEFAULT_COL_WIDTHS };
       const parsed = JSON.parse(stored) as Partial<Record<ColKey, number>>;
       const merged: Record<ColKey, number> = { ...DEFAULT_COL_WIDTHS };
@@ -444,8 +508,10 @@ export function SessionList({
   // 대비해 window-level mousemove/mouseup fallback도 함께 설치.
   const resizingCol = useRef<{
     key: ColKey;
+    nextKey: ColKey | null;
     startX: number;
     startWidth: number;
+    startNextWidth: number | null;
     el: HTMLElement | null;
     pointerId: number | null;
   } | null>(null);
@@ -465,7 +531,7 @@ export function SessionList({
       document.body.style.userSelect = '';
       setColWidths((prev) => {
         try {
-          localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
+          localStorage.setItem('coroxy-col-widths-v6', JSON.stringify(prev));
         } catch {
           // ignore quota/storage errors
         }
@@ -477,21 +543,14 @@ export function SessionList({
       if (!ctx) return;
       const delta = e.clientX - ctx.startX;
       setColWidths((prev) => {
-        const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
-        // URL 이외 컬럼: URL 이 minWidth 아래로 밀리지 않도록 max 제한
-        let target = ctx.startWidth + delta;
-        if (ctx.key !== 'url') {
-          const othersSum = (Object.keys(prev) as ColKey[])
-            .filter((k) => k !== ctx.key && k !== 'url')
-            .reduce((acc, k) => acc + prev[k], 0);
-          const maxThis = Math.max(
-            colMin,
-            (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
-          );
-          target = Math.min(target, maxThis);
-        }
-        const next = Math.max(colMin, target);
-        return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+        return resizeColWidths(
+          prev,
+          ctx.key,
+          ctx.startWidth,
+          delta,
+          ctx.nextKey,
+          ctx.startNextWidth,
+        );
       });
     };
     window.addEventListener('mousemove', onMove);
@@ -502,7 +561,7 @@ export function SessionList({
     };
   }, []);
   const handleColResizePointerDown = useCallback(
-    (key: ColKey, e: React.PointerEvent) => {
+    (key: ColKey, nextKey: ColKey | null, e: React.PointerEvent) => {
       e.preventDefault();
       e.stopPropagation();
       const el = e.currentTarget as HTMLElement;
@@ -513,8 +572,10 @@ export function SessionList({
       }
       resizingCol.current = {
         key,
+        nextKey,
         startX: e.clientX,
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        startNextWidth: nextKey ? (colWidths[nextKey] ?? DEFAULT_COL_WIDTHS[nextKey]) : null,
         el,
         pointerId: e.pointerId,
       };
@@ -526,14 +587,16 @@ export function SessionList({
   // Mouse event fallback — pointer 이벤트가 발화되지 않는 환경용. window mouseup에
   // 등록된 endResize가 저장/정리까지 처리.
   const handleColResizeMouseDown = useCallback(
-    (key: ColKey, e: React.MouseEvent) => {
+    (key: ColKey, nextKey: ColKey | null, e: React.MouseEvent) => {
       if (resizingCol.current) return;
       e.preventDefault();
       e.stopPropagation();
       resizingCol.current = {
         key,
+        nextKey,
         startX: e.clientX,
         startWidth: colWidths[key] ?? DEFAULT_COL_WIDTHS[key],
+        startNextWidth: nextKey ? (colWidths[nextKey] ?? DEFAULT_COL_WIDTHS[nextKey]) : null,
         el: null,
         pointerId: null,
       };
@@ -547,20 +610,7 @@ export function SessionList({
     if (!ctx) return;
     const delta = e.clientX - ctx.startX;
     setColWidths((prev) => {
-      const colMin = COL_MIN_MAP[ctx.key] ?? COL_MIN_WIDTH;
-      let target = ctx.startWidth + delta;
-      if (ctx.key !== 'url') {
-        const othersSum = (Object.keys(prev) as ColKey[])
-          .filter((k) => k !== ctx.key && k !== 'url')
-          .reduce((acc, k) => acc + prev[k], 0);
-        const maxThis = Math.max(
-          colMin,
-          (containerRef.current?.clientWidth ?? 0) - othersSum - URL_MIN - INDEX_COL,
-        );
-        target = Math.min(target, maxThis);
-      }
-      const next = Math.max(colMin, target);
-      return prev[ctx.key] === next ? prev : { ...prev, [ctx.key]: next };
+      return resizeColWidths(prev, ctx.key, ctx.startWidth, delta, ctx.nextKey, ctx.startNextWidth);
     });
   }, []);
   const handleColResizePointerUp = useCallback((e: React.PointerEvent) => {
@@ -578,7 +628,7 @@ export function SessionList({
     document.body.style.userSelect = '';
     setColWidths((prev) => {
       try {
-        localStorage.setItem('coroxy-col-widths-v2', JSON.stringify(prev));
+        localStorage.setItem('coroxy-col-widths-v6', JSON.stringify(prev));
       } catch {
         // ignore quota/storage errors
       }
@@ -593,7 +643,7 @@ export function SessionList({
       const next = new Set(prev);
       if (next.has(col)) next.delete(col);
       else next.add(col);
-      localStorage.setItem('coroxy-hidden-cols-v2', JSON.stringify([...next]));
+      localStorage.setItem('coroxy-hidden-cols-v6', JSON.stringify([...next]));
       return next;
     });
   };
@@ -609,6 +659,17 @@ export function SessionList({
       .map((k) => colMap.get(k))
       .filter((c): c is ColDef => !!c && !hiddenCols.has(c.key));
   }, [colOrder, hiddenCols, colMap]);
+  const tableContentWidth = useMemo(
+    () => 40 + orderedCols.reduce((sum, col) => sum + (colWidths[col.key] ?? col.defaultWidth), 0),
+    [colWidths, orderedCols],
+  );
+  const gridLineOffsets = useMemo(() => {
+    let offset = 40;
+    return orderedCols.slice(0, -1).map((col) => {
+      offset += colWidths[col.key] ?? col.defaultWidth;
+      return offset;
+    });
+  }, [colWidths, orderedCols]);
 
   const sortedSessions = useMemo(() => {
     if (!sortKey) return sessions;
@@ -631,7 +692,7 @@ export function SessionList({
       const toIdx = next.indexOf(to);
       if (toIdx < 0) return prev;
       next.splice(toIdx, 0, from);
-      localStorage.setItem('coroxy-col-order-v2', JSON.stringify(next));
+      localStorage.setItem('coroxy-col-order-v6', JSON.stringify(next));
       return next;
     });
   };
@@ -647,6 +708,7 @@ export function SessionList({
 
   // 세로 리사이즈 시 List height 가 즉시 따라가도록 containerRef(전체 높이)와
   // headerRef(헤더 높이)를 동시에 관찰하여 listHeight = container - header 로 계산.
+  // 빈 상태는 가로 스크롤 가능한 전체 테이블 폭이 아니라 사용자가 보는 viewport 폭 기준으로 중앙 정렬.
   useEffect(() => {
     const c = containerRef.current;
     if (!c) return;
@@ -654,6 +716,7 @@ export function SessionList({
       const headerH = headerRef.current?.getBoundingClientRect().height ?? 28;
       const h = c.clientHeight - headerH;
       setListHeight(h > 0 ? h : 0);
+      setListWidth(c.clientWidth);
     };
     recompute();
     const observer = new ResizeObserver(recompute);
@@ -667,12 +730,12 @@ export function SessionList({
   }, []);
 
   const headerClass =
-    'px-2.5 py-1.5 text-left bg-card/90 text-muted-foreground font-semibold text-[10px] uppercase tracking-wider border-b border-border whitespace-nowrap';
+    'mac-table-header px-2 h-[var(--ds-grid-header-height)] flex items-center text-left text-muted-foreground/86 font-normal text-[var(--ds-grid-font-size)] border-b border-border/70 whitespace-nowrap';
 
   return (
     <div
       ref={containerRef}
-      className="h-full w-full overflow-x-auto overflow-y-hidden bg-background flex flex-col"
+      className="session-table h-full w-full overflow-x-auto overflow-y-hidden flex flex-col"
     >
       {/* inner wrapper: 콘텐츠 최소폭을 min-w-max 로 보장 → 컨테이너보다 넓으면 바깥 overflow-x-auto 가 스크롤 제공 */}
       <div className="flex flex-1 min-h-0 flex-col min-w-max">
@@ -680,14 +743,13 @@ export function SessionList({
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <div ref={headerRef} className="flex shrink-0">
-              <div className={cn(headerClass, 'w-10 shrink-0')}>#</div>
-              {orderedCols.map((col, idx) => {
+              <div className={cn(headerClass, 'w-10 shrink-0 text-muted-foreground/48')}>#</div>
+              {orderedCols.map((col, index) => {
+                const nextCol = orderedCols[index + 1] ?? null;
                 const isDragging = dragKey === col.key;
                 const isDropTarget =
                   dropTargetKey === col.key && dragKey !== null && dragKey !== col.key;
                 const isSorted = sortKey === col.key;
-                const isLast = idx === orderedCols.length - 1;
-                const isUrl = col.key === 'url';
                 return (
                   <div
                     key={col.key}
@@ -695,19 +757,14 @@ export function SessionList({
                     className={cn(
                       headerClass,
                       alignClass(col.align),
-                      'border-r border-border/60',
-                      !isUrl && 'shrink-0',
+                      'shrink-0',
                       'relative cursor-pointer select-none transition-colors',
-                      isSorted && 'text-foreground bg-accent/60',
+                      isSorted && 'text-foreground bg-accent/40',
                       isDragging && 'opacity-40',
                       isDropTarget &&
-                        'bg-primary/25 text-foreground ring-1 ring-inset ring-primary',
+                        'bg-primary/14 text-foreground ring-1 ring-inset ring-primary/50',
                     )}
-                    style={
-                      isUrl
-                        ? { flex: `1 1 ${colWidths.url}px`, minWidth: col.minWidth }
-                        : { width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }
-                    }
+                    style={{ width: colWidths[col.key], minWidth: col.minWidth, flexShrink: 0 }}
                     onClick={() => handleSort(col.key)}
                     onDragStart={(e) => {
                       setDragKey(col.key);
@@ -734,26 +791,29 @@ export function SessionList({
                       setDropTargetKey(null);
                     }}
                   >
-                    {col.label} <SortIcon col={col.key} />
-                    {!isLast && (
+                    <span className="min-w-0 flex-1 truncate">
+                      {col.label} <SortIcon col={col.key} />
+                    </span>
+                    <FilterIcon className="ml-1.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/82" />
+                    {nextCol ? (
                       <span
                         draggable={false}
-                        onPointerDown={(e) => handleColResizePointerDown(col.key, e)}
+                        onPointerDown={(e) => handleColResizePointerDown(col.key, nextCol.key, e)}
                         onPointerMove={handleColResizePointerMove}
                         onPointerUp={handleColResizePointerUp}
                         onPointerCancel={handleColResizePointerUp}
-                        onMouseDown={(e) => handleColResizeMouseDown(col.key, e)}
+                        onMouseDown={(e) => handleColResizeMouseDown(col.key, nextCol.key, e)}
                         onClick={(e) => e.stopPropagation()}
                         onDragStart={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize hover:bg-primary/50 active:bg-primary z-10 touch-none"
+                        className="session-col-resize absolute -right-1 top-0 bottom-0 w-2 cursor-col-resize z-10 touch-none"
                         role="separator"
                         aria-orientation="vertical"
                         aria-label={`Resize ${col.label} column`}
                       />
-                    )}
+                    ) : null}
                   </div>
                 );
               })}
@@ -776,15 +836,24 @@ export function SessionList({
         {/* Rows — own ContextMenu for per-row actions */}
         <ContextMenu>
           <ContextMenuTrigger asChild>
-            <div className="flex-1 min-h-0">
+            <div
+              className="session-body relative flex-1 min-h-0"
+              style={{ width: tableContentWidth, minWidth: tableContentWidth }}
+            >
+              <div
+                className="session-body-grid"
+                style={{ width: tableContentWidth }}
+                aria-hidden="true"
+              >
+                {gridLineOffsets.map((offset) => (
+                  <span key={offset} style={{ left: offset }} />
+                ))}
+              </div>
               {sortedSessions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-16 text-muted-foreground gap-3">
-                  <Inbox className="h-10 w-10 opacity-30" />
-                  <span className="text-sm">No sessions captured</span>
-                  <span className="text-xs opacity-60">
-                    Start the proxy to begin capturing traffic
-                  </span>
-                </div>
+                <div
+                  className="empty-table-state sticky left-0 h-full"
+                  style={{ width: listWidth || '100%' }}
+                />
               ) : (
                 <List
                   rowHeight={ROW_HEIGHT}

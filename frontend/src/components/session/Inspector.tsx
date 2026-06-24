@@ -1,54 +1,165 @@
 import { useState } from 'react';
 import { model } from '../../../wailsjs/go/models';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const TAB_TRIGGER_CLASS =
-  'text-[11px] h-6 px-2.5 data-[state=active]:text-primary data-[state=active]:shadow-[inset_0_-2px_0_0_var(--primary)]';
-const TAB_LIST_CLASS = 'bg-card border-b border-border rounded-none h-8 px-1';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { decodeBody, formatBytes, tryFormatJson } from '@/lib/format';
-import {
-  ChevronRight,
-  Copy,
-  Check,
-  ArrowUpRight,
-  ArrowDownLeft,
-  MousePointerClick,
-} from 'lucide-react';
+import { decodeBody, formatBytes } from '@/lib/format';
+import { ChevronRight, Copy, Check, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { JsonTreeView } from '@/components/shared/JsonTreeView';
 import { HexViewer } from '@/components/shared/HexViewer';
 import { WebSocketViewer } from '@/components/shared/WebSocketViewer';
 
+const TAB_TRIGGER_CLASS =
+  'h-[var(--ds-inspector-tab-height)] shrink-0 rounded-none border-r border-border/70 px-2 text-[10px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
+const TAB_LIST_CLASS =
+  'inspector-tab-strip h-[var(--ds-inspector-tab-height)] rounded-none border-b border-border/80 px-0 overflow-x-auto overflow-y-hidden';
+const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'] as const;
+const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
+const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
+  Request: ['Method', 'URL', 'Host', 'Headers'],
+  Response: ['Status', 'Type', 'Size', 'Timing'],
+};
+
 type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
+type InspectorMode = (typeof INSPECTOR_MODES)[number];
 
 interface InspectorProps {
   session: model.Session | null;
 }
 
 export function Inspector({ session }: InspectorProps) {
-  if (!session) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-muted/30 flex items-center justify-center">
-          <MousePointerClick className="h-8 w-8 opacity-40" />
+  const [mode, setMode] = useState<InspectorMode>('Inspectors');
+
+  return (
+    <div className="inspector-workbench flex h-full min-h-0 flex-col">
+      <InspectorModeStrip mode={mode} onModeChange={setMode} />
+      <div className="min-h-0 flex-1">
+        {mode === 'Inspectors' &&
+          (session ? <ActiveInspector session={session} /> : <EmptyInspector />)}
+        {mode === 'Rules' && <RulesMode session={session} />}
+        {mode === 'Overview' && <OverviewMode session={session} />}
+      </div>
+    </div>
+  );
+}
+
+function InspectorModeStrip({
+  mode,
+  onModeChange,
+}: {
+  mode: InspectorMode;
+  onModeChange: (mode: InspectorMode) => void;
+}) {
+  return (
+    <div className="inspector-mode-strip" role="tablist" aria-label="Inspector tools">
+      {INSPECTOR_MODES.map((item) => (
+        <button
+          key={item}
+          type="button"
+          className={cn('inspector-mode-tab', item === mode && 'inspector-mode-tab-active')}
+          aria-selected={item === mode}
+          onClick={() => onModeChange(item)}
+          role="tab"
+          tabIndex={item === mode ? 0 : -1}
+        >
+          {item}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function RulesMode({ session }: { session: model.Session | null }) {
+  const ruleRows = [
+    ['Target', session?.target?.host || '-'],
+    ['Method', session?.request?.method || '-'],
+    ['Breakpoint', session ? 'Eligible' : 'Idle'],
+    ['Composer', session?.request?.method || '-'],
+    ['Diff', session ? 'Ready' : 'Idle'],
+  ];
+
+  return (
+    <div className="inspector-side-mode">
+      <PaneHeader title="Rules" />
+      <div className="inspector-mode-body">
+        <div className="inspector-mode-summary">
+          <span>Context</span>
+          <span>{session ? 'Selected session' : 'No selection'}</span>
         </div>
-        <div className="text-center">
-          <div className="text-sm font-medium text-foreground/60">Select a session</div>
-          <div className="text-xs mt-1 opacity-50">
-            Click a request in the sidebar to inspect it
-          </div>
+        <div className="inspector-mode-table">
+          {ruleRows.map(([label, value]) => (
+            <div className="inspector-mode-row" key={label}>
+              <span>{label}</span>
+              <span>{value}</span>
+            </div>
+          ))}
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
+function OverviewMode({ session }: { session: model.Session | null }) {
+  const overviewRows = session
+    ? [
+        ['Method', session.request?.method || '-'],
+        ['URL', session.request?.url || '-'],
+        ['Status', session.response?.status_code ? String(session.response.status_code) : '-'],
+        ['Host', session.target?.host || '-'],
+        ['Request Body', formatBytes(session.request?.body_size || 0)],
+        ['Response Body', formatBytes(session.response?.body_size || 0)],
+      ]
+    : [
+        ['Selection', 'None'],
+        ['Request', 'Idle'],
+        ['Response', 'Idle'],
+        ['Body', '0 B'],
+      ];
+
+  return (
+    <div className="inspector-side-mode">
+      <PaneHeader title="Overview" />
+      <div className="inspector-mode-body">
+        <div className="inspector-mode-summary">
+          <span>{session ? 'Session' : 'Traffic'}</span>
+          <span>{session?.id || 'Idle'}</span>
+        </div>
+        <div className="inspector-mode-table">
+          {overviewRows.map(([label, value]) => (
+            <div className="inspector-mode-row" key={label}>
+              <span>{label}</span>
+              <span title={value}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmptyInspector() {
+  return (
+    <ResizablePanelGroup orientation="vertical" id="coroxy-inspector-empty" className="h-full">
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <EmptyInspectorPane title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
+      </ResizablePanel>
+
+      <ResizableHandle withHandle />
+
+      <ResizablePanel defaultSize={50} minSize={20}>
+        <EmptyInspectorPane title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
+      </ResizablePanel>
+    </ResizablePanelGroup>
+  );
+}
+
+function ActiveInspector({ session }: { session: model.Session }) {
   return (
     <ResizablePanelGroup orientation="vertical" id="coroxy-inspector" className="h-full">
       {/* Request Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
-        <div className="flex flex-col h-full">
+        <div className="mac-inspector-pane flex flex-col h-full">
           <PaneHeader title="Request" icon={<ArrowUpRight className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
@@ -74,7 +185,7 @@ export function Inspector({ session }: InspectorProps) {
                 Raw
               </TabsTrigger>
             </TabsList>
-            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+            <div className="flex-1 overflow-auto p-3 text-[12px] leading-5 font-mono">
               <TabsContent value="headers" className="mt-0">
                 <RequestHeaders session={session} />
               </TabsContent>
@@ -112,7 +223,7 @@ export function Inspector({ session }: InspectorProps) {
 
       {/* Response Pane */}
       <ResizablePanel defaultSize={50} minSize={20}>
-        <div className="flex flex-col h-full">
+        <div className="mac-inspector-pane flex flex-col h-full">
           <PaneHeader title="Response" icon={<ArrowDownLeft className="h-3 w-3" />} />
           <Tabs defaultValue="headers" className="flex-1 flex flex-col min-h-0">
             <TabsList className={TAB_LIST_CLASS}>
@@ -141,7 +252,7 @@ export function Inspector({ session }: InspectorProps) {
                   </TabsTrigger>
                 )}
             </TabsList>
-            <div className="flex-1 overflow-auto p-3 text-[13px] font-mono">
+            <div className="flex-1 overflow-auto p-3 text-[12px] leading-5 font-mono">
               <TabsContent value="headers" className="mt-0">
                 <ResponseHeaders session={session} />
               </TabsContent>
@@ -179,9 +290,47 @@ export function Inspector({ session }: InspectorProps) {
 
 function PaneHeader({ title, icon }: { title: string; icon?: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 text-foreground text-[10px] font-semibold uppercase tracking-wider border-b border-border">
-      <span className="text-primary">{icon}</span>
-      {title}
+    <div className="inspector-pane-header flex h-[var(--ds-inspector-pane-height)] items-center gap-1.5 border-b border-border/80 px-2.5 text-[10.5px] font-semibold text-foreground/86">
+      <span className="inspector-pane-icon">{icon}</span>
+      <span>{title}</span>
+    </div>
+  );
+}
+
+function EmptyInspectorPane({ title, icon }: { title: string; icon?: React.ReactNode }) {
+  const fields = EMPTY_INSPECTOR_FIELDS[title] ?? EMPTY_INSPECTOR_FIELDS.Request;
+
+  return (
+    <div className="mac-inspector-pane flex h-full flex-col">
+      <PaneHeader title={title} icon={icon} />
+      <div className={cn(TAB_LIST_CLASS, 'flex shrink-0 items-center')}>
+        {INSPECTOR_TABS.map((tab, index) => (
+          <div
+            key={tab}
+            className={cn(
+              'flex h-full shrink-0 items-center border-r border-border/70 px-2 text-[10px] text-muted-foreground/58',
+              index === 0 && 'bg-card/64 text-foreground/72 shadow-[inset_0_-2px_0_var(--border)]',
+            )}
+          >
+            {tab}
+          </div>
+        ))}
+      </div>
+      <div className="inspector-empty-canvas min-h-0 flex-1">
+        <div className="inspector-empty-status">
+          <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/36" />
+          <span>No {title.toLowerCase()} selected</span>
+        </div>
+
+        <div className="inspector-empty-grid" aria-hidden="true">
+          {fields.map((field) => (
+            <div className="inspector-empty-row" key={field}>
+              <span>{field}</span>
+              <span />
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -240,7 +389,7 @@ function CopyableRow({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(value);
+    window.navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -256,7 +405,7 @@ function CopyableRow({
         {label}
       </span>
       <span
-        className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/50 rounded px-1 -mx-1"
+        className="text-foreground break-all flex-1 cursor-pointer hover:bg-muted/60 rounded-md px-1 -mx-1"
         onClick={handleCopy}
       >
         {value}
@@ -512,11 +661,11 @@ function BodyContent({
         )}
       </div>
       {parsedJson !== null && viewMode === 'tree' ? (
-        <div className="bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+        <div className="inspector-code-surface p-3 max-h-[400px] overflow-auto">
           <JsonTreeView data={parsedJson} />
         </div>
       ) : (
-        <pre className="whitespace-pre-wrap text-foreground text-xs leading-5 bg-secondary p-3 rounded-md max-h-[400px] overflow-auto">
+        <pre className="inspector-code-surface whitespace-pre-wrap text-foreground text-xs leading-5 p-3 max-h-[400px] overflow-auto">
           {formatBody(decoded, contentType)}
         </pre>
       )}
@@ -545,14 +694,14 @@ function ImagePreview({
   for (let i = 0; i < bytes.length; i += chunkSize) {
     parts.push(String.fromCharCode(...bytes.slice(i, i + chunkSize)));
   }
-  const base64 = btoa(parts.join(''));
+  const base64 = window.btoa(parts.join(''));
   const dataUrl = `data:${mime};base64,${base64}`;
   return (
     <div>
       <div className="text-muted-foreground text-xs mb-2">
         {formatBytes(size)} · {contentType}
       </div>
-      <div className="bg-secondary p-4 rounded-md flex items-center justify-center">
+      <div className="inspector-code-surface p-4 flex items-center justify-center">
         <img
           src={dataUrl}
           alt="Response body"
@@ -581,7 +730,7 @@ function TimingView({ session }: { session: model.Session }) {
   return (
     <div className="space-y-3">
       <div className="text-muted-foreground text-xs">Total: {totalMs.toFixed(1)}ms</div>
-      <div className="flex h-6 rounded-md overflow-hidden bg-secondary">
+      <div className="inspector-code-surface flex h-6 overflow-hidden p-0">
         {phases.map((p) => {
           if (p.value <= 0) return null;
           const pct = total > 0 ? (p.value / total) * 100 : 0;
