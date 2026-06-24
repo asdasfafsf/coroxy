@@ -14,7 +14,7 @@ const TAB_TRIGGER_CLASS =
   'h-[var(--ds-inspector-tab-height)] shrink-0 rounded-none border-r border-border/70 px-2 text-[10px] text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-[inset_0_-2px_0_var(--primary)]';
 const TAB_LIST_CLASS =
   'inspector-tab-strip h-[var(--ds-inspector-tab-height)] rounded-none border-b border-border/80 px-0 overflow-x-auto overflow-y-hidden';
-const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'];
+const INSPECTOR_MODES = ['Inspectors', 'Rules', 'Overview'] as const;
 const INSPECTOR_TABS = ['Headers', 'Query', 'Cookies', 'WebForms', 'Body', 'Hex', 'Raw'];
 const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
   Request: ['Method', 'URL', 'Host', 'Headers'],
@@ -22,37 +22,120 @@ const EMPTY_INSPECTOR_FIELDS: Record<string, string[]> = {
 };
 
 type SessionWithWS = model.Session & { ws_frames?: model.WSFrame[] };
+type InspectorMode = (typeof INSPECTOR_MODES)[number];
 
 interface InspectorProps {
   session: model.Session | null;
 }
 
 export function Inspector({ session }: InspectorProps) {
+  const [mode, setMode] = useState<InspectorMode>('Inspectors');
+
   return (
     <div className="inspector-workbench flex h-full min-h-0 flex-col">
-      <InspectorModeStrip />
+      <InspectorModeStrip mode={mode} onModeChange={setMode} />
       <div className="min-h-0 flex-1">
-        {session ? <ActiveInspector session={session} /> : <EmptyInspector />}
+        {mode === 'Inspectors' &&
+          (session ? <ActiveInspector session={session} /> : <EmptyInspector />)}
+        {mode === 'Rules' && <RulesMode session={session} />}
+        {mode === 'Overview' && <OverviewMode session={session} />}
       </div>
     </div>
   );
 }
 
-function InspectorModeStrip() {
+function InspectorModeStrip({
+  mode,
+  onModeChange,
+}: {
+  mode: InspectorMode;
+  onModeChange: (mode: InspectorMode) => void;
+}) {
   return (
     <div className="inspector-mode-strip" role="tablist" aria-label="Inspector tools">
-      {INSPECTOR_MODES.map((mode, index) => (
+      {INSPECTOR_MODES.map((item) => (
         <button
-          key={mode}
+          key={item}
           type="button"
-          className={cn('inspector-mode-tab', index === 0 && 'inspector-mode-tab-active')}
-          aria-selected={index === 0}
+          className={cn('inspector-mode-tab', item === mode && 'inspector-mode-tab-active')}
+          aria-selected={item === mode}
+          onClick={() => onModeChange(item)}
           role="tab"
-          tabIndex={index === 0 ? 0 : -1}
+          tabIndex={item === mode ? 0 : -1}
         >
-          {mode}
+          {item}
         </button>
       ))}
+    </div>
+  );
+}
+
+function RulesMode({ session }: { session: model.Session | null }) {
+  const ruleRows = [
+    ['Breakpoints', session ? 'Ready for selected session' : 'Waiting for a session'],
+    [
+      'Composer',
+      session?.request?.method
+        ? `${session.request.method} request can be reused`
+        : 'No request selected',
+    ],
+    ['Filters', 'Applied through Live Traffic tabs'],
+    ['Diff', session ? 'Available from session row actions' : 'Select a session to compare'],
+  ];
+
+  return (
+    <div className="inspector-side-mode">
+      <PaneHeader title="Rules" />
+      <div className="inspector-mode-body">
+        <div className="inspector-mode-note">
+          Rules and breakpoints stay attached to the traffic workflow.
+        </div>
+        <div className="inspector-mode-table">
+          {ruleRows.map(([label, value]) => (
+            <div className="inspector-mode-row" key={label}>
+              <span>{label}</span>
+              <span>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OverviewMode({ session }: { session: model.Session | null }) {
+  const overviewRows = session
+    ? [
+        ['Method', session.request?.method || '-'],
+        ['URL', session.request?.url || '-'],
+        ['Status', session.response?.status_code ? String(session.response.status_code) : '-'],
+        ['Host', session.target?.host || '-'],
+        ['Request Body', formatBytes(session.request?.body_size || 0)],
+        ['Response Body', formatBytes(session.response?.body_size || 0)],
+      ]
+    : [
+        ['Selection', 'No session selected'],
+        ['Inspectors', 'Request and response panes are idle'],
+        ['Rules', 'Select a session to enable contextual actions'],
+        ['Overview', 'Traffic summary will appear here'],
+      ];
+
+  return (
+    <div className="inspector-side-mode">
+      <PaneHeader title="Overview" />
+      <div className="inspector-mode-body">
+        <div className="inspector-mode-note">
+          {session ? 'Selected session summary' : 'Live Traffic summary'}
+        </div>
+        <div className="inspector-mode-table">
+          {overviewRows.map(([label, value]) => (
+            <div className="inspector-mode-row" key={label}>
+              <span>{label}</span>
+              <span title={value}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
